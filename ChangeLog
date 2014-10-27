@@ -1,6 +1,13 @@
 CHANGES
 =======
 
+0.0.5
+-----
+
+* Constant name is configurable, sysconfig file
+* Cosmetic change
+* removed unused script
+
 0.0.4
 -----
 

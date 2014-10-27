@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 #
-# File name: anycast-healthchecker.py
+# File name: anycast_healthchecker.py
 #
 # Creation date: 21-10-2014
 #
@@ -424,6 +424,9 @@ class HealthChecker(object):
         bird_conf_file('str'): The absolute path of file which contains
         the definition of constant used by BIRD daemon.
 
+        bird_constant_name('str'): The constant name used in the bird
+        configuration.
+
         stop_event(Queue obj): A queue to communicate stop events to threads.
 
         action(Queue obj): A queue of ip_prefixes and their action to
@@ -440,10 +443,11 @@ class HealthChecker(object):
         all threads, and then exits main program
 
     """
-    def __init__(self, log, cfg_dir, bird_conf_file):
+    def __init__(self, log, cfg_dir, bird_conf_file, bird_constant_name):
         self.log = log
         self.cfg_dir = cfg_dir
         self.bird_conf_file = bird_conf_file
+        self.bird_constant_name = bird_constant_name
         self.stop_event = Event()
         self.action = Queue()
 
@@ -516,7 +520,7 @@ class HealthChecker(object):
         bird_conf.seek(0)
         bird_conf.write("# Generated in {}\n".format(time.ctime()))
         bird_conf.write("{}\n".format(comment))
-        bird_conf.write("define {} =\n".format(NAME_OF_CONSTANT))
+        bird_conf.write("define {} =\n".format(self.bird_constant_name))
         bird_conf.write("{}[\n".format(4 * ' '))
         if prefixes:
             for prefix in prefixes[:-1]:
@@ -650,6 +654,10 @@ def main():
         default='/etc/bird.d/anycast-prefixes.conf',
         help='Bird config file')
     parser.add_argument(
+        '--bird-constant-name', '-g', dest='bird_constant_name',
+        default='ACAST_PS_ADVERTISE',
+        help='Name of the constant used in Bird config file')
+    parser.add_argument(
         '--log-file', '-f', dest='log_file',
         default='/var/log/anycast-healthchecker/anycast-healthchecker.log',
         help='Log file')
@@ -711,7 +719,10 @@ def main():
     context.pidfile = pid_lockfile
 
     # Create our master process.
-    healthchecker = HealthChecker(log, args.cfg_dir, args.bird_conf_file)
+    healthchecker = HealthChecker(log,
+                                  args.cfg_dir,
+                                  args.bird_conf_file,
+                                  args.bird_constant_name)
 
     # Set signal mapping to catch singals and act accordingly.
     context.signal_map = {

@@ -16,6 +16,7 @@ prog="anycast-healthchecker"
 
 OPTIONS=
 [ -e /etc/sysconfig/$prog ] && . /etc/sysconfig/$prog
+runasuser=${RUNASUSER:-healthchecker}
 
 pidfile="/var/run/$prog/${prog}.pid"
 lockfile="/var/lock/subsys/$prog"
@@ -24,7 +25,7 @@ start() {
     [ -x $exec ] || exit 5
     [ -f $config ] || exit 6
     echo -n $"Starting $prog: "
-    daemon --user healthchecker --pidfile $pidfile $exec $OPTIONS
+    daemon --user $runasuser --pidfile $pidfile $exec $OPTIONS
     retval=$?
     echo
     [ $retval -eq 0 ] && touch $lockfile
