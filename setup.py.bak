@@ -1,0 +1,17 @@
+#!/usr/bin/python
+# coding=utf-8
+
+from setuptools import setup
+
+setup(
+    name='anycast-healthchecker',
+    version='0.0.1',
+    description='A healthchecker for Anycasted Services',
+    author='Pavlos Parissis',
+    author_email='pavlos.parissis@booking.com',
+    scripts=['anycast-healthchecker.py'],
+    package_data={
+        'init': ['ext/*']
+    },
+    # data_files=[('init', ['ext/*/*'])],
+)
