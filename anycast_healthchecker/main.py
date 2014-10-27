@@ -508,7 +508,7 @@ class HealthChecker(object):
 
         if not conf_updated:
             bird_conf.close()
-            self.log.info("No updates for bird configuratio")
+            self.log.info("No updates for bird configuration")
             return conf_updated
 
         # OK some IP_PREFIX is either removed or added, go and truncate the
