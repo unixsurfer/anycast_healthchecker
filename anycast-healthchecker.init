@@ -11,7 +11,7 @@
 # Source function library.
 . /etc/rc.d/init.d/functions
 
-exec="/usr/local/bin/anycast-healthchecker.py"
+exec="/opt/blue-python/3.4/bin/anycast-healthchecker"
 prog="anycast-healthchecker"
 
 OPTIONS=
