@@ -1,6 +1,13 @@
 CHANGES
 =======
 
+0.0.8
+-----
+
+* Added program name in the header of bird configuration
+* Detect if IP-PREFIX is assigned to loopback interface
+* changelog
+
 0.0.7
 -----
 
