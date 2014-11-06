@@ -291,6 +291,41 @@ class ServiceCheck(Thread):
 
         return proc.returncode == 0
 
+    def _ip_assigned(self):
+        """Checks if IP-PREFIX is assigned to loopback interface.
+
+        Returns:
+            True if IP-PREFIX found assigned otherwise False.
+        """
+        cmd = ['/sbin/ip', 'address', 'show', 'dev', 'lo']
+
+        self.log.debug("running {}".format(' '.join(cmd)))
+        try:
+            out = subprocess.check_output(cmd,
+                                          universal_newlines=True,
+                                          timeout=1)
+            if self.config['ip_prefix'] in out:
+                self.log.debug("{} assigned to loopback interface".format(
+                    self.config['ip_prefix']))
+                return True
+            else:
+                self.log.debug("{} NOT assigned to loopback interface".format(
+                    self.config['ip_prefix']))
+                return False
+        except subprocess.CalledProcessError as error:
+            self.log.error("Error checking IP-PREFIX {} {}".format(cmd,
+                                                                   error.output))
+            # Because it is unlikely to ever get an error I return True
+            return True
+        except subprocess.TimeoutExpired:
+            self.log.error("Timeout running {}".format(' '.join(cmd)))
+            # Because it is unlikely to ever get a timeout I return True
+            return True
+
+        self.log.debug("Code shouldn't land here!")
+
+        return False
+
     def run(self):
         """Discovers the health of a service based on the result of the check.
 
@@ -334,7 +369,18 @@ class ServiceCheck(Thread):
         # Go in a loop until we are told to stop
         while not self.stop_event.isSet():
 
-            if self._run_check():
+            if not self._ip_assigned():
+                    up_cnt = 0
+                    self.log.info(("Status DOWN because {} isn't assigned to"
+                                   " to loopback interface, but IP-PREFIX isn't"
+                                   " removed from BIRD configuration as direct1"
+                                   " protocol in BIRD has already removed the"
+                                   " route for that IP-PREFIX which triggered"
+                                   " upstream routers to withdrawn the specific"
+                                   " route").format(self.config['ip_prefix']))
+                    if previous_state != 'DOWN':
+                        previous_state = 'DOWN'
+            elif self._run_check():
                 if up_cnt == (self.config['check_rise'] - 1):
                     down_cnt = 0
                     self.log.info("Status UP")
@@ -353,7 +399,7 @@ class ServiceCheck(Thread):
                     self.log.info("Going UP {}".format(up_cnt))
                 else:
                     self.log.error("up_cnt higher! {}".format(up_cnt))
-            else:
+            elif not self._run_check():
                 if down_cnt == (self.config['check_fail'] - 1):
                     up_cnt = 0
                     self.log.info("Status DOWN")
