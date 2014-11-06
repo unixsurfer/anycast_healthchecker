@@ -564,7 +564,8 @@ class HealthChecker(object):
         # OK some IP_PREFIX is either removed or added, go and truncate the
         # configuration with the new data.
         bird_conf.seek(0)
-        bird_conf.write("# Generated in {}\n".format(time.ctime()))
+        bird_conf.write("# Generated in {} by anycast-healthchecker\n".format(
+            time.ctime()))
         bird_conf.write("{}\n".format(comment))
         bird_conf.write("define {} =\n".format(self.bird_constant_name))
         bird_conf.write("{}[\n".format(4 * ' '))
