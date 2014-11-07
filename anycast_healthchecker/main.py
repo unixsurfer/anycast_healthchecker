@@ -500,7 +500,7 @@ class HealthChecker(object):
         self.log.debug("Initialize HealthChecker")
 
     def _get_config_files(self):
-        """Retrives the absolute file path of configuration files.
+        """Retrieves the absolute file path of configuration files.
 
         Returns:
             A list of absolute file paths.
@@ -638,7 +638,7 @@ class HealthChecker(object):
         """A signal catcher.
 
         Upon catching a signal sends stop event to a queue, waits a bit
-        and then exits the main progam.
+        and then exits the main program.
 
         Arguments:
             signum (int): The signal number.
