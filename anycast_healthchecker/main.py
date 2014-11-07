@@ -582,21 +582,47 @@ class HealthChecker(object):
         return conf_updated
 
     def _reload_bird(self):
-        "Reloads BIRD daemon by issuing a reconfigure command on birdcl"
+        """Reloads BIRD daemon by issuing a reconfigure command on birdcl
+
+        It uses birdcl configure to reload BIRD. Some useful information on
+        how birdcl works:
+            -- It returns a non-zero exit code only when it can't access
+            BIRD via the control socket (/var/run/bird.ctl). This happens
+            when BIRD daemon is down or when the caller of birdcl doesn't have
+            access to the control socket.
+            -- It returns zero exit code when reload fails due to invalid
+            config, thus we catch this case by looking at the output and not
+            at the exit code.
+            -- It returns zero exit code when reload was successful.
+            -- It should never timeout, if it does then it is a bug
+
+        """
         _cmd = ['sudo', '/usr/sbin/birdcl', 'configure']
         try:
             _output = subprocess.check_output(_cmd,
                                               timeout=2,
+                                              stderr=subprocess.STDOUT,
                                               universal_newlines=True)
         except subprocess.TimeoutExpired:
             self.log.error("Reloading bird timeout")
             return
-        except subprocess.CalledProcessError:
-            self.log.error("Reloading bird returned non-zero exit")
+        except subprocess.CalledProcessError as error:
+            # birdcl returns 0 even when it fails due to invalid config, but
+            # it returns 1 when BIRD is down.
+            self.log.error(("Reloading BIRD returned non-zero code, most likely"
+                            " BIRD daemon is down:{}").format(error.output))
             return
 
+        # 'Reconfigured' string will be in the output if and only if conf is
+        # valid.
         if 'Reconfigured' in _output:
             self.log.info("Reloaded BIRD daemon")
+        else:
+            # We will end up here only if we generated an invalid conf
+            # or someone broke bird.conf.
+            self.log.error(("Reloading BIRD returned error, most likely we "
+                            "generated an invalid conf or bird.conf is broken"
+                            ":{}").format(_output))
 
     def run(self):
         """Lunches checks and triggers updates on BIRD configuration."""
