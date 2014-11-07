@@ -1,6 +1,13 @@
 CHANGES
 =======
 
+0.0.9
+-----
+
+* Better handling of errors when we reload bird
+* Fixed typos
+* Changelog updated
+
 0.0.8
 -----
 
