@@ -1,6 +1,19 @@
 CHANGES
 =======
 
+0.1.0
+-----
+
+* added git push --tags step in README
+* Added (finally) some text in README
+* Renamed variable is_updated -> bird_updated
+* another small doc update
+* Various small docstrings updates
+* Rewrote ServiceCheck class docstring and changed log severity to error
+* Fixed indentation issue and rewrote message when IP-PREFIX is configured
+* Catch the case where conf says check disabled but value for on_disabled is wrong
+* Changelog updated
+
 0.0.9
 -----
 
