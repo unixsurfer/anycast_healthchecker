@@ -14,6 +14,7 @@ Release
 To make a release you should first create a signed tag, pbr will use this for the version number::
 
    git tag -s 0.0.9 -m 'bump release'
+   git push --tags
 
 Create the source distribution archive (the archive will be placed in the **dist** directory)::
 
