@@ -375,16 +375,16 @@ class ServiceCheck(Thread):
         while not self.stop_event.isSet():
 
             if not self._ip_assigned():
-                    up_cnt = 0
-                    self.log.info(("Status DOWN because {} isn't assigned to"
-                                   " to loopback interface, but IP-PREFIX isn't"
-                                   " removed from BIRD configuration as direct1"
-                                   " protocol in BIRD has already removed the"
-                                   " route for that IP-PREFIX which triggered"
-                                   " upstream routers to withdrawn the specific"
-                                   " route").format(self.config['ip_prefix']))
-                    if previous_state != 'DOWN':
-                        previous_state = 'DOWN'
+                up_cnt = 0
+                self.log.info(("Status DOWN because {0} isn't assigned to"
+                               " to loopback interface. {0} prefix isn't"
+                               " removed from BIRD configuration as direct"
+                               " protocol in BIRD has already withdrawn the"
+                               " route for that IP-PREFIX. In nutshell traffic"
+                               " is NOT routed anymore by upstream routers to"
+                               " this node").format(self.config['ip_prefix']))
+                if previous_state != 'DOWN':
+                    previous_state = 'DOWN'
             elif self._run_check():
                 if up_cnt == (self.config['check_rise'] - 1):
                     down_cnt = 0
