@@ -236,6 +236,7 @@ class ServiceCheck(Thread):
     """
 
     def __init__(self, config_file, stop_event, action, log):
+        """Initialize name and configuration of the thread."""
         super(ServiceCheck, self).__init__()
         self.daemon = True
         self.config_file = config_file
@@ -244,6 +245,7 @@ class ServiceCheck(Thread):
         self.log = log
 
         self.config = None
+        # Load the configuration and stop thread if no configuration is found
         self._load_config()
         if self.config is None:
             self.log.error("No config!, exiting thread")
@@ -653,6 +655,7 @@ class HealthChecker(object):
         # Stay running until we receive an stop event
         while not self.stop_event.is_set():
             try:
+                # Fetch items from action queue
                 health_action = self.action.get(1)
                 self.log.info(("Returned an item from the queue for {} with "
                                "IP_PREFIX {} and action to {} from Bird "
@@ -665,6 +668,7 @@ class HealthChecker(object):
                 if is_updated:
                     self._reload_bird()
             except Empty:
+                # Just keep trying to fetch item
                 continue
 
         for _thread in _workers:
@@ -673,7 +677,7 @@ class HealthChecker(object):
     def catch_signal(self, signum, frame):
         """A signal catcher.
 
-        Upon catching a signal sends stop event to a queue, waits a bit
+        Upon catching a signal sends stop event to all threads, waits a bit
         and then exits the main program.
 
         Arguments:
