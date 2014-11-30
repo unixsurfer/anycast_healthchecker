@@ -465,7 +465,8 @@ class HealthChecker(object):
     from and added to BIRD configuration. The BIRD configuration file that is
     being modified, defines a constant of IP_PREFIXes for which routes are
     allowed to be announced via routing protocols. When an IP_PREFIX is
-    removed BIRD daemon withdraws the route associated that IP_PREFIX.
+    removed from that constant, BIRD daemon withdraws the route associated
+    that IP_PREFIX.
 
     Arguments:
         log(logger): A logger to log messages.
@@ -526,7 +527,10 @@ class HealthChecker(object):
         """Updates BIRD configuration.
 
         Arguments:
-            health_action (tuple): A 3 element tuple.
+            health_action (tuple): A 3 element tuple:
+            1st: The name of the thread
+            2nd: ip_prefix
+            3nd: Action to take, either 'add' or 'del'
 
         Returns:
             True if BIRD configuration was updated otherwise False.
