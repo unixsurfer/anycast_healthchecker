@@ -217,16 +217,17 @@ class LoggingDaemonContext(daemon.DaemonContext):
 class ServiceCheck(Thread):
     """Handles a check for each service.
 
-    It loads JSON configuration in memory and keeps running a check against
-    the service until it receives a stop event.
+    This is thread for each service check which loads JSON configuration in
+    memory and keeps running a check against the service until it receives a
+    stop event by the main thread.
 
-    If configuration can not be opened or parsed it causes an exit on the main
-    program.
+    If configuration can't be opened or can't be parsed, thread is stopped.
+    TODO: I should use alert using passive check framework.
 
     Arguments:
         config_file (str): The absolute path of the configuration file
         for the service check.
-        stop_event(Event obj): A Event obj to singal the check to be stopped.
+        stop_event(Event obj): A Event obj to signal the check to be stopped.
         action (Queue obj): A queue object to put health action
         log (logger obj): A logger object to use.
 
@@ -245,7 +246,7 @@ class ServiceCheck(Thread):
         self.config = None
         self._load_config()
         if self.config is None:
-            self.log.warning("No config!, exiting thread")
+            self.log.error("No config!, exiting thread")
             return None
 
         self.name = self.config['name']
