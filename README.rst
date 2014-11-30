@@ -35,9 +35,9 @@ Booking.com instructions::
 
    python setup.py clean --all
    python setup.py sdist
-   scp dist/anycast_healthchecker-0.0.9.tar.gz bkbuild-201.lhr4.prod.booking.com:~/git_tree/packages/blue-python/anycast-healthchecker
+   scp dist/anycast_healthchecker-0.0.9.tar.gz bkbuild-201.lhr4.prod.booking.com:~/git_tree/blue-python/anycast-healthchecker
    ssh bkbuild-201.lhr4.prod.booking.com
-   cd ~/git_tree/packages/blue-python/anycast-healthchecker
+   cd ~/git_tree/blue-python/anycast-healthchecker
    vi anycast-healthchecker.spec
    cd ..
    ./bin/build_package --norepo anycast-healthchecker
