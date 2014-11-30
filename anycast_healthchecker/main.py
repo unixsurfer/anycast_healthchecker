@@ -663,9 +663,9 @@ class HealthChecker(object):
                                                        health_action[1],
                                                        health_action[2]))
 
-                is_updated = self._update_bird_prefix_conf(health_action)
+                bird_updated = self._update_bird_prefix_conf(health_action)
                 self.action.task_done()
-                if is_updated:
+                if bird_updated:
                     self._reload_bird()
             except Empty:
                 # Just keep trying to fetch item
