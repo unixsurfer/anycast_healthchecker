@@ -365,6 +365,11 @@ class ServiceCheck(Thread):
             self.log.info("{} in queue".format(self.config['ip_prefix']))
             self.log.info("Check is now permanently disabled")
             return None
+        elif self.config['check_disabled']:
+            self.log.warning(("Configuration says check is disabled but the"
+                              " 'on_disabled' setting has wrong value ({})."
+                              " Due to this misconfiguration check is not"
+                              " disabled").format(self.config['on_disabled']))
 
         # Go in a loop until we are told to stop
         while not self.stop_event.isSet():
