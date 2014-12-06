@@ -285,12 +285,12 @@ class ServiceCheck(Thread):
                and not self.stop_event.isSet()):
             time.sleep(0.1)
 
+        self.log.debug("Check duration {}secs".format(time.time() - start_time))
+
         if proc.poll() is None:
             proc.kill()
             self.log.error("Check timeout or received stop event")
             return False
-
-        self.log.debug("Check duration {}secs".format(time.time() - start_time))
 
         return proc.returncode == 0
 
