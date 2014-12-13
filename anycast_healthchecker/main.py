@@ -161,7 +161,7 @@ class LoggingDaemonContext(daemon.DaemonContext):
     def __init__(self,
                  chroot_directory=None,
                  working_directory='/',
-                 umask=0,
+                 umask=0o022,
                  uid=None,
                  gid=None,
                  prevent_core=True,
