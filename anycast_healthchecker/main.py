@@ -38,7 +38,6 @@ def running(processid):
 
     Returns:
         True if process id is found otherwise False.
-
     """
     try:
         # From kill(2)
@@ -52,7 +51,11 @@ def running(processid):
     return True
 
 
-def get_file_logger(name, file_path, log_level=logging.DEBUG, log_format=None):
+def get_file_logger(
+        name,
+        file_path,
+        log_level=logging.DEBUG,
+        log_format=None):
     """Sets up a rotating file logger.
 
     The rotation policy is fixed to 100MBs and 8 backup files are kept.
@@ -75,9 +78,10 @@ def get_file_logger(name, file_path, log_level=logging.DEBUG, log_format=None):
                       '%(threadName)-32s %(message)s')
     my_logger = logging.getLogger(name)
     my_logger.setLevel(log_level)
-    handler = logging.handlers.RotatingFileHandler(file_path,
-                                                   maxBytes=104857600,
-                                                   backupCount=8)
+    handler = logging.handlers.RotatingFileHandler(
+        file_path,
+        maxBytes=104857600,
+        backupCount=8)
     formatter = logging.Formatter(log_format)
     handler.setFormatter(formatter)
     my_logger.addHandler(handler)
@@ -287,7 +291,8 @@ class ServiceCheck(Thread):
                and not self.stop_event.isSet()):
             time.sleep(0.1)
 
-        self.log.debug("Check duration {}secs".format(time.time() - start_time))
+        self.log.debug("Check duration {}secs".format(
+            time.time() - start_time))
 
         if proc.poll() is None:
             proc.kill()
@@ -306,9 +311,10 @@ class ServiceCheck(Thread):
 
         self.log.debug("running {}".format(' '.join(cmd)))
         try:
-            out = subprocess.check_output(cmd,
-                                          universal_newlines=True,
-                                          timeout=1)
+            out = subprocess.check_output(
+                cmd,
+                universal_newlines=True,
+                timeout=1)
             if self.config['ip_prefix'] in out:
                 self.log.debug("{} assigned to loopback interface".format(
                     self.config['ip_prefix']))
@@ -318,8 +324,9 @@ class ServiceCheck(Thread):
                     self.config['ip_prefix']))
                 return False
         except subprocess.CalledProcessError as error:
-            self.log.error("Error checking IP-PREFIX {} {}".format(cmd,
-                                                                   error.output))
+            self.log.error("Error checking IP-PREFIX {} {}".format(
+                cmd,
+                error.output))
             # Because it is unlikely to ever get an error I return True
             return True
         except subprocess.TimeoutExpired:
@@ -385,9 +392,9 @@ class ServiceCheck(Thread):
                                " to loopback interface. {0} prefix isn't"
                                " removed from BIRD configuration as direct"
                                " protocol in BIRD has already withdrawn the"
-                               " route for that IP-PREFIX. In nutshell traffic"
-                               " is NOT routed anymore by upstream routers to"
-                               " this node").format(self.config['ip_prefix']))
+                               " route for that prefix. In nutshell traffic"
+                               " is NOT routed anymore by routers to this"
+                               " node").format(self.config['ip_prefix']))
                 if previous_state != 'DOWN':
                     previous_state = 'DOWN'
             elif self._run_check():
@@ -500,7 +507,11 @@ class HealthChecker(object):
         all threads, and then exits main program
 
     """
-    def __init__(self, log, cfg_dir, bird_conf_file, bird_constant_name):
+    def __init__(self,
+                 log,
+                 cfg_dir,
+                 bird_conf_file,
+                 bird_constant_name):
         self.log = log
         self.cfg_dir = cfg_dir
         self.bird_conf_file = bird_conf_file
@@ -578,7 +589,7 @@ class HealthChecker(object):
         # OK some IP_PREFIX is either removed or added, go and truncate the
         # configuration with the new data.
         bird_conf.seek(0)
-        bird_conf.write("# Generated in {} by anycast-healthchecker\n".format(
+        bird_conf.write("# Generated {} by anycast-healthchecker\n".format(
             time.ctime()))
         bird_conf.write("{}\n".format(comment))
         bird_conf.write("define {} =\n".format(self.bird_constant_name))
@@ -613,18 +624,19 @@ class HealthChecker(object):
         """
         _cmd = ['sudo', '/usr/sbin/birdcl', 'configure']
         try:
-            _output = subprocess.check_output(_cmd,
-                                              timeout=2,
-                                              stderr=subprocess.STDOUT,
-                                              universal_newlines=True)
+            _output = subprocess.check_output(
+                _cmd,
+                timeout=2,
+                stderr=subprocess.STDOUT,
+                universal_newlines=True)
         except subprocess.TimeoutExpired:
             self.log.error("Reloading bird timeout")
             return
         except subprocess.CalledProcessError as error:
             # birdcl returns 0 even when it fails due to invalid config, but
             # it returns 1 when BIRD is down.
-            self.log.error(("Reloading BIRD returned non-zero code, most likely"
-                            " BIRD daemon is down:{}").format(error.output))
+            self.log.error(("Reloading BIRD failed, most likely BIRD daemon"
+                            " is down:{}").format(error.output))
             return
 
         # 'Reconfigured' string will be in the output if and only if conf is
@@ -647,10 +659,11 @@ class HealthChecker(object):
         # Lunch a thread for each configuration
         self.log.info("Going to lunch {} threads".format(len(files)))
         for config_file in files:
-            _thread = ServiceCheck(config_file,
-                                   self.stop_event,
-                                   self.action,
-                                   self.log)
+            _thread = ServiceCheck(
+                config_file,
+                self.stop_event,
+                self.action,
+                self.log)
             _thread.start()
             _workers.append(_thread)
 
@@ -780,18 +793,23 @@ def main():
         raise ValueError('Invalid log level: {}'.format(args.loglevel))
 
     # Set up loggers for stdout, stderr and daemon stream
-    log = get_file_logger('daemon', args.log_file, numeric_level)
-    stdout_log = get_file_logger('stdout',
-                                 args.stdout_log_file,
-                                 log_level=numeric_level)
+    log = get_file_logger(
+        'daemon',
+        args.log_file,
+        numeric_level)
+    stdout_log = get_file_logger(
+        'stdout',
+        args.stdout_log_file,
+        log_level=numeric_level)
 
     stderrformat = ('%(asctime)s [%(process)d] line:%(lineno)d '
                     'func:%(funcName)s %(levelname)-8s %(threadName)-32s '
                     '%(message)s')
-    stderr_log = get_file_logger('stderr',
-                                 args.stderr_log_file,
-                                 log_level=numeric_level,
-                                 log_format=stderrformat)
+    stderr_log = get_file_logger(
+        'stderr',
+        args.stderr_log_file,
+        log_level=numeric_level,
+        log_format=stderrformat)
 
     # Make some noise.
     log.debug('Before we are daemonized')
@@ -808,10 +826,11 @@ def main():
     context.pidfile = pid_lockfile
 
     # Create our master process.
-    healthchecker = HealthChecker(log,
-                                  args.cfg_dir,
-                                  args.bird_conf_file,
-                                  args.bird_constant_name)
+    healthchecker = HealthChecker(
+        log,
+        args.cfg_dir,
+        args.bird_conf_file,
+        args.bird_constant_name)
 
     # Set signal mapping to catch singals and act accordingly.
     context.signal_map = {
