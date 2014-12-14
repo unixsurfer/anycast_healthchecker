@@ -824,6 +824,8 @@ def main():
     # OK boy go and daemonize yourself.
     with context:
         log.info('Running as a daemon')
+        stdout_log.debug('Running as a daemon')
+        stderr_log.debug('Running as a daemon')
         healthchecker.run()
 # This is the standard boilerplate that calls the main() function.
 if __name__ == '__main__':
