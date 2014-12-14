@@ -8,6 +8,10 @@
 #
 # Created by: Pavlos Parissis <pavlos.parissis@booking.com>
 #
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-statements
+# pylint: disable=superfluous-parens
+#
 import os
 import sys
 import daemon
