@@ -211,11 +211,9 @@ class LoggingDaemonContext(daemon.DaemonContext):
         self._add_logger_files()
         daemon.DaemonContext.open(self)
         if self.stdout_logger:
-            file_like_obj = FileLikeLogger(self.stdout_logger)
-            sys.stdout = file_like_obj
+            sys.stdout = FileLikeLogger(self.stdout_logger)
         if self.stderr_logger:
-            file_like_obj = FileLikeLogger(self.stderr_logger)
-            sys.stderr = file_like_obj
+            sys.stderr = FileLikeLogger(self.stderr_logger)
 
 
 class ServiceCheck(Thread):
