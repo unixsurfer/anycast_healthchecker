@@ -254,7 +254,8 @@ class ServiceCheck(Thread):
         # Load the configuration and stop thread if no configuration is found
         self._load_config()
         if self.config is None:
-            self.log.error("No config!, exiting thread")
+            self.log.error("Configuration was not parsed")
+            self.name = 'unnamed_check'
             return None
 
         self.name = self.config['name']
@@ -267,7 +268,9 @@ class ServiceCheck(Thread):
             with open(self.config_file, 'r') as conf:
                 self.config = json.load(conf)
         except ValueError as error:
-            self.log.error("Invalid JSON: {}".format(error))
+            self.log.error("{} isn't a valid JSON file: {}".format(
+                self.config_file,
+                error))
         except (IOError, OSError) as error:
             self.log.error("Error for {}:{}".format(self.config_file, error))
 
@@ -357,6 +360,11 @@ class ServiceCheck(Thread):
         # UP or DOWN but only after a number of consecutive successful or
         # failure health checks.
         previous_state = 'Unknown'
+
+        # Exit thread when config is empty
+        if not self.config:
+            self.log.error("Thread is stopped as no configuration was found")
+            return
 
         for key, value in self.config.items():
             if key != 'name':
