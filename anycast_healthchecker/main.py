@@ -37,7 +37,7 @@ def running(processid):
         processid (int): Process ID number.
 
     Returns:
-        True if process id is found otherwise False.
+        True if process ID is found otherwise False.
     """
     try:
         # From kill(2)
@@ -58,7 +58,7 @@ def get_file_logger(
         log_format=None):
     """Sets up a rotating file logger.
 
-    The rotation policy is fixed to 100MBs and 8 backup files are kept.
+    The rotation policy is fixed to 100MBs size and 8 backup files.
 
     Arguments:
         name (str): The name for the logger.
@@ -90,7 +90,7 @@ def get_file_logger(
 
 
 class FileLikeLogger(object):
-    """Wraps a logging.Logger into a file like object.
+    """Wraps a logging.Logger class into a file like object.
 
     This is a handy way to redirect stdout/stdin to a logger.
 
@@ -221,11 +221,11 @@ class LoggingDaemonContext(daemon.DaemonContext):
 
 
 class ServiceCheck(Thread):
-    """Handles a check for each service.
+    """Handles a check for a service.
 
-    This is thread for each service check which loads JSON configuration in
-    memory and keeps running a check against the service until it receives a
-    stop event by the main thread.
+    It is a child class of Thread class.
+    Loads JSON configuration in memory and keeps running a check against
+    the service until it receives a stop event by the main program.
 
     If configuration can't be opened or can't be parsed, thread is stopped.
     TODO: I should use alert using passive check framework.
@@ -233,12 +233,13 @@ class ServiceCheck(Thread):
     Arguments:
         config_file (str): The absolute path of the configuration file
         for the service check.
-        stop_event(Event obj): A Event obj to signal the check to be stopped.
-        action (Queue obj): A queue object to put health action
+        stop_event(Event obj): A Event obj to signal the termination of the
+        check.
+        action (Queue obj): A queue object to put health actions.
         log (logger obj): A logger object to use.
 
     Methods:
-        run(): The run method of the thread.
+        run(): Run method of the thread.
     """
 
     def __init__(self, config_file, stop_event, action, log):
@@ -263,7 +264,7 @@ class ServiceCheck(Thread):
         self.log.info("Loading check for {}".format(self.name))
 
     def _load_config(self):
-        """Loads a JSON configuration file into a data strucure."""
+        """Loads a JSON configuration file into a data structure."""
         try:
             with open(self.config_file, 'r') as conf:
                 self.config = json.load(conf)
@@ -275,7 +276,7 @@ class ServiceCheck(Thread):
             self.log.error("Error for {}:{}".format(self.config_file, error))
 
     def _run_check(self):
-        """Runs a check command.
+        """Executes a check command.
 
         It utilizes timeout and catches stop events as well.
 
@@ -288,7 +289,7 @@ class ServiceCheck(Thread):
 
         start_time = time.time()
         expire_time = start_time + self.config['check_timeout']
-        # Wait to get a returncode, None => process is not finished
+        # Wait to get a return code, None => process is not finished
         while (time.time() < expire_time
                and proc.poll() is None
                and not self.stop_event.isSet()):
@@ -299,7 +300,7 @@ class ServiceCheck(Thread):
 
         if proc.poll() is None:
             proc.kill()
-            self.log.error("Check timeout or received stop event")
+            self.log.error("Check timed out or received stop event")
             return False
 
         return proc.returncode == 0
@@ -337,19 +338,18 @@ class ServiceCheck(Thread):
             # Because it is unlikely to ever get a timeout I return True
             return True
 
-        self.log.debug("Code shouldn't land here!")
+        self.log.debug("I shouldn't land here!, it is a BUG")
 
         return False
 
     def run(self):
-        """Discovers the health of a service based on the result of the check.
+        """Discovers the health of a service.
 
-        It runs until it receives a stop event and is responsible to
-        put an item in the queue.
-        If the check was successful after a number of consecutive successful
-        health checks then it considers the service UP and require for its
-        IP_PREFIX to be added in the BIRD configuration, otherwise ask for
-        a removal.
+        It runs until it receives a stop event and is responsible to put an
+        item in the queue. If the check was successful after a number of
+        consecutive successful health checks then it considers the service UP
+        and require for its IP_PREFIX to be added in the BIRD configuration,
+        otherwise ask for a removal.
 
         The rise and fail options prevents unnecessary configuration changes
         when the check is flapping.
@@ -464,9 +464,10 @@ class HealthChecker(object):
 
     This class should be instantiated once and daemonized.
 
-    It looks in directory for configuration files in JSON format. Each file
-    defines a service check with following attributes and is being lunched as
-    an individual thread.
+    Loads configuration files which have extension 'json' and are valid
+    JSON documents. Each file defines a service check with some attributes
+    and is being lunched as an individual thread.
+    Here is example configuration:
     {
         "name": "graphite-api.booking.com",
         "check_cmd": "absolute path of script which returns exit code 0 or 1",
@@ -479,12 +480,12 @@ class HealthChecker(object):
         "ip_prefix": "10.189.200.1/32"
     }
 
-    It uses a Event object to send a stop event to all threads when SIGTERM and
-    SIGHUP are sent. It uses a queue as a store for IP_PREFIXes to be removed
-    from and added to BIRD configuration. The BIRD configuration file that is
-    being modified, defines a constant of IP_PREFIXes for which routes are
-    allowed to be announced via routing protocols. When an IP_PREFIX is
-    removed from that constant, BIRD daemon withdraws the route associated
+    It uses also a Event object to send a stop event to all threads when
+    SIGTERM and SIGHUP are sent. It uses a queue as a store for IP_PREFIXes
+    to be removed from and added to BIRD configuration. The BIRD configuration
+    file that is being modified, defines a constant of IP_PREFIXes for which
+    routes are allowed to be announced via routing protocols. When an IP_PREFIX
+    is removed from that constant, BIRD daemon withdraws the route associated
     that IP_PREFIX.
 
     Arguments:
@@ -512,7 +513,7 @@ class HealthChecker(object):
         run(): Lunches checks and updates bird configuration based on
         the result of the check.
         catch_signal(signum, frame): Catches signals and sends stop events to
-        all threads, and then exits main program
+        all threads, and then exits main program.
 
     """
     def __init__(self,
@@ -548,6 +549,10 @@ class HealthChecker(object):
 
     def _update_bird_prefix_conf(self, health_action):
         """Updates BIRD configuration.
+
+        It adds/removes entries from a list definition and updates
+        the generation time stamp. If causes a kill to the main program
+        if it cant open the configuration file for read/write.
 
         Arguments:
             health_action (tuple): A 3 element tuple:
@@ -594,8 +599,8 @@ class HealthChecker(object):
             self.log.info("No updates for bird configuration")
             return conf_updated
 
-        # OK some IP_PREFIX is either removed or added, go and truncate the
-        # configuration with the new data.
+        # OK some IP_PREFIXes are either removed or added, go and truncate
+        # configuration with new data.
         bird_conf.seek(0)
         bird_conf.write("# Generated {} by anycast-healthchecker\n".format(
             time.ctime()))
@@ -603,6 +608,8 @@ class HealthChecker(object):
         bird_conf.write("define {} =\n".format(self.bird_constant_name))
         bird_conf.write("{}[\n".format(4 * ' '))
         if prefixes:
+            # all entries of the array constant need a trailing comma except
+            # the last one
             for prefix in prefixes[:-1]:
                 bird_conf.write("{}{},\n".format(8 * ' ', prefix))
             bird_conf.write("{}{}\n".format(8 * ' ',
@@ -615,9 +622,9 @@ class HealthChecker(object):
         return conf_updated
 
     def _reload_bird(self):
-        """Reloads BIRD daemon by issuing a reconfigure command on birdcl
+        """Reloads BIRD daemon.
 
-        It uses birdcl configure to reload BIRD. Some useful information on
+        It uses 'birdcl configure' to reload BIRD. Some useful information on
         how birdcl works:
             -- It returns a non-zero exit code only when it can't access
             BIRD via the control socket (/var/run/bird.ctl). This happens
@@ -627,7 +634,7 @@ class HealthChecker(object):
             config, thus we catch this case by looking at the output and not
             at the exit code.
             -- It returns zero exit code when reload was successful.
-            -- It should never timeout, if it does then it is a bug
+            -- It should never timeout, if it does then it is a bug.
 
         """
         _cmd = ['sudo', '/usr/sbin/birdcl', 'configure']
@@ -638,7 +645,7 @@ class HealthChecker(object):
                 stderr=subprocess.STDOUT,
                 universal_newlines=True)
         except subprocess.TimeoutExpired:
-            self.log.error("Reloading bird timeout")
+            self.log.error("Reloading bird timed out")
             return
         except subprocess.CalledProcessError as error:
             # birdcl returns 0 even when it fails due to invalid config, but
@@ -700,13 +707,12 @@ class HealthChecker(object):
     def catch_signal(self, signum, frame):
         """A signal catcher.
 
-        Upon catching a signal sends stop event to all threads, waits a bit
-        and then exits the main program.
+        Upon catching a signal send stop event to all threads, wait a bit
+        and then exit the main program.
 
         Arguments:
             signum (int): The signal number.
             frame (str): The stack frame at the time the signal was received.
-
         """
         self.log.info("Received {} signal".format(signum))
         self.stop_event.set()
@@ -717,7 +723,7 @@ class HealthChecker(object):
 
 
 def main():
-    """This is a main function:-)
+    """This is a main function
 
     Parses CLI arguments.
     Prevents running if another process is already running.
@@ -782,8 +788,6 @@ def main():
     args = parser.parse_args()
 
     # Catch already running process and clean up stale pid file.
-    # It could be removed when this program is lunched by a
-    # SysV-style initscript.
     if os.path.exists(args.pidfile):
         pid = int(open(args.pidfile).read().rstrip())
         if running(pid):
@@ -795,7 +799,7 @@ def main():
 
     # Get a PID lock file.
     pid_lockfile = PIDLockFile(args.pidfile)
-    # Map input log level to numeric which can be accepted by loggers
+    # Map log level to numeric which can be accepted by loggers.
     numeric_level = getattr(logging, args.loglevel.upper(), None)
     if not isinstance(numeric_level, int):
         raise ValueError('Invalid log level: {}'.format(args.loglevel))
