@@ -42,11 +42,11 @@ def main():
     parser = ArgumentParser(
         formatter_class=ArgumentDefaultsHelpFormatter,
         description="""
-        A Healthchecker for Anycasted services. Triggers updates to BIRD daemon
-        based on the result of a check. It modifies a file which defines a
-        constant array which is used by BIRD daemon in a filter function.
-        It should be combined with BIRD daemon as by itself does nothing
-        useful.
+        A Healthchecker for Anycasted services. Triggers updates to BIRD
+        daemon based on the result of a check. It modifies a file which
+        defines a constant array which is used by BIRD daemon in a filter
+        function. It should be combined with BIRD daemon as by itself
+        does nothing useful.
         """)
     parser.add_argument(
         '-c', '--config-dir',
