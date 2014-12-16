@@ -27,7 +27,7 @@ class HealthChecker(object):
     Here is example configuration:
     {
         "name": "graphite-api.booking.com",
-        "check_cmd": "absolute path of script which returns exit code 0 or 1",
+        "check_cmd": "absolute path of cmd which returns exit code 0 or 1",
         "check_interval": 10,
         "check_timeout": 5,
         "check_rise": 3,
@@ -39,11 +39,11 @@ class HealthChecker(object):
 
     It uses also a Event object to send a stop event to all threads when
     SIGTERM and SIGHUP are sent. It uses a queue as a store for IP_PREFIXes
-    to be removed from and added to BIRD configuration. The BIRD configuration
-    file that is being modified, defines a constant of IP_PREFIXes for which
-    routes are allowed to be announced via routing protocols. When an IP_PREFIX
-    is removed from that constant, BIRD daemon withdraws the route associated
-    that IP_PREFIX.
+    to be removed from and added to BIRD configuration.
+    The BIRD configuration file that is being modified, defines a
+    constant of IP_PREFIXes for which routes are allowed to be announced
+    via routing protocols. When an IP_PREFIX is removed from that
+    constant, BIRD daemon withdraws the route associated that IP_PREFIX.
 
     Arguments:
         log(logger): A logger to log messages.
@@ -57,11 +57,12 @@ class HealthChecker(object):
         bird_constant_name('str'): The constant name used in the bird
         configuration.
 
-        stop_event(Queue obj): A queue to communicate stop events to threads.
+        stop_event(Queue obj): A queue to communicate with stop events to
+        threads.
 
         action(Queue obj): A queue of ip_prefixes and their action to
-        take after health of a check is determined. An item is a tuple of 3
-        elements
+        take after health of a check is determined. An item is a tuple of
+        3 elements:
             1st: The name of the thread.
             2nd: ip_prefix.
             3nd: Action to take, either 'add' or 'del'.
@@ -69,8 +70,8 @@ class HealthChecker(object):
     Methods:
         run(): Lunches checks and updates bird configuration based on
         the result of the check.
-        catch_signal(signum, frame): Catches signals and sends stop events to
-        all threads, and then exits main program.
+        catch_signal(signum, frame): Catches signals and sends stop events
+        to all threads, and then exits main program.
 
     """
     def __init__(self,
@@ -126,8 +127,8 @@ class HealthChecker(object):
         name = health_action[0]
         ip_prefix = health_action[1]
         action = health_action[2]
-        comment = ('# 10.189.200.255 is a Dummy and it SHOULD NOT BE REMOVED '
-                   'AND USED.')
+        comment = ('# 10.189.200.255 is a dummy and it SHOULD NOT BE USED'
+                   'and REMOVED from the constant.')
 
         try:
             bird_conf = open(self.bird_conf_file, 'r+')
@@ -156,8 +157,8 @@ class HealthChecker(object):
             self.log.info("No updates for bird configuration")
             return conf_updated
 
-        # OK some IP_PREFIXes are either removed or added, go and truncate
-        # configuration with new data.
+        # OK some IP_PREFIXes are either removed or added,
+        # go and truncate configuration with new data.
         bird_conf.seek(0)
         bird_conf.write("# Generated {} by anycast-healthchecker\n".format(
             time.ctime()))
@@ -165,8 +166,8 @@ class HealthChecker(object):
         bird_conf.write("define {} =\n".format(self.bird_constant_name))
         bird_conf.write("{}[\n".format(4 * ' '))
         if prefixes:
-            # all entries of the array constant need a trailing comma except
-            # the last one
+            # all entries of the array constant need a trailing comma
+            # except  the last one
             for prefix in prefixes[:-1]:
                 bird_conf.write("{}{},\n".format(8 * ' ', prefix))
             bird_conf.write("{}{}\n".format(8 * ' ',
@@ -181,15 +182,15 @@ class HealthChecker(object):
     def _reload_bird(self):
         """Reloads BIRD daemon.
 
-        It uses 'birdcl configure' to reload BIRD. Some useful information on
-        how birdcl works:
+        It uses 'birdcl configure' to reload BIRD. Some useful information
+        on how birdcl works:
             -- It returns a non-zero exit code only when it can't access
             BIRD via the control socket (/var/run/bird.ctl). This happens
-            when BIRD daemon is down or when the caller of birdcl doesn't have
-            access to the control socket.
+            when BIRD daemon is down or when the caller of birdcl doesn't
+            have access to the control socket.
             -- It returns zero exit code when reload fails due to invalid
-            config, thus we catch this case by looking at the output and not
-            at the exit code.
+            config, thus we catch this case by looking at the output and
+            not at the exit code.
             -- It returns zero exit code when reload was successful.
             -- It should never timeout, if it does then it is a bug.
 
@@ -205,8 +206,8 @@ class HealthChecker(object):
             self.log.error("Reloading bird timed out")
             return
         except subprocess.CalledProcessError as error:
-            # birdcl returns 0 even when it fails due to invalid config, but
-            # it returns 1 when BIRD is down.
+            # birdcl returns 0 even when it fails due to invalid config,
+            # but it returns 1 when BIRD is down.
             self.log.error(("Reloading BIRD failed, most likely BIRD daemon"
                             " is down:{}").format(error.output))
             return

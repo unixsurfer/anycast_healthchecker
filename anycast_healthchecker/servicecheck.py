@@ -43,7 +43,8 @@ class ServiceCheck(Thread):
         self.log = log
 
         self.config = None
-        # Load the configuration and stop thread if no configuration is found
+        # Load the configuration and stop thread if no configuration is
+        # found.
         self._load_config()
         if self.config is None:
             self.log.error("Configuration was not parsed")
@@ -136,11 +137,12 @@ class ServiceCheck(Thread):
     def _check_disabled(self):
         """Checks if service check is disabled.
 
-        An item to the action queue is added based on the 'on_disabled' setting.
+        It logs a message if check is disabled and it also adds an item
+        to the action queue based on 'on_disabled' setting.
 
         Returns:
             True if check is disabled otherwise False.
-            NOTE: Returns False if check is disabled but the 'on_disabled'
+            NOTE: Returns False if check is disabled but 'on_disabled'
             setting has wrong value.
         """
         if (self.config['check_disabled']
@@ -168,25 +170,25 @@ class ServiceCheck(Thread):
     def run(self):
         """Discovers the health of a service.
 
-        It runs until it receives a stop event and is responsible to put an
-        item in the queue. If the check was successful after a number of
-        consecutive successful health checks then it considers the service UP
-        and require for its IP_PREFIX to be added in the BIRD configuration,
+        It runs until it receives a stop event and is responsible to put
+        an item into the queue. If check is successful after a number of
+        consecutive successful health checks then it considers service UP
+        and requires for its IP_PREFIX to be added in BIRD configuration,
         otherwise ask for a removal.
 
-        The rise and fail options prevents unnecessary configuration changes
+        Rise and fail options prevent unnecessary configuration changes
         when the check is flapping.
         """
         up_cnt = 0
         down_cnt = 0
-        # The current established state of the service check, it can be either
-        # UP or DOWN but only after a number of consecutive successful or
-        # failure health checks.
+        # The current established state of the service check, it can be
+        # either UP or DOWN but only after a number of consecutive
+        # successful or failure health checks.
         previous_state = 'Unknown'
 
         # Exit thread when config is empty
         if not self.config:
-            self.log.error("Thread is stopped as no configuration was found")
+            self.log.error("Thread is stopped as configuration empty")
             return
 
         for key, value in self.config.items():
@@ -214,9 +216,8 @@ class ServiceCheck(Thread):
                 if up_cnt == (self.config['check_rise'] - 1):
                     down_cnt = 0
                     self.log.info("Status UP")
-                    # Service exceeded all consecutive checks, set its state
-                    # accordingly and put an item in the queue to be picked up
-                    # by the main thread.
+                    # Service exceeded all consecutive checks.
+                    # Set its state accordingly and put an item in queue.
                     if previous_state != 'UP':
                         previous_state = 'UP'
                         self.action.put((self.name,
@@ -233,9 +234,8 @@ class ServiceCheck(Thread):
                 if down_cnt == (self.config['check_fail'] - 1):
                     up_cnt = 0
                     self.log.info("Status DOWN")
-                    # Service exceeded all consecutive checks, set its state
-                    # accordingly and put an item in the queue to be picked up
-                    # by the main thread.
+                    # Service exceeded all consecutive checks.
+                    # Set its state accordingly and put an item in queue.
                     if previous_state != 'DOWN':
                         previous_state = 'DOWN'
                         self.action.put((self.name,
@@ -251,8 +251,8 @@ class ServiceCheck(Thread):
             self.log.debug("Sleeping {}secs".format(
                 self.config['check_interval']))
             # Sleep in iterations of 1 second rather the whole time.
-            # This allows the thread to catch a stop event faster, so the main
-            # program can be terminated faster.
+            # This allows the thread to catch a stop event faster and as
+            # a result the main program can be terminated faster.
             sleep_cnt = 0
             while sleep_cnt < self.config['check_interval']:
                 if self.stop_event.isSet():
