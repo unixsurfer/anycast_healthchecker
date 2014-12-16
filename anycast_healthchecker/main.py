@@ -19,11 +19,10 @@ import logging
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from lockfile.pidlockfile import PIDLockFile
 
-from anycast_healthchecker.healthchecker import HealthChecker
+from anycast_healthchecker import healthchecker
 from anycast_healthchecker import lib
 
 NAME_OF_CONSTANT = 'ACAST_PS_ADVERTISE'
-
 
 
 def main():
@@ -142,7 +141,7 @@ def main():
     context.pidfile = pid_lockfile
 
     # Create our master process.
-    healthchecker = HealthChecker(
+    checker = healthchecker.HealthChecker(
         log,
         args.cfg_dir,
         args.bird_conf_file,
@@ -150,8 +149,8 @@ def main():
 
     # Set signal mapping to catch singals and act accordingly.
     context.signal_map = {
-        signal.SIGHUP: healthchecker.catch_signal,
-        signal.SIGTERM: healthchecker.catch_signal,
+        signal.SIGHUP: checker.catch_signal,
+        signal.SIGTERM: checker.catch_signal,
     }
 
     # OK boy go and daemonize yourself.
@@ -159,7 +158,7 @@ def main():
         log.info('Running as a daemon')
         stdout_log.debug('Running as a daemon')
         stderr_log.debug('Running as a daemon')
-        healthchecker.run()
+        checker.run()
 # This is the standard boilerplate that calls the main() function.
 if __name__ == '__main__':
     main()
