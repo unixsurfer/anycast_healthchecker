@@ -127,8 +127,8 @@ class HealthChecker(object):
         name = health_action[0]
         ip_prefix = health_action[1]
         action = health_action[2]
-        comment = ('# 10.189.200.255 is a dummy and it SHOULD NOT BE USED'
-                   'and REMOVED from the constant.')
+        comment = ('# 10.189.200.255 is a dummy. It should NOT be used'
+                   ' and REMOVED from the constant.')
 
         try:
             bird_conf = open(self.bird_conf_file, 'r+')
