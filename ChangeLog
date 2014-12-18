@@ -1,6 +1,25 @@
 CHANGES
 =======
 
+0.1.1
+-----
+
+* Tiny change on the comment we place on BIRD config file
+* More docstrings and comment updates
+* Tiny docstring update
+* More pythonic way of loading module
+* Spread logic from main.py to individual module files
+* Update docstrings and add some comments
+* Handle misconfiguration better
+* More PEP8 friendly indentation
+* Tiny refactoring
+* print on stdout and on stderr loggers that we are daemonized
+* added pylint filtering
+* set umask to 022 to avoid write access for others on log files
+* Cosmetic change: Report check duration earlier
+* Updated ChangeLog
+* fixed path README
+
 0.1.0
 -----
 
