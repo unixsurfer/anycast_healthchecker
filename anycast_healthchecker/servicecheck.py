@@ -162,6 +162,7 @@ class ServiceCheck(Thread):
         elif self.config['check_disabled']:
             self.log.warning(("Configuration says check is disabled but the"
                               " 'on_disabled' setting has wrong value ({})."
+                              " Valid valures are 'withdraw' and 'advertise'"
                               " Due to this misconfiguration check is not"
                               " disabled").format(self.config['on_disabled']))
 
