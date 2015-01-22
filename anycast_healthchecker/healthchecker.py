@@ -108,15 +108,14 @@ class HealthChecker(object):
     def _update_bird_prefix_conf(self, health_action):
         """Updates BIRD configuration.
 
-        It adds/removes entries from a list definition and updates
-        the generation time stamp. If causes a kill to the main program
-        if it cant open the configuration file for read/write.
+        It adds/removes entries from a list and updates generation timestamp.
+        Main program will exit if configuration file cant be read/written.
 
         Arguments:
             health_action (tuple): A 3 element tuple:
-            1st: The name of the thread
-            2nd: ip_prefix
-            3nd: Action to take, either 'add' or 'del'
+            1st: The name of the thread (str)
+            2nd: ip_prefix (str)
+            3nd: Action to take, either 'add' or 'del' (str)
 
         Returns:
             True if BIRD configuration was updated otherwise False.
