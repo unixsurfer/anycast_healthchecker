@@ -149,16 +149,18 @@ def get_file_logger(
         name,
         file_path,
         log_level=logging.DEBUG,
-        log_format=None):
+        log_format=None,
+        maxbytes=104857600,
+        backupcount=8):
     """Sets up a rotating file logger.
-
-    The rotation policy is fixed to 100MBs size and 8 backup files.
 
     Arguments:
         name (str): The name for the logger.
         file_path (str): The absolute path of the log file.
         log_level (logging.level obj): The threshold for this logger.
         log_format (logging.Formatter): The format of this logger.
+        maxbytes (int): Max size of the log before it is rotated.
+        backupcount (int): Number of backup file to keep.
 
     Returns:
         A logger object.
@@ -174,8 +176,8 @@ def get_file_logger(
     my_logger.setLevel(log_level)
     handler = logging.handlers.RotatingFileHandler(
         file_path,
-        maxBytes=104857600,
-        backupCount=8)
+        maxBytes=maxbytes,
+        backupCount=backupcount)
     formatter = logging.Formatter(log_format)
     handler.setFormatter(formatter)
     my_logger.addHandler(handler)

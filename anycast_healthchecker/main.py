@@ -69,6 +69,16 @@ def main():
         ],
         default='debug')
     parser.add_argument(
+        '--log-maxbytes', '-m', dest='log_maxbytes',
+        default=104857600,
+        type=int,
+        help='Maximum size of log file')
+    parser.add_argument(
+        '--log-backupcount', '-b', dest='log_backupcount',
+        default=8,
+        type=int,
+        help='Number of backup file to keep')
+    parser.add_argument(
         '--bird-conf', '-b', dest='bird_conf_file',
         default='/etc/bird.d/anycast-prefixes.conf',
         help='Bird config file')
@@ -111,7 +121,9 @@ def main():
     log = lib.get_file_logger(
         'daemon',
         args.log_file,
-        numeric_level)
+        log_level=numeric_level,
+        maxbytes=args.log_maxbytes,
+        backupcount=args.log_backupcount)
     stdout_log = lib.get_file_logger(
         'stdout',
         args.stdout_log_file,
