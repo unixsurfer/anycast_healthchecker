@@ -69,12 +69,12 @@ def main():
         ],
         default='debug')
     parser.add_argument(
-        '--log-maxbytes', '-m', dest='log_maxbytes',
+        '--log-maxbytes', '-lm', dest='log_maxbytes',
         default=104857600,
         type=int,
         help='Maximum size of log file')
     parser.add_argument(
-        '--log-backupcount', '-b', dest='log_backupcount',
+        '--log-backupcount', '-lb', dest='log_backupcount',
         default=8,
         type=int,
         help='Number of backup file to keep')
