@@ -239,7 +239,7 @@ class HealthChecker(object):
             _thread.start()
             _workers.append(_thread)
 
-        # Stay running until we receive an stop event
+        # Stay running until we receive a stop event
         while not self.stop_event.is_set():
             try:
                 # Fetch items from action queue
