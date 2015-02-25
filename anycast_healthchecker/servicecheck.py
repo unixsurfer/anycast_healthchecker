@@ -41,10 +41,9 @@ class ServiceCheck(Thread):
         self.stop_event = stop_event
         self.action = action
         self.log = log
-
         self.config = None
-        # Load the configuration and stop thread if no configuration is
-        # found.
+
+        # Load configuration and exit thread if configuration is not found.
         self._load_config()
         if self.config is None:
             self.log.error("Configuration was not parsed")
@@ -52,7 +51,6 @@ class ServiceCheck(Thread):
             return None
 
         self.name = self.config['name']
-
         self.log.info("Loading check for {}".format(self.name))
 
     def _load_config(self):
