@@ -185,7 +185,7 @@ class ServiceCheck(Thread):
         # The current established state of the service check, it can be
         # either UP or DOWN but only after a number of consecutive
         # successful or failure health checks.
-        previous_state = 'Unknown'
+        check_state = 'Unknown'
 
         # Exit thread when config is empty
         if not self.config:
@@ -211,16 +211,16 @@ class ServiceCheck(Thread):
                                " route for that prefix. In nutshell traffic"
                                " is NOT routed anymore by routers to this"
                                " node").format(self.config['ip_prefix']))
-                if previous_state != 'DOWN':
-                    previous_state = 'DOWN'
+                if check_state != 'DOWN':
+                    check_state = 'DOWN'
             elif self._run_check():
                 if up_cnt == (self.config['check_rise'] - 1):
                     down_cnt = 0
                     self.log.info("Status UP")
                     # Service exceeded all consecutive checks.
                     # Set its state accordingly and put an item in queue.
-                    if previous_state != 'UP':
-                        previous_state = 'UP'
+                    if check_state != 'UP':
+                        check_state = 'UP'
                         self.action.put((self.name,
                                          self.config['ip_prefix'],
                                          'add'))
@@ -237,8 +237,8 @@ class ServiceCheck(Thread):
                     self.log.info("Status DOWN")
                     # Service exceeded all consecutive checks.
                     # Set its state accordingly and put an item in queue.
-                    if previous_state != 'DOWN':
-                        previous_state = 'DOWN'
+                    if check_state != 'DOWN':
+                        check_state = 'DOWN'
                         self.action.put((self.name,
                                          self.config['ip_prefix'],
                                          'del'))
