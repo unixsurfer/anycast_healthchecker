@@ -104,6 +104,10 @@ class ServiceCheck(Thread):
         cmd = ['/sbin/ip', 'address', 'show', 'dev', 'lo']
 
         self.log.debug("running {}".format(' '.join(cmd)))
+        if self.stop_event.isSet():
+            self.log.info("Received stop event")
+            return
+
         try:
             out = subprocess.check_output(
                 cmd,
