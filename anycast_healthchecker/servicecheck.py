@@ -229,7 +229,7 @@ class ServiceCheck(Thread):
                     self.log.info("Going UP {}".format(up_cnt))
                 else:
                     self.log.error("up_cnt higher! {}".format(up_cnt))
-            elif not self._run_check():
+            else:
                 if down_cnt == (self.config['check_fail'] - 1):
                     up_cnt = 0
                     self.log.info("Status DOWN")
