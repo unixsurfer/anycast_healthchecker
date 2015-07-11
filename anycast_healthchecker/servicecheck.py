@@ -211,7 +211,7 @@ class ServiceCheck(Thread):
                                " removed from BIRD configuration as direct"
                                " protocol in BIRD has already withdrawn the"
                                " route for that prefix. In nutshell traffic"
-                               " is NOT routed anymore by routers to this"
+                               " is NOT routed anymore to this"
                                " node").format(self.config['ip_prefix']))
                 if check_state != 'DOWN':
                     check_state = 'DOWN'
