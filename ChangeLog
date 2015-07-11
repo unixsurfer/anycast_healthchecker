@@ -1,6 +1,26 @@
 CHANGES
 =======
 
+0.2.0
+-----
+
+* RELEASE 0.2.0 version
+* add some useful info in __init__
+* servicecheck.py: less versbose warning
+* servicecheck.py: check if we hare received stop signal before perform IP check
+* ServiceCheck.py: check was unnecessarily executed twice
+* main.py: call configuration checking
+* add requirements file
+* add a function to perform a sanity check on the configuration
+* servicecheck: Tiny rewrite of comment
+* servicecheck: Renamed previou_state to check_state
+* Fixed argument name collision
+* Fixed typo
+* Made configurable the rotation policy for log files
+* _update_bird_prefix_conf(): Doc string update
+* Report valid values for on_disabled setting
+* Update ChangeLog
+
 0.1.1
 -----
 
