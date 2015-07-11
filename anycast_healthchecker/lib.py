@@ -12,6 +12,83 @@ import os
 import sys
 import daemon
 import logging.handlers
+import glob
+import json
+import ipaddress
+import subprocess
+
+
+def configuration_check(cfg_dir, log):
+    options_type = {
+        "name": str,
+        "check_cmd": str,
+        "check_interval": int,
+        "check_timeout": int,
+        "check_rise": int,
+        "check_fail": int,
+        "check_disabled": bool,
+        "on_disabled": str,
+        "ip_prefix": str
+    }
+    files = []
+    for name in glob.glob(os.path.join(cfg_dir, '*.json')):
+        files.append(name)
+    if not files:
+        sys.exit("No configuration was found in {}".format(cfg_dir))
+
+    for filename in files:
+        try:
+            with open(filename, 'r') as conf:
+                config = json.load(conf)
+        except ValueError as error:
+            sys.exit("{} isn't a valid JSON file: {}".format(filename,
+                                                             str(error)))
+        except (IOError, OSError) as error:
+            sys.exit("Error for {}:{}".format(filename, str(error)))
+
+        for option in options_type:
+            if option not in config:
+                sys.exit("{}: {} isn't configure in".format(filename, option))
+            if not isinstance(config[option], options_type[option]):
+                sys.exit("{}: {} has invalid type of value, it should be a "
+                         "{}".format(filename,
+                                     option,
+                                     options_type[option].__name__))
+
+        if (config['on_disabled'] != 'withdraw' and
+                config['on_disabled'] != 'advertise'):
+            sys.exit("{}: on_disable has invalid value({}), it should be either"
+                     " withdraw or advertise".format(filename,
+                                                     config['on_disabled']))
+
+        # check if it is a valid IP
+        try:
+            ipaddress.IPv4Network(config['ip_prefix'])
+        except (ipaddress.AddressValueError,
+                ipaddress.NetmaskValueError,
+                ValueError) as error:
+            sys.exit("{}: {}".format(filename, str(error)))
+
+        # ip_prefix must be passed with prefix length
+        # We don't care about the value
+        if '/' not in config['ip_prefix']:
+            sys.exit("Prefix length is not specified in {}".format(
+                config['ip_prefix']))
+
+        cmd = config['check_cmd'].split()
+        log.info("Checking if we can run the check_cmd")
+        try:
+            proc = subprocess.Popen(cmd, stdin=None, stdout=None, stderr=None)
+            proc.kill()
+        except (FileNotFoundError, PermissionError, OSError, IOError) as error:
+            sys.exit("{}: failed to run {} wiht {}".format(filename,
+                                                           config['check_cmd'],
+                                                           str(error)))
+        except:
+            raise
+
+
+    log.info("Configuration check passed")
 
 
 class FileLikeLogger(object):
