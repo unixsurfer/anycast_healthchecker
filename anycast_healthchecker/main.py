@@ -143,6 +143,9 @@ def main():
     stdout_log.debug('Before we are daemonized')
     stderr_log.debug('Before we are daemonized')
 
+    # Perform a sanity check on the configuratio for each service check
+    lib.configuration_check(args.cfg_dir, log)
+
     # Get and set the DaemonContext.
     context = lib.LoggingDaemonContext()
     context.loggers_preserve = [log]
