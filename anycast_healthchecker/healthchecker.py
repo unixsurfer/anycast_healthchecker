@@ -12,6 +12,7 @@ import sys
 import time
 from threading import Event
 from queue import Queue, Empty
+import re
 
 from anycast_healthchecker.servicecheck import ServiceCheck
 
@@ -129,12 +130,15 @@ class HealthChecker(object):
         comment = ('# 10.189.200.255 is a dummy. It should NOT be used'
                    ' and REMOVED from the constant.')
 
+        # matches IPs with a trailing comma or not
+        # TODO: Do I need to if it a real valid IP
+        pat = re.compile(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/\d{1,},?')
         try:
             bird_conf = open(self.bird_conf_file, 'r+')
             lines = bird_conf.read()
             for line in lines.splitlines():
                 line = line.strip()
-                if line.startswith('10.'):
+                if pat.match(line):
                     prefixes.append(line.rstrip(','))
         except (IOError, OSError) as error:
             self.log.critical("Failed to open bird configuration")
