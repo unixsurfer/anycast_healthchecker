@@ -96,13 +96,19 @@ def main():
 
     # Catch already running process and clean up stale pid file.
     if os.path.exists(args.pidfile):
-        pid = int(open(args.pidfile).read().rstrip())
-        if lib.running(pid):
-            print("Process {} is already running".format(pid))
-            sys.exit(1)
-        else:
-            print("Cleaning stale pid file, past pid {}".format(pid))
+        pid = open(args.pidfile).read().rstrip()
+        try:
+            pid = int(pid)
+        except ValueError:
+            print("Cleaning stale pid file with invalid data:{}".format(pid))
             os.unlink(args.pidfile)
+        else:
+            if lib.running(pid):
+                print("Process {} is already running".format(pid))
+                sys.exit(1)
+            else:
+                print("Cleaning stale pid file, past pid:{}".format(pid))
+                os.unlink(args.pidfile)
 
     # Get a PID lock file.
     pid_lockfile = PIDLockFile(args.pidfile)
