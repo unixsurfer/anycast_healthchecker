@@ -15,3 +15,8 @@ TODO
 #. Add description in README about how we instruct Bird daemon to add/remove
    routes
 
+#. Add support for configuration file
+
+#. Add support for graphite metrics
+
+#. Include install/test script
