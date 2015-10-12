@@ -3,7 +3,7 @@
 
 =====================
 anycast_healthchecker
-====================
+=====================
 
     *A healthchecker for Anycasted services.*
 
@@ -31,6 +31,7 @@ supports only `Bird`_ daemon and its configuration.
 How it works
 ------------
 
+TBD
 
 Installation
 ------------
