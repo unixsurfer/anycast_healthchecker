@@ -2,12 +2,6 @@
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 #
-# File name: anycast_healthchecker.py
-#
-# Creation date: 21-10-2014
-#
-# Created by: Pavlos Parissis <pavlos.parissis@booking.com>
-#
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-statements
 # pylint: disable=superfluous-parens
