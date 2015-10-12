@@ -27,7 +27,7 @@ class HealthChecker(object):
     and is being lunched as an individual thread.
     Here is example configuration:
     {
-        "name": "graphite-api.booking.com",
+        "name": "graphite-api.foo.com",
         "check_cmd": "absolute path of cmd which returns exit code 0 or 1",
         "check_interval": 10,
         "check_timeout": 5,
