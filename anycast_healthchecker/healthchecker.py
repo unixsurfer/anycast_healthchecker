@@ -145,6 +145,11 @@ class HealthChecker(object):
             self.log.critical(error)
             self.log.critical("This is a FATAL error, exiting")
             sys.exit(1)
+        if not prefixes:
+            self.log.critical("empty bird configuration:{}".format(
+                self.bird_conf_file))
+            self.log.critical("This is a FATAL error, exiting")
+            sys.exit(1)
 
         if action == 'del' and ip_prefix in prefixes:
             self.log.info("Withdrawing {} for {}".format(ip_prefix, name))
