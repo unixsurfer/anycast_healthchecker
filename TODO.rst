@@ -20,3 +20,7 @@ TODO
 #. Add support for graphite metrics
 
 #. Include install/test script
+
+#. Review comments in code
+
+#. Consider using configparser module and migrate from json to INI files
