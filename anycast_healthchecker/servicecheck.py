@@ -233,7 +233,8 @@ class ServiceCheck(Thread):
                     up_cnt += 1
                     self.log.info("Going UP {}".format(up_cnt))
                 else:
-                    self.log.error("up_cnt higher! {}".format(up_cnt))
+                    self.log.error("up_cnt higher, it's a BUG! {}".format(
+                        up_cnt))
                 down_cnt = 0
             else:
                 if down_cnt == (self.config['check_fail'] - 1):
@@ -253,7 +254,8 @@ class ServiceCheck(Thread):
                     down_cnt += 1
                     self.log.info("Going down {}".format(down_cnt))
                 else:
-                    self.log.error("down_cnt higher! {}".format(down_cnt))
+                    self.log.error("down_cnt higher, it's a BUG! {}".format(
+                        down_cnt))
                 up_cnt = 0
             self.log.debug("Sleeping {}secs".format(
                 self.config['check_interval']))
@@ -263,7 +265,7 @@ class ServiceCheck(Thread):
             sleep_cnt = 0
             while sleep_cnt < self.config['check_interval']:
                 if self.stop_event.isSet():
-                    self.log.info("Received stop event")
+                    self.log.info("Received stop event during sleeping")
                     return
                 time.sleep(1)
                 sleep_cnt += 1
