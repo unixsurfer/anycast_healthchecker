@@ -1,5 +1,4 @@
 #!/bin/bash
-
 directories=("${PWD}"/var/var/log/anycast-healthchecker \
 "${PWD}"/var/etc/bird.d \
 "${PWD}"/var/etc/anycast-healthcheck.d \
@@ -26,16 +25,18 @@ for file in ${files[@]}; do
     fi
 done
 echo "--------create bird conf------------------"
-cat <<EOT > "${PWD}"/var/etc/bird.d/anycast-prefixes.conf
+if [ ! -e "${PWD}"/var/etc/bird.d/anycast-prefixes.conf ]; then
+    cat <<EOT > "${PWD}"/var/etc/bird.d/anycast-prefixes.conf
 # 10.189.200.255 is a dummy. It should NOT be used and REMOVED from the constant.
 define ACAST_PS_ADVERTISE =
     [
         10.189.200.255/32,
-        5.57.16.81/32
     ];
 EOT
-echo "--------create service checks------------------"
-cat <<EOT > "${PWD}"/var/etc/anycast-healthcheck.d/foo.bar.com.json
+fi
+echo "--------create service checks-------------"
+if [ ! -e "${PWD}"/var/etc/anycast-healthcheck.d/foo.bar.com.json ]; then
+    cat <<EOT > "${PWD}"/var/etc/anycast-healthcheck.d/foo.bar.com.json
 {
    "name": "foo.bar.com",
    "check_cmd": "curl -A 'anycast-healthchecker' --fail --silent --connect-timeout 1 --max-time 1 -o /dev/null  http://10.52.12.1/",
@@ -48,7 +49,9 @@ cat <<EOT > "${PWD}"/var/etc/anycast-healthcheck.d/foo.bar.com.json
    "ip_prefix": "10.52.12.1/32"
 }
 EOT
-cat <<EOT > "${PWD}"/var/etc/anycast-healthcheck.d/foo1.bar.com.json
+fi
+if [ ! -e "${PWD}"/var/etc/anycast-healthcheck.d/foo1.bar.com.json ]; then
+    cat <<EOT > "${PWD}"/var/etc/anycast-healthcheck.d/foo1.bar.com.json
 {
    "name": "foo1.bar.com",
    "check_cmd": "curl -A 'anycast-healthchecker' --fail --silent --connect-timeout 1 --max-time 1 -o /dev/null  http://10.52.12.2/",
@@ -56,11 +59,12 @@ cat <<EOT > "${PWD}"/var/etc/anycast-healthcheck.d/foo1.bar.com.json
    "check_timeout": 5,
    "check_rise": 2,
    "check_fail": 2,
-   "check_disabled": false,
+   "check_disabled": true,
    "on_disabled": "withdraw",
    "ip_prefix": "10.52.12.2/32"
 }
 EOT
+fi
 echo "--------installing software---------------"
 python3.4 setup.py install --user
 echo "--------Assign IPs in loopback------------"
@@ -91,18 +95,22 @@ configured=(127.0.0.1/8 10.52.12.1/32 10.52.12.2/32 10.52.12.3/32 10.52.12.4/32)
 
 for ip_cidr in ${configured[@]}; do
     if ! found "${ip_cidr}" "${loopback_ips[@]}"; then
-        [ -n "${test}" ] && exit 1
-        [ -n "${noop}" ] || sudo /sbin/ip addr add "${ip_cidr}" brd "${ip_cidr%%/*}" dev lo scope host && echo "${noop:+[NOOP] }Added ${ip_cidr} to loopback"
+        sudo /sbin/ip addr add "${ip_cidr}" brd "${ip_cidr%%/*}" dev lo scope host && echo "Added ${ip_cidr} to loopback"
     fi
 done
 
 for ip_cidr in $(get_ips) ; do
     if ! found "${ip_cidr}" "${configured[@]}"; then
-        [ -n "${test}" ] && exit 1
-        [ -n "${noop}" ] || sudo /sbin/ip addr del "${ip_cidr}" dev lo && echo "${noop:+[NOOP] }Removed ${ip_cidr} from loopback"
+        sudo /sbin/ip addr del "${ip_cidr}" dev lo && echo "Removed ${ip_cidr} from loopback"
     fi
 done
 echo "--------runing software-------------------"
+pgrep -F "${PWD}"/var/var/run/anycast-healthchecker/anycast-healthchecker.pid >/dev/null 2>&1
+if [ $? -eq 0 ]; then
+    echo "Process $(cat "${PWD}"/var/var/run/anycast-healthchecker/anycast-healthchecker.pid) already running, killing it..."
+    pkill -F "${PWD}"/var/var/run/anycast-healthchecker/anycast-healthchecker.pid
+    sleep 2
+fi
 "${HOME}"/.local/bin/anycast-healthchecker -c "${PWD}"/var/etc/anycast-healthcheck.d \
     -p "${PWD}"/var/var/run/anycast-healthchecker/anycast-healthchecker.pid \
     -l debug \
@@ -112,5 +120,5 @@ echo "--------runing software-------------------"
     --stderr-file "${PWD}"/var/var/log/anycast-healthchecker/stderr.log  \
     --stdout-file "${PWD}"/var/var/log/anycast-healthchecker/stdout.log
 if [ $? -eq 0 ]; then
-    echo "--------DONE!-----------------------------"
+    echo "--------daemon started!---------------"
 fi
