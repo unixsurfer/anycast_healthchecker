@@ -190,11 +190,11 @@ class HealthChecker(object):
     def _reload_bird(self):
         """Reloads BIRD daemon.
 
-        It uses 'birdcl configure' to reload BIRD. Some useful information
-        on how birdcl works:
+        It uses 'birdc configure' to reload BIRD. Some useful information
+        on how birdc works:
             -- It returns a non-zero exit code only when it can't access
             BIRD via the control socket (/var/run/bird.ctl). This happens
-            when BIRD daemon is down or when the caller of birdcl doesn't
+            when BIRD daemon is down or when the caller of birdc doesn't
             have access to the control socket.
             -- It returns zero exit code when reload fails due to invalid
             config, thus we catch this case by looking at the output and
@@ -203,7 +203,7 @@ class HealthChecker(object):
             -- It should never timeout, if it does then it is a bug.
 
         """
-        _cmd = ['sudo', '/usr/sbin/birdcl', 'configure']
+        _cmd = ['sudo', '/usr/sbin/birdc', 'configure']
         try:
             _output = subprocess.check_output(
                 _cmd,
@@ -214,7 +214,7 @@ class HealthChecker(object):
             self.log.error("Reloading bird timed out")
             return
         except subprocess.CalledProcessError as error:
-            # birdcl returns 0 even when it fails due to invalid config,
+            # birdc returns 0 even when it fails due to invalid config,
             # but it returns 1 when BIRD is down.
             self.log.error(("Reloading BIRD failed, most likely BIRD daemon"
                             " is down:{}").format(error.output))
