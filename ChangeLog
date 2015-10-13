@@ -1,21 +1,38 @@
 CHANGES
 =======
 
+0.2.2
+-----
+
+* RELEASE 0.2.2 version
+* proper shebang
+
 0.2.1
 -----
 
 * RELEASE 0.2.1 version
 * polish some log messages, no code changes
 * reset always counters for states to zero when state is in transition
+* more updates on local_run
 * updates on TODO
 * permission changes
 * use birdc rather birdcl to reconfigure bird
 * adjust interval in service checks
+* updates on local_run
+* updates on local_run
+* local_run assign IPs and install bird configuration
+* some updates on local_run
 * exit when parsing bird configuration results to an empty list of IP prefixes
 * a script to run the daemon on a development node
 * update AUTHORS
 * proper handling of invalid data on pid file
+* update TODO
+* update TODO
 * add Systemd unit file
+* more updates on TODO
+* update TODO
+* add TODO file
+* proper RST
 * add a proper README file
 * replace domain in an example conf
 * use gmail mail address
