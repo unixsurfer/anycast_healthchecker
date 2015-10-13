@@ -39,7 +39,7 @@ cat <<EOT > "${PWD}"/var/etc/anycast-healthcheck.d/foo.bar.com.json
 {
    "name": "foo.bar.com",
    "check_cmd": "curl -A 'anycast-healthchecker' --fail --silent --connect-timeout 1 --max-time 1 -o /dev/null  http://10.52.12.1/",
-   "check_interval": 2,
+   "check_interval": 10,
    "check_timeout": 5,
    "check_rise": 2,
    "check_fail": 2,
@@ -52,7 +52,7 @@ cat <<EOT > "${PWD}"/var/etc/anycast-healthcheck.d/foo1.bar.com.json
 {
    "name": "foo1.bar.com",
    "check_cmd": "curl -A 'anycast-healthchecker' --fail --silent --connect-timeout 1 --max-time 1 -o /dev/null  http://10.52.12.2/",
-   "check_interval": 2,
+   "check_interval": 10,
    "check_timeout": 5,
    "check_rise": 2,
    "check_fail": 2,
