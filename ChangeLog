@@ -1,6 +1,29 @@
 CHANGES
 =======
 
+0.2.1
+-----
+
+* RELEASE 0.2.1 version
+* polish some log messages, no code changes
+* reset always counters for states to zero when state is in transition
+* updates on TODO
+* permission changes
+* use birdc rather birdcl to reconfigure bird
+* adjust interval in service checks
+* exit when parsing bird configuration results to an empty list of IP prefixes
+* a script to run the daemon on a development node
+* update AUTHORS
+* proper handling of invalid data on pid file
+* add Systemd unit file
+* add a proper README file
+* replace domain in an example conf
+* use gmail mail address
+* remove old readme
+* better catch of IPs in bird config
+* include license to __init__
+* change License to Apache v2.0
+
 0.2.0
 -----
 

@@ -5,5 +5,5 @@
 __title__ = 'anycast_healthchecker'
 __author__ = 'Pavlos Parissis'
 __license__ = 'Apache 2.0'
-__version__ = '0.2.0'
+__version__ = '0.2.1'
 __copyright__ = 'Copyright 2015 Pavlos Parissis'
