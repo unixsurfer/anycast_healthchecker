@@ -34,6 +34,33 @@ define ACAST_PS_ADVERTISE =
         5.57.16.81/32
     ];
 EOT
+echo "--------create service checks------------------"
+cat <<EOT > "${PWD}"/var/etc/anycast-healthcheck.d/foo.bar.com.json
+{
+   "name": "foo.bar.com",
+   "check_cmd": "curl -A 'anycast-healthchecker' --fail --silent --connect-timeout 1 --max-time 1 -o /dev/null  http://10.52.12.1/",
+   "check_interval": 2,
+   "check_timeout": 5,
+   "check_rise": 2,
+   "check_fail": 2,
+   "check_disabled": false,
+   "on_disabled": "withdraw",
+   "ip_prefix": "10.52.12.1/32"
+}
+EOT
+cat <<EOT > "${PWD}"/var/etc/anycast-healthcheck.d/foo1.bar.com.json
+{
+   "name": "foo1.bar.com",
+   "check_cmd": "curl -A 'anycast-healthchecker' --fail --silent --connect-timeout 1 --max-time 1 -o /dev/null  http://10.52.12.2/",
+   "check_interval": 2,
+   "check_timeout": 5,
+   "check_rise": 2,
+   "check_fail": 2,
+   "check_disabled": false,
+   "on_disabled": "withdraw",
+   "ip_prefix": "10.52.12.2/32"
+}
+EOT
 echo "--------installing software---------------"
 python3.4 setup.py install --user
 echo "--------Assign IPs in loopback------------"
