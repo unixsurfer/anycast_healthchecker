@@ -28,3 +28,5 @@ TODO
 #. Make configurable the interface we check if IP_PREFIXs are assigned. I can't
    believe someone wont use loopback interface for anycasted IPs but you never
    know.
+
+#. Make dummy ip in anycast-prefixes.conf configurable
