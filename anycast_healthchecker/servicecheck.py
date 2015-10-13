@@ -217,10 +217,11 @@ class ServiceCheck(Thread):
                     check_state = 'DOWN'
             elif self._run_check():
                 if up_cnt == (self.config['check_rise'] - 1):
-                    down_cnt = 0
                     self.log.info("Status UP")
                     # Service exceeded all consecutive checks.
                     # Set its state accordingly and put an item in queue.
+                    # But to it only if previous state was different, to catch
+                    # uncessary bird reloads when a service flaps between states
                     if check_state != 'UP':
                         check_state = 'UP'
                         self.action.put((self.name,
@@ -233,12 +234,14 @@ class ServiceCheck(Thread):
                     self.log.info("Going UP {}".format(up_cnt))
                 else:
                     self.log.error("up_cnt higher! {}".format(up_cnt))
+                down_cnt = 0
             else:
                 if down_cnt == (self.config['check_fail'] - 1):
-                    up_cnt = 0
                     self.log.info("Status DOWN")
                     # Service exceeded all consecutive checks.
                     # Set its state accordingly and put an item in queue.
+                    # But to it only if previous state was different, to catch
+                    # uncessary bird reloads when a service flaps between states
                     if check_state != 'DOWN':
                         check_state = 'DOWN'
                         self.action.put((self.name,
@@ -251,6 +254,7 @@ class ServiceCheck(Thread):
                     self.log.info("Going down {}".format(down_cnt))
                 else:
                     self.log.error("down_cnt higher! {}".format(down_cnt))
+                up_cnt = 0
             self.log.debug("Sleeping {}secs".format(
                 self.config['check_interval']))
             # Sleep in iterations of 1 second rather the whole time.
