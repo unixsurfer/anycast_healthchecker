@@ -65,18 +65,18 @@ configured=(127.0.0.1/8 10.52.12.1/32 10.52.12.2/32 10.52.12.3/32 10.52.12.4/32)
 for ip_cidr in ${configured[@]}; do
     if ! found "${ip_cidr}" "${loopback_ips[@]}"; then
         [ -n "${test}" ] && exit 1
-        [ -n "${noop}" ] || /sbin/ip addr add "${ip_cidr}" brd "${ip_cidr%%/*}" dev lo scope host && echo "${noop:+[NOOP] }Added ${ip_cidr} to loopback"
+        [ -n "${noop}" ] || sudo /sbin/ip addr add "${ip_cidr}" brd "${ip_cidr%%/*}" dev lo scope host && echo "${noop:+[NOOP] }Added ${ip_cidr} to loopback"
     fi
 done
 
 for ip_cidr in $(get_ips) ; do
     if ! found "${ip_cidr}" "${configured[@]}"; then
         [ -n "${test}" ] && exit 1
-        [ -n "${noop}" ] || /sbin/ip addr del "${ip_cidr}" dev lo && echo "${noop:+[NOOP] }Removed ${ip_cidr} from loopback"
+        [ -n "${noop}" ] || sudo /sbin/ip addr del "${ip_cidr}" dev lo && echo "${noop:+[NOOP] }Removed ${ip_cidr} from loopback"
     fi
 done
 echo "--------runing software-------------------"
-anycast-healthchecker -c "${PWD}"/var/etc/anycast-healthcheck.d \
+"${HOME}"/.local/bin/anycast-healthchecker -c "${PWD}"/var/etc/anycast-healthcheck.d \
     -p "${PWD}"/var/var/run/anycast-healthchecker/anycast-healthchecker.pid \
     -l debug \
     --bird-conf "${PWD}"/var/etc/bird.d/anycast-prefixes.conf \
