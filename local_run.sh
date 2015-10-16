@@ -104,10 +104,11 @@ for ip_cidr in $(get_ips) ; do
         sudo /sbin/ip addr del "${ip_cidr}" dev lo && echo "Removed ${ip_cidr} from loopback"
     fi
 done
-echo "--------runing software-------------------"
+version=$("${HOME}"/.local/bin/anycast-healthchecker -v)
+echo "--------runing ${version}"
 pgrep -F "${PWD}"/var/var/run/anycast-healthchecker/anycast-healthchecker.pid >/dev/null 2>&1
 if [ $? -eq 0 ]; then
-    echo "Process $(cat "${PWD}"/var/var/run/anycast-healthchecker/anycast-healthchecker.pid) already running, killing it..."
+    echo "Process $(cat "${PWD}"/var/var/run/anycast-healthchecker/anycast-healthchecker.pid) already running, killing it.."
     pkill -F "${PWD}"/var/var/run/anycast-healthchecker/anycast-healthchecker.pid
     sleep 2
 fi
@@ -120,5 +121,5 @@ fi
     --stderr-file "${PWD}"/var/var/log/anycast-healthchecker/stderr.log  \
     --stdout-file "${PWD}"/var/var/log/anycast-healthchecker/stdout.log
 if [ $? -eq 0 ]; then
-    echo "--------daemon started!---------------"
+    echo "--------daemon started!-------------------"
 fi

@@ -15,6 +15,7 @@ from lockfile.pidlockfile import PIDLockFile
 
 from anycast_healthchecker import healthchecker
 from anycast_healthchecker import lib
+from anycast_healthchecker import __version__ as version
 
 NAME_OF_CONSTANT = 'ACAST_PS_ADVERTISE'
 
@@ -42,6 +43,10 @@ def main():
         function. It should be combined with BIRD daemon as by itself
         does nothing useful.
         """)
+    parser.add_argument(
+        '-v', '--version',
+        action='version',
+        version="%(prog)s {}".format(version))
     parser.add_argument(
         '-c', '--config-dir',
         dest='cfg_dir',
@@ -170,9 +175,9 @@ def main():
 
     # OK boy go and daemonize yourself.
     with context:
-        log.info('Running as a daemon')
-        stdout_log.debug('Running as a daemon')
-        stderr_log.debug('Running as a daemon')
+        log.info("Running version {}".format(version))
+        stdout_log.info("Running version {}".format(version))
+        stderr_log.info("Running version {}".format(version))
         checker.run()
 # This is the standard boilerplate that calls the main() function.
 if __name__ == '__main__':
