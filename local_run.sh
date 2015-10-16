@@ -82,14 +82,6 @@ get_ips () {
     /sbin/ip addr show dev lo|awk '/inet/ {print $2}'
 }
 
-while getopts "nt" option; do
-    case $option in
-        n) noop=1 ;;
-        t) test=1 ;;
-    esac
-done
-
-
 loopback_ips=( $(get_ips) )
 configured=(127.0.0.1/8 10.52.12.1/32 10.52.12.2/32 10.52.12.3/32 10.52.12.4/32)
 
