@@ -30,5 +30,3 @@ TODO
    know.
 
 #. Make dummy ip in anycast-prefixes.conf configurable
-
-#. add version argument and log version on startup
