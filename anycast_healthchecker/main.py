@@ -120,6 +120,9 @@ def main():
                 print("Cleaning stale pid file, past pid:{}".format(pid))
                 os.unlink(args.pidfile)
 
+    if not touch(args.bird_conf_file):
+        sys.exit(1)
+
     # Get a PID lock file.
     pid_lockfile = PIDLockFile(args.pidfile)
     # Map log level to numeric which can be accepted by loggers.
