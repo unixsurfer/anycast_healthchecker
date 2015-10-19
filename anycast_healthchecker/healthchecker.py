@@ -58,6 +58,9 @@ class HealthChecker(object):
         bird_constant_name('str'): The constant name used in the bird
         configuration.
 
+        dummy_prefix('str'): The dummy IP prefix which must be always present
+        in bird_constant_name and never removed.
+
         stop_event(Queue obj): A queue to communicate with stop events to
         threads.
 
@@ -79,10 +82,12 @@ class HealthChecker(object):
                  log,
                  cfg_dir,
                  bird_conf_file,
-                 bird_constant_name):
+                 bird_constant_name,
+                 dummy_ip_prefix):
         self.log = log
         self.cfg_dir = cfg_dir
         self.bird_conf_file = bird_conf_file
+        self.dummy_ip_prefix = dummy_ip_prefix
         self.bird_constant_name = bird_constant_name
         self.stop_event = Event()
         self.action = Queue()
@@ -127,8 +132,8 @@ class HealthChecker(object):
         name = health_action[0]
         ip_prefix = health_action[1]
         action = health_action[2]
-        comment = ('# 10.189.200.255 is a dummy. It should NOT be used'
-                   ' and REMOVED from the constant.')
+        comment = ("# {} is a dummy IP Prefix. It should NOT be used and "
+                   "REMOVED from the constant.".format(self.dummy_ip_prefix))
 
         # matches IPs with a trailing comma or not
         # TODO: Do I need to if it a real valid IP
@@ -145,11 +150,19 @@ class HealthChecker(object):
             self.log.critical(error)
             self.log.critical("This is a FATAL error, exiting")
             sys.exit(1)
+
         if not prefixes:
-            self.log.critical("empty bird configuration:{}".format(
+            self.log.critical("Found empty bird configuration:{}".format(
                 self.bird_conf_file))
             self.log.critical("This is a FATAL error, exiting")
             sys.exit(1)
+
+        if self.dummy_ip_prefix not in prefixes:
+            self.log.warning("Dummy IP Prefix {} wasn't found in bird "
+                             "configuration, adding it. This shouldn't have "
+                             "happened!".format(self.dummy_ip_prefix))
+            prefixes.insert(0, self.dummy_ip_prefix)
+            conf_updated = True
 
         if action == 'del' and ip_prefix in prefixes:
             self.log.info("Withdrawing {} for {}".format(ip_prefix, name))
@@ -173,14 +186,13 @@ class HealthChecker(object):
         bird_conf.write("{}\n".format(comment))
         bird_conf.write("define {} =\n".format(self.bird_constant_name))
         bird_conf.write("{}[\n".format(4 * ' '))
-        if prefixes:
-            # all entries of the array constant need a trailing comma
-            # except  the last one
-            for prefix in prefixes[:-1]:
-                bird_conf.write("{}{},\n".format(8 * ' ', prefix))
-            bird_conf.write("{}{}\n".format(8 * ' ',
-                                            prefixes[len(prefixes) - 1]))
-            bird_conf.write("{}];\n".format(4 * ' '))
+        # all entries of the array constant need a trailing comma
+        # except the last one. A single element array doesn't need the
+        # trailing comma.
+        for prefix in prefixes[:-1]:
+            bird_conf.write("{}{},\n".format(8 * ' ', prefix))
+        bird_conf.write("{}{}\n".format(8 * ' ', prefixes[len(prefixes) - 1]))
+        bird_conf.write("{}];\n".format(4 * ' '))
         bird_conf.truncate()
         bird_conf.close()
         self.log.info("Bird configuration is updated")

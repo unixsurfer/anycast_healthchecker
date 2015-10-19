@@ -98,6 +98,10 @@ def main():
         '--stdout-file', '-s', dest='stdout_log_file',
         default='/var/log/anycast-healthchecker/stdout.log',
         help='Standard output log file')
+    parser.add_argument(
+        '--dummy-prefix', '-d', dest='dummy_ip_prefix',
+        default='10.189.200.255/32',
+        help='Dummy IP Prefix')
     args = parser.parse_args()
 
     # Catch already running process and clean up stale pid file.
@@ -158,6 +162,9 @@ def main():
     # Perform a sanity check on the configuratio for each service check
     lib.configuration_check(args.cfg_dir, log)
 
+    if not valid_ip_prefix(args.dummy_ip_prefix):
+        sys.exit("Invalid dummy IP prefix:{}".format(args.dummy_ip_prefix))
+
     # Get and set the DaemonContext.
     context = lib.LoggingDaemonContext()
     context.loggers_preserve = [log]
@@ -172,7 +179,8 @@ def main():
         log,
         args.cfg_dir,
         args.bird_conf_file,
-        args.bird_constant_name)
+        args.bird_constant_name,
+        args.dummy_ip_prefix)
 
     # Set signal mapping to catch singals and act accordingly.
     context.signal_map = {
