@@ -6,6 +6,7 @@
 # pylint: disable=too-many-locals
 
 import re
+import os
 
 
 def valid_ip_prefix(ip_prefix):
@@ -21,3 +22,18 @@ def valid_ip_prefix(ip_prefix):
         return True
     else:
         return False
+
+
+def touch(file_path):
+    """Touch a file in the same way as touch tool does"""
+
+    try:
+        with open(file_path, 'a') as fh:
+            os.utime(file_path, None)
+    except (OSError, IOError) as error:
+        print("Failed to touch file:{fh} error:{err}".format(fh=file_path,
+                                                             err=error))
+        return False
+    else:
+        fh.close()
+        return True
