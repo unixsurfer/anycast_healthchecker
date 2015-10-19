@@ -7,11 +7,7 @@ directories=("${PWD}"/var/var/log/anycast-healthchecker \
 "${PWD}"/var/etc/bird.d \
 "${PWD}"/var/var/run/anycast-healthchecker)
 
-files=("${PWD}"/var/etc/bird.d/anycast-prefixes.conf \
-"${PWD}"/var/var/log/anycast-healthchecker/anycast-healthchecker.log \
-"${PWD}"/var/var/log/anycast-healthchecker/stdout.log \
-"${PWD}"/var/var/log/anycast-healthchecker/stderr.log)
-
+files=("${PWD}"/var/etc/bird.d/anycast-prefixes.conf )
 echo "--------create directory structure--------"
 for dir in ${directories[@]}; do
     if [ ! -d "${dir}" ]; then

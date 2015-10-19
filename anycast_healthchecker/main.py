@@ -16,6 +16,7 @@ from lockfile.pidlockfile import PIDLockFile
 from anycast_healthchecker import healthchecker
 from anycast_healthchecker import lib
 from anycast_healthchecker import __version__ as version
+from anycast_healthchecker.utils import valid_ip_prefix, touch
 
 NAME_OF_CONSTANT = 'ACAST_PS_ADVERTISE'
 
@@ -123,12 +124,16 @@ def main():
         raise ValueError('Invalid log level: {}'.format(args.loglevel))
 
     # Set up loggers for stdout, stderr and daemon stream
+    if not touch(args.log_file):
+        sys.exit(1)
     log = lib.get_file_logger(
         'daemon',
         args.log_file,
         log_level=numeric_level,
         maxbytes=args.log_maxbytes,
         backupcount=args.log_backupcount)
+    if not touch(args.stdout_log_file):
+        sys.exit(1)
     stdout_log = lib.get_file_logger(
         'stdout',
         args.stdout_log_file,
@@ -137,6 +142,8 @@ def main():
     stderrformat = ('%(asctime)s [%(process)d] line:%(lineno)d '
                     'func:%(funcName)s %(levelname)-8s %(threadName)-32s '
                     '%(message)s')
+    if not touch(args.stderr_log_file):
+        sys.exit(1)
     stderr_log = lib.get_file_logger(
         'stderr',
         args.stderr_log_file,
