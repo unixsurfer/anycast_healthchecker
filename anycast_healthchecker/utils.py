@@ -31,8 +31,7 @@ def touch(file_path):
         with open(file_path, 'a') as fh:
             os.utime(file_path, None)
     except (OSError, IOError) as error:
-        print("Failed to touch file:{fh} error:{err}".format(fh=file_path,
-                                                             err=error))
+        print("Failed to touch file with error:{err}".format(err=error))
         return False
     else:
         fh.close()
