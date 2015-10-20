@@ -17,7 +17,9 @@ from anycast_healthchecker import healthchecker
 from anycast_healthchecker import lib
 from anycast_healthchecker import __version__ as version
 from anycast_healthchecker.utils import (valid_ip_prefix, touch, get_config,
-                                         configuration_check, running)
+                                         configuration_check, running,
+                                         get_ip_prefixes,
+                                         get_ip_prefixes_from_bird)
 
 NAME_OF_CONSTANT = 'ACAST_PS_ADVERTISE'
 
@@ -162,6 +164,19 @@ def main():
     # Perform a sanity check on the configuratio for each service check
     config = get_config(args.cfg_dir)
     configuration_check(config)
+
+    # Check if there are IP prefixes in bird configuration
+    # for which we don't have a service check associated with
+    ip_prefixes = get_ip_prefixes(config)
+    ip_prefixes.add(args.dummy_ip_prefix)
+    ip_prefixes_in_bird = get_ip_prefixes_from_bird(args.bird_conf_file)
+
+    if not ip_prefixes_in_bird:
+        sys.exit("Found zero IP prefixes in {fh}".format(args.bird_conf_file))
+    unconfgured_ip_prefixes = ip_prefixes_in_bird.difference(ip_prefixes)
+    if unconfgured_ip_prefixes:
+        sys.exit("There are IP prefixes in {fh} for which a configuration "
+                 "isn't supplied".format(fh=args.bird_conf_file))
 
     # Make some noise.
     log.debug('Before we are daemonized')

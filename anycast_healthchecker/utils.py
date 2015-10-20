@@ -169,3 +169,15 @@ def running(processid):
         return False
 
     return True
+
+
+def get_ip_prefixes_from_bird(filename):
+    prefixes = set()
+    with open(filename, 'r') as bird_conf:
+        lines = bird_conf.read()
+        for line in lines.splitlines():
+            line = line.strip(', ')
+            if valid_ip_prefix(line):
+                prefixes.add(line.rstrip(','))
+
+    return prefixes
