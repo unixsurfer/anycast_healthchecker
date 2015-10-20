@@ -1,6 +1,35 @@
 CHANGES
 =======
 
+0.3.0
+-----
+
+* RELEASE 0.3.0 version
+* no need to close file handler as 'with' statement does it
+* remove another item from TODO
+* one item from TODO is finished
+* sys.exit can print as well:-)
+* remove unused constant
+* detect the case where Ddummy ip prefix is missing from bird conf
+* detect prefixes in bird without a configuration
+* serviceCheck and healthchecker classes get a config option
+* configuration_check accept a config object rather a dir with conf files
+* provide a get_config() to parse json files and return a dict
+* add get_config_files() to return the absolute path of json files
+* utils:configuration_check:mention the value for invalid types
+* move running function to utils module
+* allocate a pid file after all checks has been passed
+* refactor configuration_check function
+* remove items from TODO which are completed
+* exit if we can't write to bird configuration file
+* don't print filename as it is mentioned in exception message
+* add support for supplying dummy IP prefix in CLI
+* make sure log files exists before we start
+* add a touch function in utils module
+* introduce utils module with valid_ip_prefix function
+* remove unused code from local_run
+* one item from TODO is implemented
+* add support for version in CLI, print it to log as well
 * update TODO
 
 0.2.2
