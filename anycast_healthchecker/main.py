@@ -16,7 +16,8 @@ from lockfile.pidlockfile import PIDLockFile
 from anycast_healthchecker import healthchecker
 from anycast_healthchecker import lib
 from anycast_healthchecker import __version__ as version
-from anycast_healthchecker.utils import valid_ip_prefix, touch
+from anycast_healthchecker.utils import (valid_ip_prefix, touch,
+                                         configuration_check)
 
 NAME_OF_CONSTANT = 'ACAST_PS_ADVERTISE'
 
@@ -128,7 +129,7 @@ def main():
     # Map log level to numeric which can be accepted by loggers.
     numeric_level = getattr(logging, args.loglevel.upper(), None)
     if not isinstance(numeric_level, int):
-        raise ValueError('Invalid log level: {}'.format(args.loglevel))
+        sys.exit('Invalid log level: {}'.format(args.loglevel))
 
     # Set up loggers for stdout, stderr and daemon stream
     if not touch(args.log_file):
@@ -157,16 +158,16 @@ def main():
         log_level=numeric_level,
         log_format=stderrformat)
 
+    if not valid_ip_prefix(args.dummy_ip_prefix):
+        sys.exit("Invalid dummy IP prefix:{}".format(args.dummy_ip_prefix))
+
+    # Perform a sanity check on the configuratio for each service check
+    configuration_check(args.cfg_dir)
+
     # Make some noise.
     log.debug('Before we are daemonized')
     stdout_log.debug('Before we are daemonized')
     stderr_log.debug('Before we are daemonized')
-
-    # Perform a sanity check on the configuratio for each service check
-    lib.configuration_check(args.cfg_dir, log)
-
-    if not valid_ip_prefix(args.dummy_ip_prefix):
-        sys.exit("Invalid dummy IP prefix:{}".format(args.dummy_ip_prefix))
 
     # Get and set the DaemonContext.
     context = lib.LoggingDaemonContext()
