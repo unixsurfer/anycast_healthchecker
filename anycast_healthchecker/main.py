@@ -17,7 +17,7 @@ from anycast_healthchecker import healthchecker
 from anycast_healthchecker import lib
 from anycast_healthchecker import __version__ as version
 from anycast_healthchecker.utils import (valid_ip_prefix, touch,
-                                         configuration_check)
+                                         configuration_check, running)
 
 NAME_OF_CONSTANT = 'ACAST_PS_ADVERTISE'
 
@@ -114,7 +114,7 @@ def main():
             print("Cleaning stale pid file with invalid data:{}".format(pid))
             os.unlink(args.pidfile)
         else:
-            if lib.running(pid):
+            if running(pid):
                 print("Process {} is already running".format(pid))
                 sys.exit(1)
             else:

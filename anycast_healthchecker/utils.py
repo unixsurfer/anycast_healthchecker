@@ -109,3 +109,24 @@ def configuration_check(cfg_dir):
                 fh=filename,
                 cmd=config['check_cmd'],
                 err=str(error)))
+
+
+def running(processid):
+    """Checks the validity of a process ID.
+
+    Arguments:
+        processid (int): Process ID number.
+
+    Returns:
+        True if process ID is found otherwise False.
+    """
+    try:
+        # From kill(2)
+        # If sig is 0 (the null signal), error checking is performed but no
+        # signal is actually sent. The null signal can be used to check the
+        # validity of pid
+        os.kill(processid, 0)
+    except OSError:
+        return False
+
+    return True
