@@ -99,7 +99,6 @@ def get_config(cfg_dir):
         except OSError as error:
             sys.exit(str(error))
         else:
-            conf.close()
             full_config[filename] = copy.copy(config_data)
 
     if not full_config:
