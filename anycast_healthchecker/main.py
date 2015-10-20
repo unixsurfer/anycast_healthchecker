@@ -16,7 +16,7 @@ from lockfile.pidlockfile import PIDLockFile
 from anycast_healthchecker import healthchecker
 from anycast_healthchecker import lib
 from anycast_healthchecker import __version__ as version
-from anycast_healthchecker.utils import (valid_ip_prefix, touch,
+from anycast_healthchecker.utils import (valid_ip_prefix, touch, get_config,
                                          configuration_check, running)
 
 NAME_OF_CONSTANT = 'ACAST_PS_ADVERTISE'
@@ -160,7 +160,8 @@ def main():
         sys.exit("Invalid dummy IP prefix:{}".format(args.dummy_ip_prefix))
 
     # Perform a sanity check on the configuratio for each service check
-    configuration_check(args.cfg_dir)
+    config = get_config(args.cfg_dir)
+    configuration_check(config)
 
     # Make some noise.
     log.debug('Before we are daemonized')

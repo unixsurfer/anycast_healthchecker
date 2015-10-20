@@ -108,9 +108,8 @@ def get_config(cfg_dir):
     return full_config
 
 
-def configuration_check(cfg_dir):
+def configuration_check(config):
     """Perform a sanity check on configuration"""
-    config = get_config(cfg_dir)
 
     for filename in config:
         for option in OPTIONS_TYPE:
