@@ -55,12 +55,24 @@ def touch(file_path):
         return True
 
 
+def get_config_files(cfg_dir):
+    """Retrieves the absolute file path of configuration files.
+
+    Returns:
+        A list of absolute file paths.
+    """
+    file_names = []
+    for name in glob.glob(os.path.join(cfg_dir, '*.json')):
+        file_names.append(name)
+
+    return file_names
+
+
 def configuration_check(cfg_dir):
     """Perform a sanity check on configuration"""
     files = []
 
-    for name in glob.glob(os.path.join(cfg_dir, '*.json')):
-        files.append(name)
+    files = get_config_files(cfg_dir)
     if not files:
         sys.exit("No configuration was found in {}".format(cfg_dir))
 

@@ -7,7 +7,6 @@ A library which provides the HealthChecker class.
 
 import subprocess
 import os
-import glob
 import sys
 import time
 from threading import Event
@@ -15,6 +14,7 @@ from queue import Queue, Empty
 import re
 
 from anycast_healthchecker.servicecheck import ServiceCheck
+from anycast_healthchecker.utils import get_config_files
 
 
 class HealthChecker(object):
@@ -94,22 +94,6 @@ class HealthChecker(object):
 
         self.log.debug("Initialize HealthChecker")
 
-    def _get_config_files(self):
-        """Retrieves the absolute file path of configuration files.
-
-        Returns:
-            A list of absolute file paths.
-        """
-        _file_names = []
-        self.log.debug("Loading files from {}".format(self.cfg_dir))
-        for name in glob.glob(os.path.join(self.cfg_dir, '*.json')):
-            self.log.debug("Found {} configuration".format(name))
-            _file_names.append(name)
-
-        if not _file_names:
-            self.log.warning('No configuration files were found!')
-
-        return _file_names
 
     def _update_bird_prefix_conf(self, health_action):
         """Updates BIRD configuration.
@@ -247,11 +231,15 @@ class HealthChecker(object):
         """Lunches checks and triggers updates on BIRD configuration."""
         self.log.info("Lunching checks")
         _workers = []
-        files = self._get_config_files()
+        self.log.debug("Loading files from {}".format(self.cfg_dir))
+        files = get_config_files(self.cfg_dir)
+        if not files:
+            self.log.warning('No configuration files were found!')
 
         # Lunch a thread for each configuration
         self.log.info("Going to lunch {} threads".format(len(files)))
         for config_file in files:
+            self.log.debug("Lunching thread for {} file".format(config_file))
             _thread = ServiceCheck(
                 config_file,
                 self.stop_event,
