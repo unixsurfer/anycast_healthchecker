@@ -81,10 +81,10 @@ def configuration_check(cfg_dir):
                     fh=filename,
                     option=option))
             if not isinstance(config[option], OPTIONS_TYPE[option]):
-                sys.exit("{fh}: value for option {option} should a type of "
-                         "{otype}".format(fh=filename,
-                                          option=option,
-                                          otype=OPTIONS_TYPE[option].__name__))
+                sys.exit("{fh}: value({val}) for option '{option}' should be a"
+                         "type of {otype}".format(
+                             fh=filename, val=config[option], option=option,
+                             otype=OPTIONS_TYPE[option].__name__))
 
         if (config['on_disabled'] != 'withdraw' and
                 config['on_disabled'] != 'advertise'):
