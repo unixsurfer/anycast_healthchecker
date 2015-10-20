@@ -178,6 +178,12 @@ def main():
         sys.exit("There are IP prefixes in {fh} for which a configuration "
                  "isn't supplied".format(fh=args.bird_conf_file))
 
+    # Dummy ip prefix should be in the bird conf
+    if args.dummy_ip_prefix not in ip_prefixes_in_bird:
+        sys.exit("Dummy IP prefix ({ip}) not found in  bird configuration "
+                 "{fh}".format(ip=args.dummy_ip_prefix,
+                               fh=args.bird_conf_file))
+
     # Make some noise.
     log.debug('Before we are daemonized')
     stdout_log.debug('Before we are daemonized')
