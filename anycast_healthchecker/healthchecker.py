@@ -6,7 +6,6 @@ A library which provides the HealthChecker class.
 """
 
 import subprocess
-import os
 import sys
 import time
 from threading import Event
@@ -14,7 +13,6 @@ from queue import Queue, Empty
 import re
 
 from anycast_healthchecker.servicecheck import ServiceCheck
-from anycast_healthchecker.utils import get_config_files
 
 
 class HealthChecker(object):
@@ -49,9 +47,6 @@ class HealthChecker(object):
     Arguments:
         log(logger): A logger to log messages.
 
-        cfg_dir ('str'): The absolute path of a configuration directory
-        which contains configuration files for each check.
-
         bird_conf_file('str'): The absolute path of file which contains
         the definition of constant used by BIRD daemon.
 
@@ -80,12 +75,12 @@ class HealthChecker(object):
     """
     def __init__(self,
                  log,
-                 cfg_dir,
+                 config,
                  bird_conf_file,
                  bird_constant_name,
                  dummy_ip_prefix):
         self.log = log
-        self.cfg_dir = cfg_dir
+        self.config = config
         self.bird_conf_file = bird_conf_file
         self.dummy_ip_prefix = dummy_ip_prefix
         self.bird_constant_name = bird_constant_name
@@ -93,7 +88,6 @@ class HealthChecker(object):
         self.action = Queue()
 
         self.log.debug("Initialize HealthChecker")
-
 
     def _update_bird_prefix_conf(self, health_action):
         """Updates BIRD configuration.
@@ -231,17 +225,13 @@ class HealthChecker(object):
         """Lunches checks and triggers updates on BIRD configuration."""
         self.log.info("Lunching checks")
         _workers = []
-        self.log.debug("Loading files from {}".format(self.cfg_dir))
-        files = get_config_files(self.cfg_dir)
-        if not files:
-            self.log.warning('No configuration files were found!')
 
         # Lunch a thread for each configuration
-        self.log.info("Going to lunch {} threads".format(len(files)))
-        for config_file in files:
-            self.log.debug("Lunching thread for {} file".format(config_file))
+        self.log.info("Going to lunch {} threads".format(len(self.config)))
+        for conf_file in self.config:
+            self.log.debug("Lunching thread for {}".format(conf_file))
             _thread = ServiceCheck(
-                config_file,
+                self.config[conf_file],
                 self.stop_event,
                 self.action,
                 self.log)

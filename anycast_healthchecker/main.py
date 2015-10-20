@@ -181,7 +181,7 @@ def main():
     # Create our master process.
     checker = healthchecker.HealthChecker(
         log,
-        args.cfg_dir,
+        config,
         args.bird_conf_file,
         args.bird_constant_name,
         args.dummy_ip_prefix)

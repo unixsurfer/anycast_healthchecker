@@ -5,7 +5,6 @@
 A library which provides the ServiceCheck class.
 """
 
-import json
 import subprocess
 import time
 from threading import Thread
@@ -33,37 +32,17 @@ class ServiceCheck(Thread):
         run(): Run method of the thread.
     """
 
-    def __init__(self, config_file, stop_event, action, log):
+    def __init__(self, config, stop_event, action, log):
         """Initialize name and configuration of the thread."""
         super(ServiceCheck, self).__init__()
         self.daemon = True
-        self.config_file = config_file
+        self.config = config
         self.stop_event = stop_event
         self.action = action
         self.log = log
-        self.config = None
-
-        # Load configuration and exit thread if configuration is not found.
-        self._load_config()
-        if self.config is None:
-            self.log.error("Configuration was not parsed")
-            self.name = 'unnamed_check'
-            return None
-
         self.name = self.config['name']
-        self.log.info("Loading check for {}".format(self.name))
 
-    def _load_config(self):
-        """Loads a JSON configuration file into a data structure."""
-        try:
-            with open(self.config_file, 'r') as conf:
-                self.config = json.load(conf)
-        except ValueError as error:
-            self.log.error("{} isn't a valid JSON file: {}".format(
-                self.config_file,
-                error))
-        except (IOError, OSError) as error:
-            self.log.error("Error for {}:{}".format(self.config_file, error))
+        self.log.info("Loading check for {}".format(self.name))
 
     def _run_check(self):
         """Executes a check command.
