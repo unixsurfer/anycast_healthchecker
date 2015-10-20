@@ -115,8 +115,7 @@ def main():
             os.unlink(args.pidfile)
         else:
             if running(pid):
-                print("Process {} is already running".format(pid))
-                sys.exit(1)
+                sys.exit("Process {} is already running".format(pid))
             else:
                 print("Cleaning stale pid file, past pid:{}".format(pid))
                 os.unlink(args.pidfile)
