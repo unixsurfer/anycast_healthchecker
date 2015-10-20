@@ -21,8 +21,6 @@ from anycast_healthchecker.utils import (valid_ip_prefix, touch, get_config,
                                          get_ip_prefixes,
                                          get_ip_prefixes_from_bird)
 
-NAME_OF_CONSTANT = 'ACAST_PS_ADVERTISE'
-
 
 def main():
     """This is a main function
