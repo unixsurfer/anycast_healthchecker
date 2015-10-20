@@ -11,6 +11,7 @@ import json
 import sys
 import glob
 import subprocess
+import copy
 
 
 OPTIONS_TYPE = {
@@ -68,10 +69,21 @@ def get_config_files(cfg_dir):
     return file_names
 
 
-def configuration_check(cfg_dir):
-    """Perform a sanity check on configuration"""
-    files = []
+def get_ip_prefixes(config):
+    """Return a set of ip prefixes found in configuration files"""
 
+    ip_prefixes = set()
+
+    for data in config:
+        ip_prefixes.add(config[data]['ip_prefix'])
+
+    return ip_prefixes
+
+
+def get_config(cfg_dir):
+    """Parse a json files and return a dict structure"""
+    files = []
+    full_config = {}
     files = get_config_files(cfg_dir)
     if not files:
         sys.exit("No configuration was found in {}".format(cfg_dir))
@@ -79,47 +91,63 @@ def configuration_check(cfg_dir):
     for filename in files:
         try:
             with open(filename, 'r') as conf:
-                config = json.load(conf)
+                config_data = json.load(conf)
         except ValueError as error:
             sys.exit("{fh}: isn't a valid JSON file: {err}".format(
                 fh=filename,
                 err=str(error)))
         except OSError as error:
-            sys.exit("Failed to parse with error:{}".format(str(error)))
+            sys.exit(str(error))
+        else:
+            conf.close()
+            full_config[filename] = copy.copy(config_data)
 
+    if not full_config:
+        sys.exit('No data was found in configuraton, emmpty files?')
+
+    return full_config
+
+
+def configuration_check(cfg_dir):
+    """Perform a sanity check on configuration"""
+    config = get_config(cfg_dir)
+
+    for filename in config:
         for option in OPTIONS_TYPE:
-            if option not in config:
+            if option not in config[filename]:
                 sys.exit("{fh}: {option} isn't configured".format(
                     fh=filename,
                     option=option))
-            if not isinstance(config[option], OPTIONS_TYPE[option]):
+            if not isinstance(config[filename][option],
+                              OPTIONS_TYPE[option]):
                 sys.exit("{fh}: value({val}) for option '{option}' should be a"
-                         "type of {otype}".format(
-                             fh=filename, val=config[option], option=option,
+                         " type of {otype}".format(
+                             fh=filename, val=config[filename][option],
+                             option=option,
                              otype=OPTIONS_TYPE[option].__name__))
 
-        if (config['on_disabled'] != 'withdraw' and
-                config['on_disabled'] != 'advertise'):
+        if (config[filename]['on_disabled'] != 'withdraw' and
+                config[filename]['on_disabled'] != 'advertise'):
             sys.exit("{fh}: on_disable option has invalid value({val}), it "
                      "should be either 'withdraw' or 'advertise'".format(
                          fh=filename,
-                         val=config['on_disabled']))
+                         val=config[filename]['on_disabled']))
 
         # check if it is a valid IP
-        if not valid_ip_prefix(config['ip_prefix']):
+        if not valid_ip_prefix(config[filename]['ip_prefix']):
             sys.exit("{fh}: value({val}) for option 'ip_prefix' is invalid."
                      "It should be an IP PREFIX in form of <valid ip>/"
                      "<prefixlen>.".format(fh=filename,
-                                           val=config['ip_prefix']))
+                                           val=config[filename]['ip_prefix']))
 
-        cmd = config['check_cmd'].split()
+        cmd = config[filename]['check_cmd'].split()
         try:
             proc = subprocess.Popen(cmd, stdin=None, stdout=None, stderr=None)
             proc.kill()
         except (OSError, subprocess.SubprocessError) as error:
             sys.exit("{fh}: failed to run {cmd} with {err}".format(
                 fh=filename,
-                cmd=config['check_cmd'],
+                cmd=config[filename]['check_cmd'],
                 err=str(error)))
 
 
