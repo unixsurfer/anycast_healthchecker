@@ -124,8 +124,6 @@ def main():
     if not touch(args.bird_conf_file):
         sys.exit(1)
 
-    # Get a PID lock file.
-    pid_lockfile = PIDLockFile(args.pidfile)
     # Map log level to numeric which can be accepted by loggers.
     numeric_level = getattr(logging, args.loglevel.upper(), None)
     if not isinstance(numeric_level, int):
@@ -176,6 +174,7 @@ def main():
     context.stderr_logger = stderr_log
 
     # Set pidfile for DaemonContext
+    pid_lockfile = PIDLockFile(args.pidfile)
     context.pidfile = pid_lockfile
 
     # Create our master process.
