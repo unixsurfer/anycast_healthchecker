@@ -80,7 +80,8 @@ class ServiceCheck(Thread):
         Returns:
             True if IP-PREFIX found assigned otherwise False.
         """
-        cmd = ['/sbin/ip', 'address', 'show', 'dev', 'lo']
+        cmd = ['/sbin/ip', 'address', 'show', 'dev', 'lo', 'to']
+        cmd.append("{}".format(self.config['ip_prefix']))
 
         self.log.debug("running {}".format(' '.join(cmd)))
         if self.stop_event.isSet():
