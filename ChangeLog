@@ -1,6 +1,8 @@
 CHANGES
 =======
 
+* use the 'to' option in ip tool to list addresses matching the prefix
+
 0.3.0
 -----
 
