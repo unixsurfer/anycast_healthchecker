@@ -13,6 +13,7 @@ from queue import Queue, Empty
 import re
 
 from anycast_healthchecker.servicecheck import ServiceCheck
+from anycast_healthchecker.utils import OPTIONS_TYPE
 
 
 class HealthChecker(object):
@@ -86,6 +87,10 @@ class HealthChecker(object):
         self.bird_constant_name = bird_constant_name
         self.stop_event = Event()
         self.action = Queue()
+
+        # A list of service of checks
+        self.services = config.sections()
+        self.services.remove('daemon')
 
         self.log.debug("Initialize HealthChecker")
 
@@ -227,11 +232,15 @@ class HealthChecker(object):
         _workers = []
 
         # Lunch a thread for each configuration
-        self.log.info("Going to lunch {} threads".format(len(self.config)))
-        for conf_file in self.config:
-            self.log.debug("Lunching thread for {}".format(conf_file))
+        self.log.info("Going to lunch {} threads".format(len(self.services)))
+        for service in self.services:
+            self.log.debug("Lunching thread for {}".format(service))
+            _config = {}
+            for option, getter in OPTIONS_TYPE.items():
+                _config[option] = getattr(self.config, getter)(service, option)
             _thread = ServiceCheck(
-                self.config[conf_file],
+                service,
+                _config,
                 self.stop_event,
                 self.action,
                 self.log)

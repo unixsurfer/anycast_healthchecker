@@ -7,23 +7,22 @@
 
 import re
 import os
-import json
 import sys
-import glob
 import subprocess
-import copy
+import logging
+import configparser
 
 
 OPTIONS_TYPE = {
-    "name": str,
-    "check_cmd": str,
-    "check_interval": int,
-    "check_timeout": int,
-    "check_rise": int,
-    "check_fail": int,
-    "check_disabled": bool,
-    "on_disabled": str,
-    "ip_prefix": str
+    'check_cmd': 'get',
+    'check_interval': 'getint',
+    'check_timeout': 'getint',
+    'check_rise': 'getint',
+    'check_fail': 'getint',
+    'check_disabled': 'getboolean',
+    'on_disabled': 'get',
+    'ip_prefix': 'get',
+    'interface': 'get'
 }
 
 
@@ -56,97 +55,144 @@ def touch(file_path):
         return True
 
 
-def get_config_files(cfg_dir):
-    """Retrieves the absolute file path of configuration files.
+def get_ip_prefixes(config, services):
+    """Builds a set of IP prefixes found in configuration files.
+
+    Arguments:
+        config (obg): A configparser object which holds our configuration.
+        services (list): A list of section names which are the name of the
+        service checks.
 
     Returns:
-        A list of absolute file paths.
+        A set of IP prefixes.
     """
-    file_names = []
-    for name in glob.glob(os.path.join(cfg_dir, '*.json')):
-        file_names.append(name)
-
-    return file_names
-
-
-def get_ip_prefixes(config):
-    """Return a set of ip prefixes found in configuration files"""
 
     ip_prefixes = set()
 
-    for data in config:
-        ip_prefixes.add(config[data]['ip_prefix'])
+    for service in services:
+        ip_prefixes.add(config[service]['ip_prefix'])
 
     return ip_prefixes
 
 
-def get_config(cfg_dir):
-    """Parse a json files and return a dict structure"""
-    files = []
-    full_config = {}
-    files = get_config_files(cfg_dir)
-    if not files:
-        sys.exit("No configuration was found in {}".format(cfg_dir))
+def service_configuration_check(config, services):
+    """Performs a sanity check on options for each service check
 
-    for filename in files:
-        try:
-            with open(filename, 'r') as conf:
-                config_data = json.load(conf)
-        except ValueError as error:
-            sys.exit("{fh}: isn't a valid JSON file: {err}".format(
-                fh=filename,
-                err=str(error)))
-        except OSError as error:
-            sys.exit(str(error))
-        else:
-            full_config[filename] = copy.copy(config_data)
+    Arguments:
+        config (obg): A configparser object which holds our configuration.
+        services (list): A list of section names which are the name of the
+        service checks.
 
-    if not full_config:
-        sys.exit('No data was found in configuraton, emmpty files?')
+    Returns:
+        None if all checks are successfully passed otherwise exits main
+        program
+    """
+    for service in services:
+        for option, getter in OPTIONS_TYPE.items():
+            try:
+                getattr(config, getter)(service, option)
+            except configparser.Error as error:
+                sys.exit(str(error))
+            except ValueError as error:
+                sys.exit("invalid data for '{opt}' option in service check "
+                         "{name}: {err}".format(opt=option, name=service,
+                                                err=error))
 
-    return full_config
-
-
-def configuration_check(config):
-    """Perform a sanity check on configuration"""
-
-    for filename in config:
-        for option in OPTIONS_TYPE:
-            if option not in config[filename]:
-                sys.exit("{fh}: {option} isn't configured".format(
-                    fh=filename,
-                    option=option))
-            if not isinstance(config[filename][option],
-                              OPTIONS_TYPE[option]):
-                sys.exit("{fh}: value({val}) for option '{option}' should be a"
-                         " type of {otype}".format(
-                             fh=filename, val=config[filename][option],
-                             option=option,
-                             otype=OPTIONS_TYPE[option].__name__))
-
-        if (config[filename]['on_disabled'] != 'withdraw' and
-                config[filename]['on_disabled'] != 'advertise'):
-            sys.exit("{fh}: on_disable option has invalid value({val}), it "
-                     "should be either 'withdraw' or 'advertise'".format(
-                         fh=filename,
-                         val=config[filename]['on_disabled']))
+        if (config[service]['on_disabled'] != 'withdraw' and
+                config[service]['on_disabled'] != 'advertise'):
+            sys.exit("'on_disable' option has invalid value ({val}) for "
+                     "service check {name} should be either 'withdraw' or "
+                     "'advertise'".format(name=service,
+                                          val=config[service]['on_disabled']))
 
         # check if it is a valid IP
-        if not valid_ip_prefix(config[filename]['ip_prefix']):
-            sys.exit("{fh}: value({val}) for option 'ip_prefix' is invalid."
-                     "It should be an IP PREFIX in form of <valid ip>/"
-                     "<prefixlen>.".format(fh=filename,
-                                           val=config[filename]['ip_prefix']))
+        if not valid_ip_prefix(config[service]['ip_prefix']):
+            sys.exit("invalid value ({val}) for 'ip_prefix' option in service "
+                     "check {name}. It should be an IP PREFIX in form of "
+                     "ip/prefixlen.".format(name=service,
+                                            val=config[service]['ip_prefix']))
 
-        cmd = config[filename]['check_cmd'].split()
+        cmd = config[service]['check_cmd'].split()
         try:
             proc = subprocess.Popen(cmd, stdin=None, stdout=None, stderr=None)
             proc.kill()
         except (OSError, subprocess.SubprocessError) as error:
-            sys.exit("{fh}: failed to run {cmd} with {err}".format(
-                fh=filename,
-                cmd=config[filename]['check_cmd'],
-                err=str(error)))
+            sys.exit("failed to run check command '{cmd}' for service check "
+                     "{name}: {err}".format(name=service,
+                                            cmd=config[service]['check_cmd'],
+                                            err=str(error)))
+
+
+def ip_prefixes_check(config, services):
+    """Finds IP prefixes in bird configuration with missing check
+
+    Checks IP prefixes configured in Bird configuration for which we don't
+    have a service check associated with. If it finds any it exits the main
+    program.
+
+    Arguments:
+        config (obg): A configparser object which holds our configuration.
+        services (list): A list of section names which are the name of the
+        service checks.
+
+    Returns:
+        None if all checks are successfully passed otherwise exits main
+        program
+    """
+    ip_prefixes = get_ip_prefixes(config, services)
+    ip_prefixes.add(config['daemon']['dummy_ip_prefix'])
+    ip_prefixes_in_bird = get_ip_prefixes_from_bird(
+        config['daemon']['bird_conf'])
+
+    if not ip_prefixes_in_bird:
+        sys.exit("Found zero IP prefixes in {}".format(
+            config['daemon']['bird_conf']))
+    unconfgured_ip_prefixes = ip_prefixes_in_bird.difference(ip_prefixes)
+    if unconfgured_ip_prefixes:
+        sys.exit("There are IP prefixes in {fh} for which a configuration "
+                 "isn't supplied".format(fh=config['daemon']['bird_conf']))
+
+    # Dummy ip prefix should be in the bird conf
+    if config['daemon']['dummy_ip_prefix'] not in ip_prefixes_in_bird:
+        sys.exit("Dummy IP prefix ({ip}) is missing from bird configuration "
+                 "{fh}".format(ip=config['daemon']['dummy_ip_prefix'],
+                               fh=config['daemon']['bird_conf']))
+
+
+def configuration_check(config):
+    """Perform a sanity check on configuration
+
+    Arguments:
+        config (obg): A configparser object which holds our configuration.
+
+    Returns:
+        None if all checks are successfully passed otherwise exits main
+        program
+    """
+    # if not touch(config['daemon']['bird_conf']):
+    #     sys.exit(1)
+
+    numeric_level = getattr(logging, config['daemon']['loglevel'].upper(), None)
+    if not isinstance(numeric_level, int):
+        sys.exit('Invalid log level: {}'.format(config['daemon']['loglevel']))
+
+    if not touch(config['daemon']['log_file']):
+        sys.exit(1)
+    if not touch(config['daemon']['stdout_file']):
+        sys.exit(1)
+    if not touch(config['daemon']['stderr_file']):
+        sys.exit(1)
+    if not valid_ip_prefix(config['daemon']['dummy_ip_prefix']):
+        sys.exit("Invalid dummy IP prefix:{}".format(
+            config['daemon']['dummy_ip_prefix']))
+
+    services = config.sections()
+    services.remove('daemon')
+    if not services:
+        sys.exit('No service checks are configured')
+
+    service_configuration_check(config, services)
+    ip_prefixes_check(config, services)
 
 
 def running(processid):
@@ -171,9 +217,30 @@ def running(processid):
 
 
 def get_ip_prefixes_from_bird(filename):
+    """Builds a set of IP prefixes found in Bird configuration
+
+    Arguments:
+        filename(str): The absolute path of the Bird configuration file.
+
+    Notes:
+        It can only parse a file with the following format
+
+            define ACAST_PS_ADVERTISE =
+                [
+                    10.189.200.155/32,
+                    10.189.200.255/32
+                ];
+
+    Returns:
+        A set of IP prefixes.
+    """
     prefixes = set()
-    with open(filename, 'r') as bird_conf:
-        lines = bird_conf.read()
+    try:
+        with open(filename, 'r') as bird_conf:
+            lines = bird_conf.read()
+    except OSError as error:
+        sys.exit(str(error))
+    else:
         for line in lines.splitlines():
             line = line.strip(', ')
             if valid_ip_prefix(line):

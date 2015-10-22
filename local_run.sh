@@ -1,13 +1,13 @@
 #!/bin/bash
-directories=("${PWD}"/var/var/log/anycast-healthchecker \
-"${PWD}"/var/etc/bird.d \
-"${PWD}"/var/etc/anycast-healthcheck.d \
-"${PWD}"/var/var/run/anycast-healthchecker \
-"${PWD}"/var/var/log/anycast-healthchecker \
-"${PWD}"/var/etc/bird.d \
-"${PWD}"/var/var/run/anycast-healthchecker)
+TEST_DIR="${PWD}/var"
+directories=("${TEST_DIR}"/var/log/anycast-healthchecker \
+"${TEST_DIR}"/etc/bird.d \
+"${TEST_DIR}"/etc/anycast-healthcheck.d \
+"${TEST_DIR}"/var/run/anycast-healthchecker \
+"${TEST_DIR}"/var/log/anycast-healthchecker \
+"${TEST_DIR}"/etc/bird.d \
+"${TEST_DIR}"/var/run/anycast-healthchecker)
 
-files=("${PWD}"/var/etc/bird.d/anycast-prefixes.conf )
 echo "--------create directory structure--------"
 for dir in ${directories[@]}; do
     if [ ! -d "${dir}" ]; then
@@ -15,14 +15,27 @@ for dir in ${directories[@]}; do
     fi
 done
 echo "--------create files----------------------"
-for file in ${files[@]}; do
-    if [ ! -e "${file}" ]; then
-        touch "${file}"
-    fi
-done
-echo "--------create bird conf------------------"
-if [ ! -e "${PWD}"/var/etc/bird.d/anycast-prefixes.conf ]; then
-    cat <<EOT > "${PWD}"/var/etc/bird.d/anycast-prefixes.conf
+if [ ! -e ${TEST_DIR}/etc/anycast-healthchecker.conf  ]; then
+    cat <<EOT > "${TEST_DIR}"/etc/anycast-healthchecker.conf
+[DEFAULT]
+interface        = lo
+
+[daemon]
+pidfile          = ${TEST_DIR}/var//run/anycast-healthchecker/anycast-healthchecker.pid
+bird_conf        = ${TEST_DIR}/etc/bird.d/anycast-prefixes.conf
+bird_variable    = ACAST_PS_ADVERTISE
+loglevel         = debug
+log_maxbytes     = 104857600
+log_backups      = 8
+log_file         = ${TEST_DIR}/var/log/anycast-healthchecker/anycast-healthchecker.log
+stderr_file      = ${TEST_DIR}/var/log/anycast-healthchecker/stderr.log
+stdout_file      = ${TEST_DIR}/var/log/anycast-healthchecker/stdout.log
+dummy_ip_prefix  = 10.189.200.255/32
+EOT
+fi
+
+if [ ! -e ${TEST_DIR}/etc/bird.d/anycast-prefixes.conf ]; then
+    cat <<EOT > ${TEST_DIR}/etc/bird.d/anycast-prefixes.conf
 # 10.189.200.255 is a dummy. It should NOT be used and REMOVED from the constant.
 define ACAST_PS_ADVERTISE =
     [
@@ -31,34 +44,30 @@ define ACAST_PS_ADVERTISE =
 EOT
 fi
 echo "--------create service checks-------------"
-if [ ! -e "${PWD}"/var/etc/anycast-healthcheck.d/foo.bar.com.json ]; then
-    cat <<EOT > "${PWD}"/var/etc/anycast-healthcheck.d/foo.bar.com.json
-{
-   "name": "foo.bar.com",
-   "check_cmd": "curl -A 'anycast-healthchecker' --fail --silent --connect-timeout 1 --max-time 1 -o /dev/null  http://10.52.12.1/",
-   "check_interval": 10,
-   "check_timeout": 5,
-   "check_rise": 2,
-   "check_fail": 2,
-   "check_disabled": false,
-   "on_disabled": "withdraw",
-   "ip_prefix": "10.52.12.1/32"
-}
+if [ ! -e ${TEST_DIR}/etc/anycast-healthcheck.d/foo.bar.com.json ]; then
+    cat <<EOT > ${TEST_DIR}/etc/anycast-healthcheck.d/foo.bar.com.conf
+[foo.bar.com]
+check_cmd = curl -A 'anycast-healthchecker' --fail --silent --connect-timeout 1 --max-time 1 -o /dev/null  http://10.52.12.1/
+check_interval = 10
+check_timeout = 5
+check_rise = 2
+check_fail = 2
+check_disabled = false
+on_disabled = withdraw
+ip_prefix = 10.52.12.1/32
 EOT
 fi
-if [ ! -e "${PWD}"/var/etc/anycast-healthcheck.d/foo1.bar.com.json ]; then
-    cat <<EOT > "${PWD}"/var/etc/anycast-healthcheck.d/foo1.bar.com.json
-{
-   "name": "foo1.bar.com",
-   "check_cmd": "curl -A 'anycast-healthchecker' --fail --silent --connect-timeout 1 --max-time 1 -o /dev/null  http://10.52.12.2/",
-   "check_interval": 10,
-   "check_timeout": 5,
-   "check_rise": 2,
-   "check_fail": 2,
-   "check_disabled": true,
-   "on_disabled": "withdraw",
-   "ip_prefix": "10.52.12.2/32"
-}
+if [ ! -e ${TEST_DIR}/etc/anycast-healthcheck.d/foo1.bar.com.conf ]; then
+    cat <<EOT > ${TEST_DIR}/etc/anycast-healthcheck.d/foo1.bar.com.conf
+[foo1.bar.com]
+check_cmd = curl -A 'anycast-healthchecker' --fail --silent --connect-timeout 1 --max-time 1 -o /dev/null  http://10.52.12.2/
+check_interval = 10
+check_timeout = 5
+check_rise =  2
+check_fail =  2
+check_disabled = false
+on_disabled = withdraw
+ip_prefix = 10.52.12.2/32
 EOT
 fi
 echo "--------installing software---------------"
@@ -100,14 +109,8 @@ if [ $? -eq 0 ]; then
     pkill -F "${PWD}"/var/var/run/anycast-healthchecker/anycast-healthchecker.pid
     sleep 2
 fi
-"${HOME}"/.local/bin/anycast-healthchecker -c "${PWD}"/var/etc/anycast-healthcheck.d \
-    -p "${PWD}"/var/var/run/anycast-healthchecker/anycast-healthchecker.pid \
-    -l debug \
-    --bird-conf "${PWD}"/var/etc/bird.d/anycast-prefixes.conf \
-    --bird-constant-name ACAST_PS_ADVERTISE \
-    --log-file  "${PWD}"/var/var/log/anycast-healthchecker/anycast-healthchecker.log \
-    --stderr-file "${PWD}"/var/var/log/anycast-healthchecker/stderr.log  \
-    --stdout-file "${PWD}"/var/var/log/anycast-healthchecker/stdout.log
+"${HOME}"/.local/bin/anycast-healthchecker -f "${PWD}"/var/etc/anycast-healthchecker.conf \
+    -d "${PWD}"/var/etc/anycast-healthcheck.d
 if [ $? -eq 0 ]; then
     echo "--------daemon started!-------------------"
 fi

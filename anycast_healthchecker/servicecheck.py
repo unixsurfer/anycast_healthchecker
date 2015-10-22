@@ -32,15 +32,15 @@ class ServiceCheck(Thread):
         run(): Run method of the thread.
     """
 
-    def __init__(self, config, stop_event, action, log):
+    def __init__(self, service, config, stop_event, action, log):
         """Initialize name and configuration of the thread."""
         super(ServiceCheck, self).__init__()
+        self.name = service
         self.daemon = True
         self.config = config
         self.stop_event = stop_event
         self.action = action
         self.log = log
-        self.name = self.config['name']
 
         self.log.info("Loading check for {}".format(self.name))
 
@@ -80,8 +80,15 @@ class ServiceCheck(Thread):
         Returns:
             True if IP-PREFIX found assigned otherwise False.
         """
-        cmd = ['/sbin/ip', 'address', 'show', 'dev', 'lo', 'to']
-        cmd.append("{}".format(self.config['ip_prefix']))
+        cmd = [
+            '/sbin/ip',
+            'address',
+            'show',
+            'dev',
+            "{}".format(self.config['interface']),
+            'to',
+            "{}".format(self.config['ip_prefix']),
+        ]
 
         self.log.debug("running {}".format(' '.join(cmd)))
         if self.stop_event.isSet():
