@@ -98,17 +98,9 @@ class HealthChecker(object):
         comment = ("# {} is a dummy IP Prefix. It should NOT be used and "
                    "REMOVED from the constant.".format(self.dummy_ip_prefix))
 
-        # matches IPs with a trailing comma or not
-        # TODO: Do I need to if it a real valid IP
-        pat = re.compile(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/\d{1,},?')
         try:
-            bird_conf = open(self.bird_conf_file, 'r+')
-            lines = bird_conf.read()
-            for line in lines.splitlines():
-                line = line.strip()
-                if pat.match(line):
-                    prefixes.append(line.rstrip(','))
-        except (IOError, OSError) as error:
+            prefixes = get_ip_prefixes_from_bird(self.bird_conf_file, die=False)
+        except OSError as error:
             self.log.critical("Failed to open bird configuration")
             self.log.critical(error)
             self.log.critical("This is a FATAL error, exiting")
@@ -137,28 +129,34 @@ class HealthChecker(object):
             conf_updated = True
 
         if not conf_updated:
-            bird_conf.close()
             self.log.info("No updates for bird configuration")
             return conf_updated
 
         # OK some IP_PREFIXes are either removed or added,
         # go and truncate configuration with new data.
-        bird_conf.seek(0)
-        bird_conf.write("# Generated {} by anycast-healthchecker\n".format(
-            time.ctime()))
-        bird_conf.write("{}\n".format(comment))
-        bird_conf.write("define {} =\n".format(self.bird_constant_name))
-        bird_conf.write("{}[\n".format(4 * ' '))
-        # all entries of the array constant need a trailing comma
-        # except the last one. A single element array doesn't need the
-        # trailing comma.
-        for prefix in prefixes[:-1]:
-            bird_conf.write("{}{},\n".format(8 * ' ', prefix))
-        bird_conf.write("{}{}\n".format(8 * ' ', prefixes[len(prefixes) - 1]))
-        bird_conf.write("{}];\n".format(4 * ' '))
-        bird_conf.truncate()
-        bird_conf.close()
-        self.log.info("Bird configuration is updated")
+        try:
+            with open(self.bird_conf_file, 'r+') as bird_conf:
+                bird_conf.seek(0)
+                bird_conf.write("# Generated {time} by anycast-healthchecker"
+                                "\n".format(time=time.ctime()))
+                bird_conf.write("{}\n".format(comment))
+                bird_conf.write("define {} =\n".format(self.bird_constant_name))
+                bird_conf.write("{}[\n".format(4 * ' '))
+                # all entries of the array constant need a trailing comma
+                # except the last one. A single element array doesn't need the
+                # trailing comma.
+                for prefix in prefixes[:-1]:
+                    bird_conf.write("{}{},\n".format(8 * ' ', prefix))
+                bird_conf.write("{}{}\n".format(8 * ' ', prefixes[len(prefixes) - 1]))
+                bird_conf.write("{}];\n".format(4 * ' '))
+                bird_conf.truncate()
+                bird_conf.close()
+                self.log.info("Bird configuration is updated")
+        except OSError as error:
+            self.log.critical("Failed to update bird configuration")
+            self.log.critical(error)
+            self.log.critical("This is a FATAL error, exiting")
+            sys.exit(1)
 
         return conf_updated
 
