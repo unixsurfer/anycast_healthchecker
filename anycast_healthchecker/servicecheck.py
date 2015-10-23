@@ -115,9 +115,6 @@ class ServiceCheck(Thread):
         It logs a message if check is disabled and it also adds an item
         to the action queue based on 'on_disabled' setting.
 
-        NOTE: Returns False if check is disabled but 'on_disabled' setting has
-        wrong value.
-
         Returns:
             True if check is disabled otherwise False.
         """
@@ -135,12 +132,6 @@ class ServiceCheck(Thread):
             self.log.info("{} in queue".format(self.config['ip_prefix']))
             self.log.info("Check is now permanently disabled")
             return True
-        elif self.config['check_disabled']:
-            self.log.warning(("Configuration says check is disabled but the"
-                              " 'on_disabled' setting has wrong value ({})."
-                              " Valid valures are 'withdraw' and 'advertise'"
-                              " Due to this misconfiguration check is not"
-                              " disabled").format(self.config['on_disabled']))
 
         return False
 
