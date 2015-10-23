@@ -17,27 +17,11 @@ from anycast_healthchecker.utils import OPTIONS_TYPE
 
 
 class HealthChecker(object):
-    """Lunches service checkers and triggers a reconfiguration on BIRD.
+    """Lunches service checks and triggers a reconfiguration on BIRD.
 
     This class should be instantiated once and daemonized.
 
-    Loads configuration files which have extension 'json' and are valid
-    JSON documents. Each file defines a service check with some attributes
-    and is being lunched as an individual thread.
-    Here is example configuration:
-    {
-        "name": "graphite-api.foo.com",
-        "check_cmd": "absolute path of cmd which returns exit code 0 or 1",
-        "check_interval": 10,
-        "check_timeout": 5,
-        "check_rise": 3,
-        "check_fail": 2,
-        "check_disabled": false,
-        "on_disabled": "withdraw",
-        "ip_prefix": "10.189.200.1/32"
-    }
-
-    It uses also a Event object to send a stop event to all threads when
+    It uses a event object to send a stop event to all threads when
     SIGTERM and SIGHUP are sent. It uses a queue as a store for IP_PREFIXes
     to be removed from and added to BIRD configuration.
     The BIRD configuration file that is being modified, defines a
@@ -47,6 +31,8 @@ class HealthChecker(object):
 
     Arguments:
         log(logger): A logger to log messages.
+
+        config(configparger obj): A configparser object with the configuration
 
         bird_conf_file('str'): The absolute path of file which contains
         the definition of constant used by BIRD daemon.
