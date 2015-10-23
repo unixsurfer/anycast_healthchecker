@@ -107,7 +107,6 @@ pgrep -F "${PWD}"/var/var/run/anycast-healthchecker/anycast-healthchecker.pid >/
 if [ $? -eq 0 ]; then
     echo "Process $(cat "${PWD}"/var/var/run/anycast-healthchecker/anycast-healthchecker.pid) already running, killing it.."
     pkill -F "${PWD}"/var/var/run/anycast-healthchecker/anycast-healthchecker.pid
-    sleep 2
 fi
 "${HOME}"/.local/bin/anycast-healthchecker -f "${PWD}"/var/etc/anycast-healthchecker.conf \
     -d "${PWD}"/var/etc/anycast-healthcheck.d
