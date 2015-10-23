@@ -6,19 +6,21 @@
 # pylint: disable=too-many-statements
 # pylint: disable=superfluous-parens
 #
-"""Healthchecker for Anycasted services.
+"""A simple healthchecker for Anycasted services.
 
 Usage:
-    anycast-healthchecker [-f <file> -d <directory> -c -p]
+    anycast-healthchecker [-f <file> -d <directory> -c ] [-p | -P]
 
 Options:
     -f, --file <file>  configuration file with settings for the daemon
-                       [default: /etc/anycast-servicechecker.conf]
+                       [default: /etc/anycast-healthchecker.conf]
     -d, --dir <dir>    directory with configuration files for service checks
                        [default: /etc/anycast-servicecheck.d]
-    -c, --check        check configuration
+    -c, --check        perform a sanity check on configuration
     -p, --print        show default settings for daemon and service checks
+    -P, --print-conf   show configuration
     -v, --version      show version
+    -h, --help         show this screen
 """
 import os
 import sys
@@ -28,6 +30,7 @@ from lockfile.pidlockfile import PIDLockFile
 from docopt import docopt
 import configparser
 import glob
+import copy
 
 from anycast_healthchecker import healthchecker
 from anycast_healthchecker import lib
@@ -35,23 +38,22 @@ from anycast_healthchecker import __version__ as version
 from anycast_healthchecker.utils import configuration_check, running
 
 DEFAULT_OPTIONS = {
-    'interface': 'lo',
-    'check_interval': '10',
-    'check_timeout': '2',
-    'check_rise': '2',
-    'check_fail': '2',
-    'check_disabled': 'true',
-    'on_disable': 'withdraw',
-}
-
-DAEMON_SETTINGS = {
+    'DEFAULT': {
+        'interface': 'lo',
+        'check_interval': '10',
+        'check_timeout': '2',
+        'check_rise': '2',
+        'check_fail': '2',
+        'check_disabled': 'true',
+        'on_disable': 'withdraw',
+    },
     'daemon': {
         'pidfile': '/var/run/anycast-healthchecker/anycast-healthchecker.pid',
         'bird_conf': '/etc/bird.d/anycast-prefixes.conf',
         'bird_variable': 'ACAST_PS_ADVERTISE',
         'loglevel': 'debug',
         'log_maxbytes': '104857600',
-        'log_backups': '8',
+        'log_backups': '81',
         'log_file': '/var/log/anycast-healthchecker/anycast-healthchecker.log',
         'stderr_file': '/var/log/anycast-healthchecker/stderr.log',
         'stdout_file': '/var/log/anycast-healthchecker/stdout.log',
@@ -61,27 +63,34 @@ DAEMON_SETTINGS = {
 
 
 def main():
-    """Starts daemon"""
+    """Parse CLI and starts daemon."""
 
     args = docopt(__doc__, version=version)
     if args['--print']:
-        print("[DEFAULT]")
-        for k, v in DEFAULT_OPTIONS.items():
-            print("{k} = {v}".format(k=k, v=v))
-        print()
-        for section in DAEMON_SETTINGS:
+        for section in DEFAULT_OPTIONS:
             print("[{}]".format(section))
-            for k, v in DAEMON_SETTINGS[section].items():
-                print("{k} = {v}".format(k=k, v=v))
+            for key, value in DEFAULT_OPTIONS[section].items():
+                print("{k} = {v}".format(k=key, v=value))
+            print()
         sys.exit(0)
 
     # Parse configuration.
-    config = configparser.ConfigParser()
+    defaults = copy.copy(DEFAULT_OPTIONS['DEFAULT'])
+    daemon_defaults = {'daemon': copy.copy(DEFAULT_OPTIONS['daemon'])}
+    config = configparser.ConfigParser(defaults=defaults)
+    config.read_dict(daemon_defaults)
     config_files = [args['--file']]
     config_files.extend(glob.glob(os.path.join(args['--dir'], '*.conf')))
     config.read(config_files)
-    for k, v in config.items('daemon'):
-        print(k, v)
+
+    if args['--print-conf']:
+        for section in config:
+            print("[{}]".format(section))
+            for key, value in config[section].items():
+                print("{k} = {v}".format(k=key, v=value))
+            print()
+        sys.exit(0)
+
     # Catch already running process and clean up stale pid file.
     pidfile = config['daemon']['pidfile']
     if os.path.exists(pidfile):
