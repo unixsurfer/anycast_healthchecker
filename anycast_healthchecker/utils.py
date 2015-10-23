@@ -137,8 +137,8 @@ def ip_prefixes_check(config, services):
     """
     ip_prefixes = get_ip_prefixes(config, services)
     ip_prefixes.add(config['daemon']['dummy_ip_prefix'])
-    ip_prefixes_in_bird = get_ip_prefixes_from_bird(
-        config['daemon']['bird_conf'])
+    ip_prefixes_in_bird = set(get_ip_prefixes_from_bird(
+        config['daemon']['bird_conf']))
 
     if not ip_prefixes_in_bird:
         sys.exit("Found zero IP prefixes in {}".format(
@@ -210,8 +210,8 @@ def running(processid):
     return True
 
 
-def get_ip_prefixes_from_bird(filename):
-    """Builds a set of IP prefixes found in Bird configuration
+def get_ip_prefixes_from_bird(filename, die=True):
+    """Builds a list of IP prefixes found in Bird configuration
 
     Arguments:
         filename(str): The absolute path of the Bird configuration file.
@@ -226,18 +226,21 @@ def get_ip_prefixes_from_bird(filename):
                 ];
 
     Returns:
-        A set of IP prefixes.
+        A list of IP prefixes.
     """
-    prefixes = set()
+    prefixes = []
     try:
         with open(filename, 'r') as bird_conf:
             lines = bird_conf.read()
     except OSError as error:
-        sys.exit(str(error))
+        if die:
+            sys.exit(str(error))
+        else:
+            raise
     else:
         for line in lines.splitlines():
             line = line.strip(', ')
             if valid_ip_prefix(line):
-                prefixes.add(line.rstrip(','))
+                prefixes.append(line.rstrip(','))
 
     return prefixes
