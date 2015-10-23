@@ -37,7 +37,6 @@ class ServiceCheck(Thread):
     def _run_check(self):
         """Executes a check command.
 
-
         Returns:
             True if the exit code of the command was 0 otherwise False.
         """
