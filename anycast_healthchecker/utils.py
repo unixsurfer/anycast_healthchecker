@@ -124,7 +124,7 @@ def service_configuration_check(config, services):
 
 
 def ip_prefixes_check(config, services):
-    """Finds IP prefixes in bird configuration with missing check
+    """Finds IP prefixes in Bird configuration with missing check
 
     Checks IP prefixes configured in Bird configuration for which we don't
     have a service check associated with. If it finds any it exits the main
@@ -134,10 +134,6 @@ def ip_prefixes_check(config, services):
         config (obg): A configparser object which holds our configuration.
         services (list): A list of section names which are the name of the
         service checks.
-
-    Returns:
-        None if all checks are successfully passed otherwise exits main
-        program
     """
     ip_prefixes = get_ip_prefixes(config, services)
     ip_prefixes.add(config['daemon']['dummy_ip_prefix'])
