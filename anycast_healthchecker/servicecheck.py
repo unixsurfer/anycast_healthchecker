@@ -13,18 +13,9 @@ from threading import Thread
 class ServiceCheck(Thread):
     """Handles a check for a service.
 
-    It is a child class of Thread class.
-    Loads JSON configuration in memory and keeps running a check against
-    the service until it receives a stop event by the main program.
-
-    If configuration can't be opened or can't be parsed, thread is stopped.
-    TODO: I should use alert using passive check framework.
-
     Arguments:
         config_file (str): The absolute path of the configuration file
         for the service check.
-        stop_event(Event obj): A Event obj to signal the termination of the
-        check.
         action (Queue obj): A queue object to put health actions.
         log (logger obj): A logger object to use.
 
@@ -32,13 +23,12 @@ class ServiceCheck(Thread):
         run(): Run method of the thread.
     """
 
-    def __init__(self, service, config, stop_event, action, log):
+    def __init__(self, service, config, action, log):
         """Initialize name and configuration of the thread."""
         super(ServiceCheck, self).__init__()
         self.name = service
         self.daemon = True
         self.config = config
-        self.stop_event = stop_event
         self.action = action
         self.log = log
 
@@ -47,32 +37,35 @@ class ServiceCheck(Thread):
     def _run_check(self):
         """Executes a check command.
 
-        It utilizes timeout and catches stop events as well.
 
         Returns:
             True if the exit code of the command was 0 otherwise False.
         """
         cmd = self.config['check_cmd'].split()
         self.log.info("Running {}".format(' '.join(cmd)))
-        proc = subprocess.Popen(cmd, stdin=None, stdout=None, stderr=None)
+        proc = subprocess.Popen(cmd,
+                                stdin=None,
+                                stdout=None,
+                                stderr=None,
+                                close_fds=True)
 
         start_time = time.time()
-        expire_time = start_time + self.config['check_timeout']
-        # Wait to get a return code, None => process is not finished
-        while (time.time() < expire_time
-               and proc.poll() is None
-               and not self.stop_event.isSet()):
-            time.sleep(0.1)
+        try:
+            proc.wait(self.config['check_timeout'])
+        except subprocess.TimeoutExpired:
+            self.log.error("Check timed out")
+            if proc.poll() is None:
+                proc.kill()
+            returncode = False
+        else:
+            self.log.debug("Check duration {}secs".format(
+                time.time() - start_time))
+            if proc.returncode == 0:
+                returncode = True
+            else:
+                returncode = False
 
-        self.log.debug("Check duration {}secs".format(
-            time.time() - start_time))
-
-        if proc.poll() is None:
-            proc.kill()
-            self.log.error("Check timed out or received stop event")
-            return False
-
-        return proc.returncode == 0
+        return returncode
 
     def _ip_assigned(self):
         """Checks if IP-PREFIX is assigned to loopback interface.
@@ -91,9 +84,6 @@ class ServiceCheck(Thread):
         ]
 
         self.log.debug("running {}".format(' '.join(cmd)))
-        if self.stop_event.isSet():
-            self.log.info("Received stop event")
-            return
 
         try:
             out = subprocess.check_output(
@@ -160,8 +150,8 @@ class ServiceCheck(Thread):
     def run(self):
         """Discovers the health of a service.
 
-        It runs until it receives a stop event and is responsible to put
-        an item into the queue. If check is successful after a number of
+        It runs until it being killed from main program and is responsible to
+        put an item into the queue. If check is successful after a number of
         consecutive successful health checks then it considers service UP
         and requires for its IP_PREFIX to be added in BIRD configuration,
         otherwise ask for a removal.
@@ -189,7 +179,7 @@ class ServiceCheck(Thread):
             return
 
         # Go in a loop until we are told to stop
-        while not self.stop_event.isSet():
+        while True:
 
             if not self._ip_assigned():
                 up_cnt = 0
@@ -244,17 +234,6 @@ class ServiceCheck(Thread):
                     self.log.error("down_cnt higher, it's a BUG! {}".format(
                         down_cnt))
                 up_cnt = 0
-            self.log.debug("Sleeping {}secs".format(
+            self.log.debug("Sleeping {} secs".format(
                 self.config['check_interval']))
-            # Sleep in iterations of 1 second rather the whole time.
-            # This allows the thread to catch a stop event faster and as
-            # a result the main program can be terminated faster.
-            sleep_cnt = 0
-            while sleep_cnt < self.config['check_interval']:
-                if self.stop_event.isSet():
-                    self.log.info("Received stop event during sleeping")
-                    return
-                time.sleep(1)
-                sleep_cnt += 1
-
-        self.log.info("Received stop event")
+            time.sleep(self.config['check_interval'])

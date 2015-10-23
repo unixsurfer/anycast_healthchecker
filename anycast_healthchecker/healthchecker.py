@@ -8,12 +8,11 @@ A library which provides the HealthChecker class.
 import subprocess
 import sys
 import time
-from threading import Event
 from queue import Queue, Empty
 import re
 
 from anycast_healthchecker.servicecheck import ServiceCheck
-from anycast_healthchecker.utils import OPTIONS_TYPE
+from anycast_healthchecker.utils import OPTIONS_TYPE, get_ip_prefixes_from_bird
 
 
 class HealthChecker(object):
@@ -21,9 +20,8 @@ class HealthChecker(object):
 
     This class should be instantiated once and daemonized.
 
-    It uses a event object to send a stop event to all threads when
-    SIGTERM and SIGHUP are sent. It uses a queue as a store for IP_PREFIXes
-    to be removed from and added to BIRD configuration.
+    It uses a queue as a store for IP_PREFIXes to be removed from and added to
+    BIRD configuration.
     The BIRD configuration file that is being modified, defines a
     constant of IP_PREFIXes for which routes are allowed to be announced
     via routing protocols. When an IP_PREFIX is removed from that
@@ -43,9 +41,6 @@ class HealthChecker(object):
         dummy_prefix('str'): The dummy IP prefix which must be always present
         in bird_constant_name and never removed.
 
-        stop_event(Queue obj): A queue to communicate with stop events to
-        threads.
-
         action(Queue obj): A queue of ip_prefixes and their action to
         take after health of a check is determined. An item is a tuple of
         3 elements:
@@ -56,7 +51,7 @@ class HealthChecker(object):
     Methods:
         run(): Lunches checks and updates bird configuration based on
         the result of the check.
-        catch_signal(signum, frame): Catches signals and sends stop events
+        catch_signal(signum, frame): Catches signals
         to all threads, and then exits main program.
 
     """
@@ -71,7 +66,6 @@ class HealthChecker(object):
         self.bird_conf_file = bird_conf_file
         self.dummy_ip_prefix = dummy_ip_prefix
         self.bird_constant_name = bird_constant_name
-        self.stop_event = Event()
         self.action = Queue()
 
         # A list of service of checks
@@ -227,14 +221,13 @@ class HealthChecker(object):
             _thread = ServiceCheck(
                 service,
                 _config,
-                self.stop_event,
                 self.action,
                 self.log)
             _thread.start()
             _workers.append(_thread)
 
-        # Stay running until we receive a stop event
-        while not self.stop_event.is_set():
+        # Stay running until we are stopped
+        while True:
             try:
                 # Fetch items from action queue
                 health_action = self.action.get(1)
@@ -258,16 +251,10 @@ class HealthChecker(object):
     def catch_signal(self, signum, frame):
         """A signal catcher.
 
-        Upon catching a signal send stop event to all threads, wait a bit
-        and then exit the main program.
-
         Arguments:
             signum (int): The signal number.
             frame (str): The stack frame at the time the signal was received.
         """
         self.log.info("Received {} signal".format(signum))
-        self.stop_event.set()
-        self.log.info("Sent stop event to all threads")
-        time.sleep(2)
         self.log.info("Going down")
         sys.exit(0)
