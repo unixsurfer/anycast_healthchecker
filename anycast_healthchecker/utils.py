@@ -166,9 +166,6 @@ def configuration_check(config):
         None if all checks are successfully passed otherwise exits main
         program
     """
-    # if not touch(config['daemon']['bird_conf']):
-    #     sys.exit(1)
-
     numeric_level = getattr(logging, config['daemon']['loglevel'].upper(), None)
     if not isinstance(numeric_level, int):
         sys.exit('Invalid log level: {}'.format(config['daemon']['loglevel']))
