@@ -91,6 +91,12 @@ def main():
             print()
         sys.exit(0)
 
+    # Perform a sanity check on the configuration
+    if args['--check']:
+        configuration_check(config)
+        print("OK")
+        sys.exit(0)
+
     # Catch already running process and clean up stale pid file.
     pidfile = config['daemon']['pidfile']
     if os.path.exists(pidfile):
@@ -107,10 +113,6 @@ def main():
                 print("Cleaning stale pid file with pid:{}".format(pid))
                 os.unlink(pidfile)
 
-    # Perform a sanity check on the configuration
-    configuration_check(config)
-    if args['--check']:
-        sys.exit(0)
 
     # Map log level to numeric which can be accepted by loggers.
     numeric_level = getattr(logging, config['daemon']['loglevel'].upper(), None)
