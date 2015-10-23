@@ -9,7 +9,6 @@ import subprocess
 import sys
 import time
 from queue import Queue, Empty
-import re
 
 from anycast_healthchecker.servicecheck import ServiceCheck
 from anycast_healthchecker.utils import OPTIONS_TYPE, get_ip_prefixes_from_bird
