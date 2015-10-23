@@ -14,24 +14,22 @@ class ServiceCheck(Thread):
     """Handles a check for a service.
 
     Arguments:
-        config_file (str): The absolute path of the configuration file
-        for the service check.
+        config_file (str): The absolute path of the configuration file for the
+        service check.
         action (Queue obj): A queue object to put health actions.
         log (logger obj): A logger object to use.
 
     Methods:
         run(): Run method of the thread.
     """
-
     def __init__(self, service, config, action, log):
-        """Initialize name and configuration of the thread."""
+        """Set the name of thread to be the name of the service."""
         super(ServiceCheck, self).__init__()
         self.name = service
         self.daemon = True
         self.config = config
         self.action = action
         self.log = log
-
         self.log.info("Loading check for {}".format(self.name))
 
     def _run_check(self):
@@ -67,10 +65,10 @@ class ServiceCheck(Thread):
         return returncode
 
     def _ip_assigned(self):
-        """Checks if IP-PREFIX is assigned to loopback interface.
+        """Checks if IP prefix is assigned to loopback interface.
 
         Returns:
-            True if IP-PREFIX found assigned otherwise False.
+            True if IP prefix found assigned otherwise False.
         """
         cmd = [
             '/sbin/ip',
@@ -83,7 +81,6 @@ class ServiceCheck(Thread):
         ]
 
         self.log.debug("running {}".format(' '.join(cmd)))
-
         try:
             out = subprocess.check_output(
                 cmd,
@@ -118,10 +115,11 @@ class ServiceCheck(Thread):
         It logs a message if check is disabled and it also adds an item
         to the action queue based on 'on_disabled' setting.
 
+        NOTE: Returns False if check is disabled but 'on_disabled' setting has
+        wrong value.
+
         Returns:
             True if check is disabled otherwise False.
-            NOTE: Returns False if check is disabled but 'on_disabled'
-            setting has wrong value.
         """
         if (self.config['check_disabled']
                 and self.config['on_disabled'] == 'withdraw'):
@@ -149,20 +147,20 @@ class ServiceCheck(Thread):
     def run(self):
         """Discovers the health of a service.
 
-        It runs until it being killed from main program and is responsible to
-        put an item into the queue. If check is successful after a number of
-        consecutive successful health checks then it considers service UP
-        and requires for its IP_PREFIX to be added in BIRD configuration,
-        otherwise ask for a removal.
-
-        Rise and fail options prevent unnecessary configuration changes
-        when the check is flapping.
+        Runs until it is being killed from main program and is responsible to
+        put an item into the queue based on the status of the health check.
+        The status of service is consider UP after a number of consecutive
+        successful health checks, in that case it asks main program to add the
+        IP prefix associated with service to BIRD configuration, otherwise ask
+        for a removal.
+        Rise and fail options prevent unnecessary configuration changes when
+        check is flapping.
         """
         up_cnt = 0
         down_cnt = 0
         # The current established state of the service check, it can be
-        # either UP or DOWN but only after a number of consecutive
-        # successful or failure health checks.
+        # either UP or DOWN but only after a number of consecutive successful
+        # or failure health checks.
         check_state = 'Unknown'
 
         for key, value in self.config.items():
@@ -189,10 +187,10 @@ class ServiceCheck(Thread):
             elif self._run_check():
                 if up_cnt == (self.config['check_rise'] - 1):
                     self.log.info("Status UP")
-                    # Service exceeded all consecutive checks.
-                    # Set its state accordingly and put an item in queue.
-                    # But to it only if previous state was different, to catch
-                    # uncessary bird reloads when a service flaps between states
+                    # Service exceeded all consecutive checks. Set its state
+                    # accordingly and put an item in queue. But to it only if
+                    # previous state was different, to catch unnecessary bird
+                    # reloads when a service flaps between states.
                     if check_state != 'UP':
                         check_state = 'UP'
                         self.action.put((self.name,
@@ -213,7 +211,7 @@ class ServiceCheck(Thread):
                     # Service exceeded all consecutive checks.
                     # Set its state accordingly and put an item in queue.
                     # But to it only if previous state was different, to catch
-                    # uncessary bird reloads when a service flaps between states
+                    # unnecessary bird reloads when a service flaps between states
                     if check_state != 'DOWN':
                         check_state = 'DOWN'
                         self.action.put((self.name,
