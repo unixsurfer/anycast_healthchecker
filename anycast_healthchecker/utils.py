@@ -143,8 +143,9 @@ def ip_prefixes_check(config, services):
     if not ip_prefixes_in_bird:
         sys.exit("Found zero IP prefixes in {}".format(
             config['daemon']['bird_conf']))
-    unconfgured_ip_prefixes = ip_prefixes_in_bird.difference(ip_prefixes)
-    if unconfgured_ip_prefixes:
+
+    unconfigured_ip_prefixes = ip_prefixes_in_bird.difference(ip_prefixes)
+    if unconfigured_ip_prefixes:
         sys.exit("There are IP prefixes in {fh} for which a configuration "
                  "isn't supplied".format(fh=config['daemon']['bird_conf']))
 
