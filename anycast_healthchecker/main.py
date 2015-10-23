@@ -53,7 +53,7 @@ DEFAULT_OPTIONS = {
         'bird_variable': 'ACAST_PS_ADVERTISE',
         'loglevel': 'debug',
         'log_maxbytes': '104857600',
-        'log_backups': '81',
+        'log_backups': '8',
         'log_file': '/var/log/anycast-healthchecker/anycast-healthchecker.log',
         'stderr_file': '/var/log/anycast-healthchecker/stderr.log',
         'stdout_file': '/var/log/anycast-healthchecker/stdout.log',
