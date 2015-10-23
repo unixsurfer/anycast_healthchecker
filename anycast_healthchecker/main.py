@@ -92,8 +92,8 @@ def main():
         sys.exit(0)
 
     # Perform a sanity check on the configuration
+    configuration_check(config)
     if args['--check']:
-        configuration_check(config)
         print("OK")
         sys.exit(0)
 
