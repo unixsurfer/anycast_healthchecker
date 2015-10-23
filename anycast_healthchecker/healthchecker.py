@@ -15,44 +15,38 @@ from anycast_healthchecker.utils import OPTIONS_TYPE, get_ip_prefixes_from_bird
 
 
 class HealthChecker(object):
-    """Lunches service checks and triggers a reconfiguration on BIRD.
+    """Lunches service checks and triggers a reconfiguration on BIRD daemon.
 
     This class should be instantiated once and daemonized.
 
-    It uses a queue as a store for IP_PREFIXes to be removed from and added to
-    BIRD configuration.
-    The BIRD configuration file that is being modified, defines a
-    constant of IP_PREFIXes for which routes are allowed to be announced
-    via routing protocols. When an IP_PREFIX is removed from that
-    constant, BIRD daemon withdraws the route associated that IP_PREFIX.
+    It uses a queue as a store for IP prefixes to be removed from and added to
+    BIRD configuration file.
 
     Arguments:
-        log(logger): A logger to log messages.
+        log(logger obj): A logger to log messages.
 
         config(configparger obj): A configparser object with the configuration
 
-        bird_conf_file('str'): The absolute path of file which contains
-        the definition of constant used by BIRD daemon.
+        bird_conf_file('str'): The absolute path of file which contains the
+        definition of constant used by BIRD daemon to store IP prefixes for
+        which routes are allowed to be advertised
 
-        bird_constant_name('str'): The constant name used in the bird
+        bird_constant_name('str'): The constant name used in the BIRD daemon
         configuration.
 
-        dummy_prefix('str'): The dummy IP prefix which must be always present
-        in bird_constant_name and never removed.
+        dummy_prefix('str'): A dummy IP prefix which must be always present
+        in bird_constant_name and it should never be removed from it.
 
-        action(Queue obj): A queue of ip_prefixes and their action to
-        take after health of a check is determined. An item is a tuple of
-        3 elements:
-            1st: The name of the thread.
-            2nd: ip_prefix.
+        action(Queue obj): A queue of IP prefixes and their action to be taken
+        based on the state of health check. An item is a tuple of 3 elements:
+            1st: name of the thread.
+            2nd: IP prefix.
             3nd: Action to take, either 'add' or 'del'.
 
     Methods:
-        run(): Lunches checks and updates bird configuration based on
+        run(): Lunches checks and updates BIRD configuration based on
         the result of the check.
         catch_signal(signum, frame): Catches signals
-        to all threads, and then exits main program.
-
     """
     def __init__(self,
                  log,
@@ -76,7 +70,7 @@ class HealthChecker(object):
     def _update_bird_prefix_conf(self, health_action):
         """Updates BIRD configuration.
 
-        It adds/removes entries from a list and updates generation timestamp.
+        Adds/removes entries from a list and updates generation time stamp.
         Main program will exit if configuration file cant be read/written.
 
         Arguments:
@@ -99,20 +93,19 @@ class HealthChecker(object):
 
         try:
             prefixes = get_ip_prefixes_from_bird(self.bird_conf_file, die=False)
-        except OSError as error:
-            self.log.critical("Failed to open bird configuration")
-            self.log.critical(error)
+        except OSError as err:
+            self.log.error("Failed to open bird configuration, {}".format(err))
             self.log.critical("This is a FATAL error, exiting")
             sys.exit(1)
 
         if not prefixes:
-            self.log.critical("Found empty bird configuration:{}".format(
+            self.log.error("Found empty bird configuration:{}".format(
                 self.bird_conf_file))
             self.log.critical("This is a FATAL error, exiting")
             sys.exit(1)
 
         if self.dummy_ip_prefix not in prefixes:
-            self.log.warning("Dummy IP Prefix {} wasn't found in bird "
+            self.log.warning("Dummy IP prefix {} wasn't found in bird "
                              "configuration, adding it. This shouldn't have "
                              "happened!".format(self.dummy_ip_prefix))
             prefixes.insert(0, self.dummy_ip_prefix)
@@ -131,8 +124,8 @@ class HealthChecker(object):
             self.log.info("No updates for bird configuration")
             return conf_updated
 
-        # OK some IP_PREFIXes are either removed or added,
-        # go and truncate configuration with new data.
+        # some IP prefixes are either removed or added, truncate configuration
+        # with new data.
         try:
             with open(self.bird_conf_file, 'r+') as bird_conf:
                 bird_conf.seek(0)
@@ -163,18 +156,17 @@ class HealthChecker(object):
     def _reload_bird(self):
         """Reloads BIRD daemon.
 
-        It uses 'birdc configure' to reload BIRD. Some useful information
-        on how birdc works:
-            -- It returns a non-zero exit code only when it can't access
-            BIRD via the control socket (/var/run/bird.ctl). This happens
-            when BIRD daemon is down or when the caller of birdc doesn't
-            have access to the control socket.
-            -- It returns zero exit code when reload fails due to invalid
-            config, thus we catch this case by looking at the output and
-            not at the exit code.
-            -- It returns zero exit code when reload was successful.
-            -- It should never timeout, if it does then it is a bug.
-
+        Runs 'birdc configure' to reload BIRD. Some useful information on how
+        birdc tool works:
+            -- Returns a non-zero exit code only when it can't access BIRD
+            daemon via the control socket (/var/run/bird.ctl).
+            This happens when BIRD daemon is either down or when the caller of
+            birdc doesn't have access to the control socket.
+            -- Returns zero exit code when reload fails due to invalid
+            configuration. Thus, we catch this case by looking at the output
+            and not at the exit code.
+            -- Returns zero exit code when reload was successful.
+            -- Should never timeout, if it does then it is a bug.
         """
         _cmd = ['sudo', '/usr/sbin/birdc', 'configure']
         try:
@@ -230,7 +222,7 @@ class HealthChecker(object):
                 # Fetch items from action queue
                 health_action = self.action.get(1)
                 self.log.info(("Returned an item from the queue for {} with "
-                               "IP_PREFIX {} and action to {} from Bird "
+                               "IP prefix {} and action to {} from Bird "
                                "configuration").format(health_action[0],
                                                        health_action[1],
                                                        health_action[2]))
@@ -240,7 +232,7 @@ class HealthChecker(object):
                 if bird_updated:
                     self._reload_bird()
             except Empty:
-                # Just keep trying to fetch item
+                # Just keep trying to fetch items
                 continue
 
         for _thread in _workers:
