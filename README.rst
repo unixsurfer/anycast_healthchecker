@@ -2,7 +2,7 @@
 .. README.rst
 
 =====================
-anycast_healthchecker
+anycast-healthchecker
 =====================
 
     *A healthchecker for Anycasted services.*
@@ -13,25 +13,307 @@ anycast_healthchecker
 Introduction
 ------------
 
-**anycast_healthchecker** is a Python program to monitor a service and instruct
+**anycast-healthchecker** is a Python program to monitor a service and instruct
 `Bird`_ daemon to advertise or withdraw a route associated with the service
 based on the results of the health check.
 
 It makes sure that a route is only advertised from the local node if and only if
-the service is healthy. It works together with `Bird`_ daemon to achieve this
-using a specific configuration. Thus, **anycast_healthchecker**  is useful when is
-used in conjuction with `Bird`_ daemon and with a specific configuration logic
-in place.
+the service is healthy. It works together with `Bird`_ daemon to achieve this.
+Thus, **anycast-healthchecker** is useful when is used in conjunction with
+`Bird`_ daemon and with a specific configuration logic in place.
 
 `Bird`_ is a powerful and functional dynamic IP routing daemon with a lot of
-capabilities and features. Current release of **anycast_healthchecker**
-supports only `Bird`_ daemon and its configuration.
+capabilities and features.
 
+
+What is Anycast
+---------------
+
+Anycast is a network address scheme where traffic from a sender has more than
+one potential receivers, but only one of them receives it. Routing protocols,
+`BGP`_ or `OSPF`_, decides which one of the potential receivers will actually
+receive traffic based on the topology of the network. The main attribute which
+contributes to the decision is the distance in terms of hops between the sender
+and the receiver. The nearest receiver to a sender always receive the traffic
+and this only change if something changes on the network, another receiver
+closest to the sender appears or current receiver disappears. These potential
+receivers use `BGP`_ or `OSPF`_ by running an Internet Routing daemon, `Bird`_
+or quagga, to simultaneously announce the same destination IP address from
+different places on the network. Due to the nature of Anycast these receivers
+do not need to be on the same network and as a result they can be located on any
+network across a global network infrastructure. Anycast doesn't balance traffic
+as only one receiver attracts traffic from senders. For instance, if there are
+two servers which announce the same IP address in certain location for a service,
+traffic will be distributed across these two servers unevenly as clients are
+spread across the network in an uneven way.
+
+Anycast is being used as a mechanism to switch traffic between and within
+data-centers for the following main reasons:
+
+* the switch of traffic occurs without the need to enforce a change to the clients
+
+In case of disaster of a service in one location, traffic from location will be
+switched to another DC without any manual intervention and most importantly
+without pushing a change to the clients which you don't always control.
+
+* the switch happens within few milliseconds
+
+The same technology can be used for balancing traffic using
+`Equal-Cost Multi-Path`_.
+
+ECMP routing is another network technology where traffic can be routed over
+multiple paths. In the context of routing protocols, path is the route a packet
+has to take in order to be delivered to a destination. Because these multiple
+paths have the same cost (in terms of hops), traffic is balanced across them.
+This provides the possibility to perform load-balancing of traffic across
+multiple servers. Routers are the devices which perform load-balancing of
+traffic and most of them use a deterministic way to select the server based on:
+
+* source IP
+* source PORT
+* destination IP
+* destination PORT
+
+The combination of the above properties of the packet is called network flow.
+Each flow is different, thus traffic is evenly balanced across all servers.
+These servers run an Internet Routing daemon in the same way as with Anycast
+case but with the major difference that all servers receive traffic.
+The main characteristic of this type of load-balancing is that is stateless.
+Router balances traffic for a destination IP address based on the quadruple
+flow without the need to understand and inspect protocols above Layer 3.
+As a result it is very cheap in terms of resources and very fast at the same
+time. This is commonly advertised as balancing of traffic at wire-speed.
 
 How it works
 ------------
 
-TBD
+Current release of **anycast-healthchecker** supports only Bird daemon which
+has to be configured in a specific way. Thus, it is mandatory to explain very
+briefly how Bird handles advertisements for routes.
+
+Bird maintains a routing information base (`RIB`_) and various protocols
+import/export routes to/from it. The diagram below illustrates how Bird
+advertises routes for IPs assigned to loopback interface to the rest of the
+network using BGP protocol. Bird can also imports routes learned via BGP/OSPF
+protocols, but this part of the routing process is irrelevant to the work of
+anycast-healthchecker.
+
+
+.. image:: bird_daemon_rib_explained.png
+   :scale: 60%
+
+A route is always associated with a service which runs locally on the box.
+The Anycasted service is a daemon (HAProxy, Nginx, Bind etc) which processes
+incoming traffic and listens to an IP (Anycast Service Address) for which a
+route exists in RIB and it's advertised from the local node to the network
+by Bird.
+
+As it is exhibited in the above diagram a route is advertised only when:
+
+#. IP is assigned to loopback interface
+#. `direct`_ protocol from Bird imports a route in RIB for that IP
+#. BGP/OSPF protocols exports that route from RIB to a network peer
+
+The route associated with the Anycasted service must be either advertised or
+withdrawn based on the status of the service, otherwise traffic will be routed
+to the local node regardless of the status of the service.
+
+Bird provides `filtering`_ capabilities with the help of a very simple
+programming language. A filter can be used to either accept or reject routes
+before they are exported from RIB to the network. The filter look up to a simple
+list data structure which contains IP prefixes for which routes are allowed to
+be advertised. Data structure is stored in a text file and sourced by Bird upon
+start or reload or reconfigure of the daemon. The following diagram illustrates
+how this technique works:
+
+.. image:: bird_daemon_filter_explained.png
+   :scale: 60%
+
+This configuration logic allows a separate process to update the list by adding
+or removing IP prefixes and trigger a reconfigure on Bird in order to advertise
+or withdraw routes.  **anycast-healthchecker** is the process which monitors
+Anycasted services and based on the status of the health checks updates the list
+of IP prefixes.
+
+Bird doesn't allow the definition of a list with no elements and when that happens
+Bird will emit an error and refuse to start. Because of this anycast-healthchecker
+makes sure that there is always an IP prefix in the list, see dummy_ip_prefix
+configuration option in `Configuring checks for services`_.
+
+Configuring anycast-healthchecker
+---------------------------------
+
+Bird configuration
+##################
+
+Below is an example configuration for Bird which establishes the logic described
+`How it works`_ and is the minimum configuration which is required by
+anycast-healthchecker to be in place, otherwise there wouldn't be a proper monitor for Anycasted services.
+
+From the following snippet of Bird configuration (bird.conf) the most import
+bit is the use of where clause with a function(match_route) in export parameter
+of BGP protocol. Routes before are exported will passed to that function::
+
+    include "/etc/bird.d/*.conf";
+    protocol device {
+        scan time 10;
+    }
+    protocol direct direct1 {
+        interface "lo";
+            debug all;
+            export none;
+            import all;
+    }
+    template bgp bgp_peers {
+        bfd on;
+        debug all;
+        import none;
+        export where match_route();
+        local as 64815;
+    }
+    protocol bgp BGP1 from bgp_peers {
+        disabled no;
+        description "Peer-BGP1";
+        neighbor 10.248.7.254 as 64814;
+    }
+
+The match_function (/etc/bird.d/match-route.conf) look up the network prefix of
+the route to a list and accept the export if network prefix is in that list::
+
+    function match_route()
+    {
+        return net ~ ACAST_PS_ADVERTISE;
+    }
+
+The list ACAST_PS_ADVERTISE of IP prefixes is defined in /etc/bird.d/anycast-prefixes.conf::
+
+    define ACAST_PS_ADVERTISE =
+        [
+            10.189.200.255/32
+        ];
+
+Configuring the daemon
+######################
+
+anycast-healthchecker uses the Python `daemon`_ library to implement a
+well-behaved Unix daemon process and it also utilizes threading for running each
+service check.
+
+anycast-healthchecker uses `INI`_ as a format of the configuration files.
+The below is an example configuration for the daemon (anycast-healthchecker.conf)::
+
+    [DEFAULT]
+    interface            = lo
+
+    [daemon]
+    pidfile              = /var/run/anycast-healthchecker/anycast-healthchecker.pid
+    bird_conf            = /etc/bird.d/anycast-prefixes.conf
+    bird_variable        = ACAST_PS_ADVERTISE
+    bird_reconfigure_cmd = sudo /usr/sbin/birdc configure
+    loglevel             = debug
+    log_maxbytes         = 104857600
+    log_backups          = 8
+    log_file             = /var/log/anycast-healthchecker/anycast-healthchecker.log
+    stderr_file          = /var/log/anycast-healthchecker/stderr.log
+    stdout_file          = /var/log/anycast-healthchecker/stdout.log
+    dummy_ip_prefix      = 10.189.200.255/32
+
+The daemon doesn't need to run as root as long as it has enough grands to
+modify the Bird configuration(anycast-prefixes.conf) and trigger a
+reconfiguration on bird by running `birdc configure`. In the above example we
+use sudo and sudoers file has being configured accordingly.
+
+DEFAULT section
+***************
+
+Below are the default settings for all service checks, see `Configuring checks
+for services`_ for explanation on the parameters.
+
+:interface: lo
+:check_interval: 10
+:check_timeout: 2
+:check_rise: 2
+:check_fail: 2
+:check_disabled: true
+:on_disable: withdraw
+
+Daemon section
+**************
+
+:pidfile: a file to store pid of the daemon
+:bird_conf: a file with the variable containing IP prefixes allowed to be exported
+:bird_variable: the name of the variable
+:bird_reconfigure_cmd: a command to trigger a reconfiguration of Bird
+:loglevel: log level
+:log_maxbytes: maximum sizes in bytes for log files
+:log_backups: number of old log files to maintain
+:log_file: a file to log messages
+:stderr_file: a file to redirect standard error messages emitted by the daemon
+:stdout_file: a file to redirect standard output messages emitted by the daemon
+
+
+Configuring checks for services
+###############################
+
+An example of a service check configuration::
+
+    [foo.bar.com]
+    check_cmd = /usr/bin/curl -A 'anycast-healthchecker' --fail --silent http://10.52.12.1/
+    check_interval = 10
+    check_timeout = 5
+    check_fail = 2
+    check_rise = 2
+    check_disabled = false
+    on_disabled = withdraw
+    ip_prefix = 10.52.12.1/32
+
+The configuration for a single service check is defined in one section.
+The name of the section becomes the name of the service check and appears in
+the log files for easier searching of errors/warnings messages.
+
+:check_cmd: the command to run to determine the status of the service based
+            on the return code. Complex health checking should be wrapped
+            in a script file. Output is ignored.
+:check_interval: how often to run the check in seconds
+:check_timeout: set timeout in seconds for the check command
+:check_fail: a service considered as down after <n> consecutive unsuccessful health checks
+:check_rise: a service considered as up after <n> consecutive successful health checks
+:check_disabled: either disable the check with `true` or enable it with `false`
+:on_disabled: what to do when check is disabled, either withdraw or advertise
+:ip_prefix: IP prefix associated with the service. It **must be** assigned to
+            the interface set in `interface` parameter
+:interface: the name of the interface that `ip_prefix` is assigned to
+
+You can squeeze multiple sections in one file or one provide different files
+per section.
+
+Starting the daemon
+###################
+
+Daemon CLI usage::
+
+    % anycast-healthchecker --help
+    A simple healthchecker for Anycasted services.
+
+    Usage:
+        anycast-healthchecker [-f <file> -d <directory> -c ] [-p | -P]
+
+    Options:
+        -f, --file <file>  configuration file with settings for the daemon
+                           [default: /etc/anycast-healthchecker.conf]
+        -d, --dir <dir>    directory with configuration files for service checks
+                           [default: /etc/anycast-servicecheck.d]
+        -c, --check        perform a sanity check on configuration
+        -p, --print        show default settings for daemon and service checks
+        -P, --print-conf   show configuration
+        -v, --version      show version
+        -h, --help         show this screen
+
+You can lunch the daemon by supplying a configuration file and a directory with
+configuration for service checks::
+
+  % anycast-healthchecker -f ./anycast-healthchecker.conf -d ./anycast-healthchecker.d
+
 
 Installation
 ------------
@@ -85,6 +367,11 @@ I would love to hear what other people think about **anycast_healthchecker** and
 feedback. Please post your comments, bug reports, wishes on my `issues page
 <https://github.com/unixsurfer/anycast_healthchecker/issues>`_.
 
+Testing
+#######
+
+Use local_run.sh script found in the root of the project......TBD....
+
 Licensing
 ---------
 
@@ -105,4 +392,11 @@ Contacts
 **Author**: Palvos Parissis <pavlos.parissis@gmail.com>
 
 .. _Bird: http://bird.network.cz/
-
+.. _BGP: https://en.wikipedia.org/wiki/Border_Gateway_Protocol
+.. _OSPF: https://en.wikipedia.org/wiki/Open_Shortest_Path_First
+.. _Equal-Cost Multi-Path: https://en.wikipedia.org/wiki/Equal-cost_multi-path_routing
+.. _direct: http://bird.network.cz/?get_doc&f=bird-6.html#ss6.4
+.. _filtering: http://bird.network.cz/?get_doc&f=bird-5.html
+.. _RIB: https://en.wikipedia.org/wiki/Routing_table
+.. _INI: https://en.wikipedia.org/wiki/INI_file
+.. _daemon: https://pypi.python.org/pypi/python-daemon/

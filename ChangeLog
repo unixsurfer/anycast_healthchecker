@@ -1,6 +1,47 @@
 CHANGES
 =======
 
+* updates
+* update
+* update
+* update
+* more update
+* more updates
+* more updates
+* add bird conf
+* more updates on readme plus new drawings
+* readme updates and images
+* rst fun
+* add anycast part
+* add example and working bird configuration
+* use a more reasonable default value for log_backups option
+* ServiceCheck: remove unnecessary check for wrong value for on_disabled option
+* ServiceCheck: updates on docstrings/comments
+* HealthChecker: docstrings/comment updates
+* add an item to TODO
+* more useful logging on startup
+* make pylint happy by shorten length of lines
+* remove items from TODO list
+* include an example anycast-healthchecker.conf file
+* healthchecker: remove unnecessary import of re module
+* remove unnecessary empty line
+* healthchecker: use get_ip_prefixes_from_bird to fetch IP prefixes
+* ServiceCheck: remove unnecessary code
+* local_run: drop sleep as it isn't needed anymore
+* MAJOR: drop event system as it is not needed anymore
+* local_run: use correct file extension
+* utils: get_ip_prefixes_from_bird returns a list
+* HealthChecker: docstring updates
+* utils: remove unnecessary commented lines
+* utils: fix typo in variable name
+* utils: docstrings updates
+* BUG: always perform sanity checks
+* BUG:perform sanity check before we check if daemon is running
+* add support for showing configuration
+* add items in TODO list
+* remove items from TODO which are completed
+* MAJOR:switch to INI files with configparser and docopt for CLI
+* add item in TODO
 * use the 'to' option in ip tool to list addresses matching the prefix
 
 0.3.0
