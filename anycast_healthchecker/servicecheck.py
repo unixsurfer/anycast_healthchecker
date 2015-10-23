@@ -166,11 +166,6 @@ class ServiceCheck(Thread):
         # successful or failure health checks.
         check_state = 'Unknown'
 
-        # Exit thread when config is empty
-        if not self.config:
-            self.log.error("Thread is stopped as configuration empty")
-            return
-
         for key, value in self.config.items():
             self.log.debug("{}={}:{}".format(key, value, type(value)))
 
