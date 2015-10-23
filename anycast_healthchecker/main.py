@@ -113,7 +113,6 @@ def main():
                 print("Cleaning stale pid file with pid:{}".format(pid))
                 os.unlink(pidfile)
 
-
     # Map log level to numeric which can be accepted by loggers.
     numeric_level = getattr(logging, config['daemon']['loglevel'].upper(), None)
 

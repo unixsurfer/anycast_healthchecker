@@ -146,7 +146,8 @@ class HealthChecker(object):
                 # trailing comma.
                 for prefix in prefixes[:-1]:
                     bird_conf.write("{}{},\n".format(8 * ' ', prefix))
-                bird_conf.write("{}{}\n".format(8 * ' ', prefixes[len(prefixes) - 1]))
+                bird_conf.write("{}{}\n".format(8 * ' ',
+                                                prefixes[len(prefixes) - 1]))
                 bird_conf.write("{}];\n".format(4 * ' '))
                 bird_conf.truncate()
                 bird_conf.close()
