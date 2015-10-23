@@ -44,7 +44,7 @@ define ACAST_PS_ADVERTISE =
 EOT
 fi
 echo "--------create service checks-------------"
-if [ ! -e ${TEST_DIR}/etc/anycast-healthcheck.d/foo.bar.com.json ]; then
+if [ ! -e ${TEST_DIR}/etc/anycast-healthcheck.d/foo.bar.com.conf ]; then
     cat <<EOT > ${TEST_DIR}/etc/anycast-healthcheck.d/foo.bar.com.conf
 [foo.bar.com]
 check_cmd = curl -A 'anycast-healthchecker' --fail --silent --connect-timeout 1 --max-time 1 -o /dev/null  http://10.52.12.1/
