@@ -71,7 +71,7 @@ class HealthChecker(object):
         self.services = config.sections()
         self.services.remove('daemon')
 
-        self.log.debug("Initialize HealthChecker")
+        self.log.debug("Initialize healthchecker")
 
     def _update_bird_prefix_conf(self, health_action):
         """Updates BIRD configuration.

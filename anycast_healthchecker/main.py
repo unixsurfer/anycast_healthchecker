@@ -169,9 +169,7 @@ def main():
 
     # OK boy go and daemonize yourself.
     with context:
-        log.info("Running version {}".format(version))
-        stdout_log.info("Running version {}".format(version))
-        stderr_log.info("Running version {}".format(version))
+        log.info("Starting daemon {}".format(version))
         checker.run()
 # This is the standard boilerplate that calls the main() function.
 if __name__ == '__main__':
