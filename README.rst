@@ -250,8 +250,8 @@ Daemon section
 :log_file: a file to log messages
 :stderr_file: a file to redirect standard error messages emitted by the daemon
 :stdout_file: a file to redirect standard output messages emitted by the daemon
-dummy_ip_prefix: a IP prefix in form of <IP>/prefixlength> which will be always
-present in the `bird_variable` to avoid having an empty list.
+:dummy_ip_prefix: a IP prefix in form of <IP>/prefixlength> which will be always
+                  present in the `bird_variable` to avoid having an empty list.
 
 :NOTE: The dummy_ip_prefix **must** not be used by a service, assigned to
        loopback interface and configured anywhere on the network as
