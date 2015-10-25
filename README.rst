@@ -229,27 +229,27 @@ DEFAULT section
 Below are the default settings for all service checks, see `Configuring checks
 for services`_ for explanation on the parameters.
 
-interface: lo
-check_interval: 10
-check_timeout: 2
-check_rise: 2
-check_fail: 2
-check_disabled: true
-on_disable: withdraw
+:interface: lo
+:check_interval: 10
+:check_timeout: 2
+:check_rise: 2
+:check_fail: 2
+:check_disabled: true
+:on_disable: withdraw
 
 Daemon section
 **************
 
-pidfile: a file to store pid of the daemon
-bird_conf: a file with the variable containing IP prefixes allowed to be exported
-bird_variable: the name of the variable
-bird_reconfigure_cmd: a command to trigger a reconfiguration of Bird
-loglevel: log level
-log_maxbytes: maximum sizes in bytes for log files
-log_backups: number of old log files to maintain
-log_file: a file to log messages
-stderr_file: a file to redirect standard error messages emitted by the daemon
-stdout_file: a file to redirect standard output messages emitted by the daemon
+:pidfile: a file to store pid of the daemon
+:bird_conf: a file with the variable containing IP prefixes allowed to be exported
+:bird_variable: the name of the variable
+:bird_reconfigure_cmd: a command to trigger a reconfiguration of Bird
+:loglevel: log level
+:log_maxbytes: maximum sizes in bytes for log files
+:log_backups: number of old log files to maintain
+:log_file: a file to log messages
+:stderr_file: a file to redirect standard error messages emitted by the daemon
+:stdout_file: a file to redirect standard output messages emitted by the daemon
 dummy_ip_prefix: a IP prefix in form of <IP>/prefixlength> which will be always
 present in the `bird_variable` to avoid having an empty list.
 
