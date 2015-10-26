@@ -1,2 +1,1 @@
-OPTIONS="-c /etc/anycast-servicecheck.d -b /etc/bird.d/anycast-prefixes.conf -g ACAST_PS_ADVERTISE"
 RUNASUSER="healthchecker"
