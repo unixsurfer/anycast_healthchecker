@@ -6,12 +6,11 @@
 # description: A healthchecker daemon to run checks against multiple services \
 #              and either advertise or withdraw a route for an IP_PREFIX
 #              which is associated with the service.
-#              a backslash>
 
 # Source function library.
 . /etc/rc.d/init.d/functions
 
-exec="/opt/blue-python/3.4/bin/anycast-healthchecker"
+exec="/usr/bin/anycast-healthchecker"
 prog="anycast-healthchecker"
 
 OPTIONS=
