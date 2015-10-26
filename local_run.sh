@@ -110,7 +110,7 @@ if [ $? -eq 0 ]; then
     pkill -F "${PWD}"/var/var/run/anycast-healthchecker/anycast-healthchecker.pid
 fi
 "${HOME}"/.local/bin/anycast-healthchecker -f "${PWD}"/var/etc/anycast-healthchecker.conf \
-    -d "${PWD}"/var/etc/anycast-healthcheck.d
+    -d "${PWD}"/var/etc/anycast-healthchecker.d
 if [ $? -eq 0 ]; then
     echo "--------daemon started!-------------------"
 fi
