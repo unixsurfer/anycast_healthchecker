@@ -1,13 +1,9 @@
 TODO
 ====
 
-#. Add proper example configuration in README
-
-#. Add description in README about how we instruct Bird daemon to add/remove
-   routes
-
 #. Add support for graphite metrics
 
 #. Improve the way we handle timeouts/errors when we run ip tool
 
-#. Make path of birdc configurable
+#. Consider switching from threads to asyncio, requires to drop support for
+   Pyhton version < 3.5. I can live with that.
