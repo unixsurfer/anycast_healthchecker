@@ -15,16 +15,13 @@ Introduction
 
 **anycast-healthchecker** is a Python program to monitor a service and instruct
 `Bird`_ daemon to advertise or withdraw a route associated with the service
-based on the results of the health check.
+based on the result of a health check.
 
 It makes sure that a route is only advertised from the local node if and only if
-the service is healthy. It works together with `Bird`_ daemon to achieve this.
-Thus, **anycast-healthchecker** is useful when is used in conjunction with
-`Bird`_ daemon and with a specific configuration logic in place.
-
-`Bird`_ is a powerful and functional dynamic IP routing daemon with a lot of
-capabilities and features.
-
+the service associated with the route is healthy. It works together with `Bird`_
+daemon to achieve this. Thus, **anycast-healthchecker** is useful when is used
+in conjunction with `Bird`_ daemon and with a specific configuration logic in
+place.
 
 What is Anycast
 ---------------
@@ -40,7 +37,7 @@ closest to the sender appears or current receiver disappears. These potential
 receivers use `BGP`_ or `OSPF`_ by running an Internet Routing daemon, `Bird`_
 or quagga, to simultaneously announce the same destination IP address from
 different places on the network. Due to the nature of Anycast these receivers
-do not need to be on the same network and as a result they can be located on any
+don't need to be on the same network and as a result they can be located on any
 network across a global network infrastructure. Anycast doesn't balance traffic
 as only one receiver attracts traffic from senders. For instance, if there are
 two servers which announce the same IP address in certain location for a service,
@@ -84,8 +81,8 @@ flow without the need to understand and inspect protocols above Layer 3.
 As a result it is very cheap in terms of resources and very fast at the same
 time. This is commonly advertised as balancing of traffic at wire-speed.
 
-How it works
-------------
+How it anycast healthchecking works
+-----------------------------------
 
 Current release of **anycast-healthchecker** supports only Bird daemon which
 has to be configured in a specific way. Thus, it is mandatory to explain very
@@ -121,10 +118,10 @@ to the local node regardless of the status of the service.
 Bird provides `filtering`_ capabilities with the help of a very simple
 programming language. A filter can be used to either accept or reject routes
 before they are exported from RIB to the network. The filter look up to a simple
-list data structure which contains IP prefixes for which routes are allowed to
-be advertised. Data structure is stored in a text file and sourced by Bird upon
-start or reload or reconfigure of the daemon. The following diagram illustrates
-how this technique works:
+list data structure which contains IP prefixes (<IP>/<prefix length>) for which
+routes are allowed to be advertised. Data structure is stored in a text file
+and sourced by Bird upon start or reload or reconfigure of the daemon.
+The following diagram illustrates how this technique works:
 
 .. image:: bird_daemon_filter_explained.png
    :scale: 60%
@@ -147,12 +144,13 @@ Bird configuration
 ##################
 
 Below is an example configuration for Bird which establishes the logic described
-`How it works`_ and is the minimum configuration which is required by
-anycast-healthchecker to be in place, otherwise there wouldn't be a proper monitor for Anycasted services.
+`How it anycast healthchecking works`_ and is the minimum configuration which is
+required by anycast-healthchecker to be in place, otherwise there wouldn't be a
+proper monitor for Anycasted services.
 
 From the following snippet of Bird configuration (bird.conf) the most import
-bit is the use of where clause with a function(match_route) in export parameter
-of BGP protocol. Routes before are exported will passed to that function::
+bit is the use of where clause with a function (match_route) in export parameter
+of BGP protocol. Routes before are exported will be passed to that function::
 
     include "/etc/bird.d/*.conf";
     protocol device {
@@ -177,8 +175,9 @@ of BGP protocol. Routes before are exported will passed to that function::
         neighbor 10.248.7.254 as 64814;
     }
 
-The match_function (/etc/bird.d/match-route.conf) look up the network prefix of
-the route to a list and accept the export if network prefix is in that list::
+The match_function (/etc/bird.d/match-route.conf) look up the IP prefix of
+the route to a list and accept the export if it finds the IP prefix in that
+list::
 
     function match_route()
     {
@@ -189,7 +188,8 @@ The list ACAST_PS_ADVERTISE of IP prefixes is defined in /etc/bird.d/anycast-pre
 
     define ACAST_PS_ADVERTISE =
         [
-            10.189.200.255/32
+            10.189.200.255/32,
+            10.2.3.1
         ];
 
 Configuring the daemon
@@ -219,7 +219,7 @@ The below is an example configuration for the daemon (anycast-healthchecker.conf
     dummy_ip_prefix      = 10.189.200.255/32
 
 The daemon doesn't need to run as root as long as it has enough grands to
-modify the Bird configuration(anycast-prefixes.conf) and trigger a
+modify the Bird configuration (anycast-prefixes.conf) and trigger a
 reconfiguration on bird by running `birdc configure`. In the above example we
 use sudo and sudoers file has being configured accordingly.
 
@@ -250,8 +250,9 @@ Daemon section
 :log_file: a file to log messages
 :stderr_file: a file to redirect standard error messages emitted by the daemon
 :stdout_file: a file to redirect standard output messages emitted by the daemon
-:dummy_ip_prefix: a IP prefix in form of <IP>/prefixlength> which will be always
+:dummy_ip_prefix: a IP prefix in form of <IP>/<prefixlength> which will be always
                   present in the `bird_variable` to avoid having an empty list.
+
 
 :NOTE: The dummy_ip_prefix **must** not be used by a service, assigned to
        loopback interface and configured anywhere on the network as
