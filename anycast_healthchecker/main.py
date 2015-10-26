@@ -15,7 +15,7 @@ Options:
     -f, --file <file>  configuration file with settings for the daemon
                        [default: /etc/anycast-healthchecker.conf]
     -d, --dir <dir>    directory with configuration files for service checks
-                       [default: /etc/anycast-servicecheck.d]
+                       [default: /etc/anycast-healthchecker.d]
     -c, --check        perform a sanity check on configuration
     -p, --print        show default settings for daemon and service checks
     -P, --print-conf   show configuration
