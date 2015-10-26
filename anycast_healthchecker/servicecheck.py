@@ -86,14 +86,6 @@ class ServiceCheck(Thread):
                 cmd,
                 universal_newlines=True,
                 timeout=1)
-            if self.config['ip_prefix'] in out:
-                self.log.debug("{} assigned to loopback interface".format(
-                    self.config['ip_prefix']))
-                return True
-            else:
-                self.log.debug("{} NOT assigned to loopback interface".format(
-                    self.config['ip_prefix']))
-                return False
         except subprocess.CalledProcessError as error:
             self.log.error("Error checking IP-PREFIX {} {}".format(
                 cmd,
@@ -104,6 +96,15 @@ class ServiceCheck(Thread):
             self.log.error("Timeout running {}".format(' '.join(cmd)))
             # Because it is unlikely to ever get a timeout I return True
             return True
+        else:
+            if self.config['ip_prefix'] in out:
+                self.log.debug("{} assigned to loopback interface".format(
+                    self.config['ip_prefix']))
+                return True
+            else:
+                self.log.debug("{} NOT assigned to loopback interface".format(
+                    self.config['ip_prefix']))
+                return False
 
         self.log.debug("I shouldn't land here!, it is a BUG")
 
