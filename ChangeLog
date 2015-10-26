@@ -1,18 +1,28 @@
 CHANGES
 =======
 
-* updates
-* update
-* update
-* update
-* more update
-* more updates
-* more updates
-* add bird conf
-* more updates on readme plus new drawings
-* readme updates and images
-* rst fun
-* add anycast part
+0.4.0
+-----
+
+* RELEASE 0.4.0 version
+* ServiceCheck: rearrange the check of IPs in lo interface
+* correct the directory path which contains the service checks
+* add/remove items from README
+* remove OPTIONS variable as its settings aren't supported anymore
+* change path of the daemon
+* change the default directory location for services check configs
+* another set of updates on README
+* fix for real the typos in README
+* fix typos in README
+* some tiny updates on README
+* add support for bird_reconfigure_cmd
+* reStructured text is fun:-(
+* Revert "align left the parameter names"
+* align left the parameter names
+* small corrections on README
+* update diagram about RIB in bird
+* update diagram about RIB in bird
+* add proper description/examples/configution
 * add example and working bird configuration
 * use a more reasonable default value for log_backups option
 * ServiceCheck: remove unnecessary check for wrong value for on_disabled option
