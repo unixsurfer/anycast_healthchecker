@@ -81,8 +81,8 @@ flow without the need to understand and inspect protocols above Layer 3.
 As a result it is very cheap in terms of resources and very fast at the same
 time. This is commonly advertised as balancing of traffic at wire-speed.
 
-Howanycast healthchecking works
--------------------------------
+How anycast-healthchecking works
+--------------------------------
 
 Current release of **anycast-healthchecker** supports only Bird daemon which
 has to be configured in a specific way. Thus, it is mandatory to explain very
