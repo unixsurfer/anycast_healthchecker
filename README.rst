@@ -140,6 +140,14 @@ configuration option in `Daemon section`_.
 Configuring anycast-healthchecker
 ---------------------------------
 
+Because anycast-healthchecker is very much tied in with Bird daemon, we first
+explain the configuration needed in Bird and then we explain configuration for
+the anycast-healthchecker daemon and for the service checks.
+
+Last but not least, CLI of daemon is explained and how it can be invoked.
+
+At the root of the project there is a System V init and a Systemd unit file.
+
 Bird configuration
 ##################
 
@@ -257,6 +265,9 @@ Daemon section
 :NOTE: The dummy_ip_prefix **must** not be used by a service, assigned to
        loopback interface and configured anywhere on the network as
        anycast-healthchecker **does not** perform any checks for it.
+
+:NOTE: Make sure there isn't any other process which modifies the file set in
+       `bird_conf` as this file is managed by anycast-healthchecker.
 
 Configuring checks for services
 ###############################
