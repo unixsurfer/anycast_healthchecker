@@ -168,7 +168,7 @@ class HealthChecker(object):
             -- Returns zero exit code when reload was successful.
             -- Should never timeout, if it does then it is a bug.
         """
-        _cmd = ['sudo', '/usr/sbin/birdc', 'configure']
+        _cmd = self.config['daemon']['bird_reconfigure_cmd'].split()
         try:
             _output = subprocess.check_output(
                 _cmd,

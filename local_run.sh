@@ -31,6 +31,7 @@ log_file         = ${TEST_DIR}/var/log/anycast-healthchecker/anycast-healthcheck
 stderr_file      = ${TEST_DIR}/var/log/anycast-healthchecker/stderr.log
 stdout_file      = ${TEST_DIR}/var/log/anycast-healthchecker/stdout.log
 dummy_ip_prefix  = 10.189.200.255/32
+bird_reconfigure_cmd = sudo /usr/sbin/birdc configure
 EOT
 fi
 

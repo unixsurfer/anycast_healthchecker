@@ -58,6 +58,7 @@ DEFAULT_OPTIONS = {
         'stderr_file': '/var/log/anycast-healthchecker/stderr.log',
         'stdout_file': '/var/log/anycast-healthchecker/stdout.log',
         'dummy_ip_prefix': '10.189.200.255/32',
+        'bird_reconfigure_cmd': 'sudo /usr/sbin/birdc configure',
     }
 }
 
