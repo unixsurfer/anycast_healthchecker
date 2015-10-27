@@ -393,17 +393,17 @@ for testing purposes and does the following:
 #. Create the necessary directory structure under $PWD/var to store
    configuration and log files
 
-#. Generates configuration for the daemon and for 2 serice checks
+#. Generates configuration for the daemon and for 2 service checks
 
 #. Generates bird configuration(anycast-prefixes.conf)
 
-#. Install anycast-healthchecker using python3.4 setup.py install --user
+#. Installes anycast-healthchecker using python3.4 setup.py install --user
 
-#. Assign 4 IPs (10.52.12.[1-4]) to loopback interface
+#. Assigns 4 IPs (10.52.12.[1-4]) to loopback interface
 
 #. Checks if bird daemon runs but it doesn't try to start if it's running
 
-#. Lunch the daemon as normal user and not as root
+#. Starts the daemon as normal user and not as root
 
 Requirements for running local_run.sh and having a workable setup
 
