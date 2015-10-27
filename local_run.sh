@@ -89,7 +89,7 @@ found () {
 }
 
 get_ips () {
-    /sbin/ip addr show dev lo|awk '/inet/ {print $2}'
+    /sbin/ip -4 addr show dev lo|awk '/inet/ {print $2}'
 }
 
 loopback_ips=( $(get_ips) )
