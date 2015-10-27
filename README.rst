@@ -387,13 +387,38 @@ feedback. Please post your comments, bug reports, wishes on my `issues page
 Testing
 #######
 
-Use local_run.sh script found in the root of the project......TBD....
+At the root of the project there is a `local_run.sh` script which is being used
+for testing purposes and does the following:
+
+#. Create the necessary directory structure under $PWD/var to store
+   configuration and log files
+
+#. Generates configuration for the daemon and for 2 serice checks
+
+#. Generates bird configuration(anycast-prefixes.conf)
+
+#.Install anycast-healthchecker using python3.4 setup.py install --user
+
+#. Assign 4 IPs (10.52.12.[1-4]) to loopback interface
+
+#. Checks if bird daemon runs but it doesn't try to start if it's running
+
+#. Lunch the daemon as normal user and not as root
+
+Requirements for running local_run.sh and having a workable setup
+
+#. python3.4 installation available
+
+#. Bird installed and configured as it is mentioned in `Bird confiuguration`_
+
+#. sudo access to run sudo birdc configure
+
+#. sudo access to assign IPs on the loopback interface
 
 Licensing
 ---------
 
 Apache 2.0
-
 
 Acknowledgement
 ---------------
