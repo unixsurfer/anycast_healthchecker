@@ -397,7 +397,7 @@ for testing purposes and does the following:
 
 #. Generates bird configuration(anycast-prefixes.conf)
 
-#.Install anycast-healthchecker using python3.4 setup.py install --user
+#. Install anycast-healthchecker using python3.4 setup.py install --user
 
 #. Assign 4 IPs (10.52.12.[1-4]) to loopback interface
 
@@ -409,7 +409,7 @@ Requirements for running local_run.sh and having a workable setup
 
 #. python3.4 installation available
 
-#. Bird installed and configured as it is mentioned in `Bird confiuguration`_
+#. Bird installed and configured as it is mentioned in `Bird configuration`_
 
 #. sudo access to run sudo birdc configure
 
