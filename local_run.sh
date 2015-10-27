@@ -1,11 +1,14 @@
 #!/bin/bash
 TEST_DIR="${PWD}/var"
+DOTDIR="${TEST_DIR}/etc/anycast-healthchecker.d"
+DAEMON="${HOME}/.local/bin/anycast-healthchecker"
+DAEMONCONF="${TEST_DIR}/etc/anycast-healthchecker.conf"
+PIDIFILE="${TEST_DIR}/var/run/anycast-healthchecker/anycast-healthchecker.pid"
 directories=("${TEST_DIR}"/var/log/anycast-healthchecker \
 "${TEST_DIR}"/etc/bird.d \
-"${TEST_DIR}"/etc/anycast-healthcheck.d \
+"${DOTDIR}" \
 "${TEST_DIR}"/var/run/anycast-healthchecker \
 "${TEST_DIR}"/var/log/anycast-healthchecker \
-"${TEST_DIR}"/etc/bird.d \
 "${TEST_DIR}"/var/run/anycast-healthchecker)
 
 echo "--------create directory structure--------"
@@ -15,13 +18,13 @@ for dir in ${directories[@]}; do
     fi
 done
 echo "--------create files----------------------"
-if [ ! -e ${TEST_DIR}/etc/anycast-healthchecker.conf  ]; then
-    cat <<EOT > "${TEST_DIR}"/etc/anycast-healthchecker.conf
+if [ ! -e ${DAEMONCONF}  ]; then
+    cat <<EOT > "${DAEMONCONF}"
 [DEFAULT]
 interface        = lo
 
 [daemon]
-pidfile          = ${TEST_DIR}/var//run/anycast-healthchecker/anycast-healthchecker.pid
+pidfile          = ${PIDIFILE}
 bird_conf        = ${TEST_DIR}/etc/bird.d/anycast-prefixes.conf
 bird_variable    = ACAST_PS_ADVERTISE
 loglevel         = debug
@@ -41,14 +44,15 @@ if [ ! -e ${TEST_DIR}/etc/bird.d/anycast-prefixes.conf ]; then
 define ACAST_PS_ADVERTISE =
     [
         10.189.200.255/32,
+        10.52.12.1
     ];
 EOT
 fi
 echo "--------create service checks-------------"
-if [ ! -e ${TEST_DIR}/etc/anycast-healthcheck.d/foo.bar.com.conf ]; then
-    cat <<EOT > ${TEST_DIR}/etc/anycast-healthcheck.d/foo.bar.com.conf
+if [ ! -e ${DOTDIR}/foo.bar.com.conf ]; then
+    cat <<EOT > ${DOTDIR}/foo.bar.com.conf
 [foo.bar.com]
-check_cmd = curl -A 'anycast-healthchecker' --fail --silent --connect-timeout 1 --max-time 1 -o /dev/null  http://10.52.12.1/
+check_cmd = curl -A 'anycast-healthchecker' --fail --silent -o /dev/null  http://10.52.12.1:8888
 check_interval = 10
 check_timeout = 5
 check_rise = 2
@@ -58,10 +62,10 @@ on_disabled = withdraw
 ip_prefix = 10.52.12.1/32
 EOT
 fi
-if [ ! -e ${TEST_DIR}/etc/anycast-healthcheck.d/foo1.bar.com.conf ]; then
-    cat <<EOT > ${TEST_DIR}/etc/anycast-healthcheck.d/foo1.bar.com.conf
+if [ ! -e ${DOTDIR}/foo1.bar.com.conf ]; then
+    cat <<EOT > ${DOTDIR}/foo1.bar.com.conf
 [foo1.bar.com]
-check_cmd = curl -A 'anycast-healthchecker' --fail --silent --connect-timeout 1 --max-time 1 -o /dev/null  http://10.52.12.2/
+check_cmd = curl -A 'anycast-healthchecker' --fail --silent -o /dev/null  http://10.52.12.2:8888
 check_interval = 10
 check_timeout = 5
 check_rise =  2
@@ -102,15 +106,15 @@ for ip_cidr in $(get_ips) ; do
         sudo /sbin/ip addr del "${ip_cidr}" dev lo && echo "Removed ${ip_cidr} from loopback"
     fi
 done
-version=$("${HOME}"/.local/bin/anycast-healthchecker -v)
+version=$("${DAEMON}" -v)
 echo "--------runing ${version}"
-pgrep -F "${PWD}"/var/var/run/anycast-healthchecker/anycast-healthchecker.pid >/dev/null 2>&1
+pgrep -F "${PIDIFILE}" >/dev/null 2>&1
 if [ $? -eq 0 ]; then
-    echo "Process $(cat "${PWD}"/var/var/run/anycast-healthchecker/anycast-healthchecker.pid) already running, killing it.."
-    pkill -F "${PWD}"/var/var/run/anycast-healthchecker/anycast-healthchecker.pid
+    echo "Process $(cat "${PIDIFILE}") already running, killing it.."
+    pkill -F "${PIDIFILE}"
 fi
-"${HOME}"/.local/bin/anycast-healthchecker -f "${PWD}"/var/etc/anycast-healthchecker.conf \
-    -d "${PWD}"/var/etc/anycast-healthchecker.d
+"${DAEMON}" -f "${DAEMONCONF}" -d "${DOTDIR}"
 if [ $? -eq 0 ]; then
     echo "--------daemon started!-------------------"
+    echo 'run: nohup  python3.4 -m http.server --bind 10.52.12.2 8888 & nohup python3.4 -m http.server --bind 10.52.12.1 8888 &'
 fi
