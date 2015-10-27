@@ -107,7 +107,14 @@ for ip_cidr in $(get_ips) ; do
     fi
 done
 version=$("${DAEMON}" -v)
-echo "--------runing ${version}"
+echo "---------check if Bird is running--------"
+bird_pid=$(pgrep bird)
+if [ ! -z ${bird_pid} ]; then
+    echo "bird seems to run pid:${bird_pid}"
+else
+    echo "######bird seems to not be running#####"
+fi
+echo "--------runing ${version}----------------"
 pgrep -F "${PIDIFILE}" >/dev/null 2>&1
 if [ $? -eq 0 ]; then
     echo "Process $(cat "${PIDIFILE}") already running, killing it.."
