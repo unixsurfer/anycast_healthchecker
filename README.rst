@@ -38,13 +38,13 @@ closest to the sender appears or current receiver disappears.
 The below three drawings exhibit how traffic is routed between a sender and
 multiple potential receivers when something changes on network.
 
-.. include:: anycast-receivers-example1.png
+.. image:: anycast-receivers-example1.png
    :scale: 60%
 
-.. include:: anycast-receivers-example2.png
+.. image:: anycast-receivers-example2.png
    :scale: 60%
 
-.. include:: anycast-receivers-example3.png
+.. image:: anycast-receivers-example3.png
    :scale: 60%
 
 These potential receivers use `BGP`_ or `OSPF`_ by running an Internet Routing
