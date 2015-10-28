@@ -444,7 +444,7 @@ Contacts
 
 **Project website**: https://github.com/unixsurfer/anycast_healthchecker
 
-**Author**: Palvos Parissis <pavlos.parissis@gmail.com>
+**Author**: Pavlos Parissis <pavlos.parissis@gmail.com>
 
 .. _Bird: http://bird.network.cz/
 .. _BGP: https://en.wikipedia.org/wiki/Border_Gateway_Protocol
