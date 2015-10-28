@@ -226,8 +226,8 @@ The below is an example configuration for the daemon (anycast-healthchecker.conf
     stdout_file          = /var/log/anycast-healthchecker/stdout.log
     dummy_ip_prefix      = 10.189.200.255/32
 
-The daemon doesn't need to run as root as long as it has enough grands to
-modify the Bird configuration (anycast-prefixes.conf) and trigger a
+The daemon doesn't need to run as root as long as it has sufficient privileges
+to modify the Bird configuration (anycast-prefixes.conf) and trigger a
 reconfiguration on bird by running `birdc configure`. In the above example we
 use sudo and sudoers file has being configured accordingly.
 

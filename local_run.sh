@@ -76,7 +76,7 @@ ip_prefix = 10.52.12.2/32
 EOT
 fi
 echo "--------installing software---------------"
-python3.4 setup.py install --user
+python3 setup.py install
 echo "--------Assign IPs in loopback------------"
 found () {
     local query="$1"
