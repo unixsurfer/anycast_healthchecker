@@ -31,18 +31,31 @@ one potential receivers, but only one of them receives it. Routing protocols,
 `BGP`_ or `OSPF`_, decides which one of the potential receivers will actually
 receive traffic based on the topology of the network. The main attribute which
 contributes to the decision is the distance in terms of hops between the sender
-and the receiver. The nearest receiver to a sender always receive the traffic
-and this only change if something changes on the network, another receiver
-closest to the sender appears or current receiver disappears. These potential
-receivers use `BGP`_ or `OSPF`_ by running an Internet Routing daemon, `Bird`_
-or quagga, to simultaneously announce the same destination IP address from
-different places on the network. Due to the nature of Anycast these receivers
-don't need to be on the same network and as a result they can be located on any
-network across a global network infrastructure. Anycast doesn't balance traffic
-as only one receiver attracts traffic from senders. For instance, if there are
-two servers which announce the same IP address in certain location for a service,
-traffic will be distributed across these two servers unevenly as clients are
-spread across the network in an uneven way.
+and the receiver. The nearest receiver to a sender always receives the traffic
+and this only changes if something changes on the network, another receiver
+closest to the sender appears or current receiver disappears.
+
+The below three drawings exhibit how traffic is routed between a sender and
+multiple potential receivers when something changes on network.
+
+.. include:: anycast-receivers-example1.png
+   :scale: 60%
+
+.. include:: anycast-receivers-example2.png
+   :scale: 60%
+
+.. include:: anycast-receivers-example3.png
+   :scale: 60%
+
+These potential receivers use `BGP`_ or `OSPF`_ by running an Internet Routing
+daemon, `Bird`_ or quagga, to simultaneously announce the same destination IP
+address from different places on the network. Due to the nature of Anycast these
+receivers don't need to be on the same network and as a result they can be
+located on any network across a global network infrastructure. Anycast doesn't
+balance traffic as only one receiver attracts traffic from senders.
+For instance, if there are two servers which announce the same IP address in
+certain location for a service, traffic will be distributed across these two
+servers unevenly as clients are spread across the network in an uneven way.
 
 Anycast is being used as a mechanism to switch traffic between and within
 data-centers for the following main reasons:
