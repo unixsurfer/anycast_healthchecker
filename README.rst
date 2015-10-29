@@ -166,11 +166,11 @@ Bird configuration
 ##################
 
 Below is an example configuration for Bird which establishes the logic described
-`How anycast healthchecker works`_. It is the minimum configuration required by
+`How anycast-healthchecker works`_. It is the minimum configuration required by
 anycast-healthchecker to function properly.
 
 The most important part is the line `export where match_route();`. It forces all
-routes to pass from 'match_route' function before are exported::
+routes to pass from `match_route` function before are exported::
 
     include "/etc/bird.d/*.conf";
     protocol device {
