@@ -134,10 +134,10 @@ language. A filter can be used to either accept or reject routes before they
 are exported from RIB to the network.
 
 We have a list of IP prefixes (<IP>/<prefix length>) stored in a text file.
-Routes that **aren't** included in the list are filtered-out and they don't get
-exported from RIB to the network. The white-list text file is sourced by Bird
-upon startup, reload and reconfiguration. The following diagram illustrates how
-this technique works:
+IP prefixes that **are not** included in the list are filtered-out and they
+**do not** get exported from RIB to the network. The white-list text file is
+sourced by Bird upon startup, reload and reconfiguration.
+The following diagram illustrates how this technique works:
 
 .. image:: bird_daemon_filter_explained.png
    :scale: 60%
@@ -150,14 +150,14 @@ of IP prefixes.
 
 Bird doesn't allow the definition of a list with no elements and when that happens
 Bird will emit an error and refuse to start. Because of this anycast-healthchecker
-makes sure that there is always an IP prefix in the list, see dummy_ip_prefix
+makes sure that there is always an IP prefix in the list, see ``dummy_ip_prefix``
 configuration option in `Daemon section`_.
 
 Configuring anycast-healthchecker
 ---------------------------------
 
 Because anycast-healthchecker is very much tied in with Bird daemon, we first
-explain the configuration you need make in Bird. Then, we will cover the
+explain the configuration you need to make in Bird. Then, we will cover the
 configuration of anycast-healthchecker daemon, and then the configuration of
 the health checks in particular and finally we'll cover the invocation of the
 program from the command line.
@@ -169,8 +169,8 @@ Below is an example configuration for Bird which establishes the logic described
 `How anycast-healthchecker works`_. It is the minimum configuration required by
 anycast-healthchecker to function properly.
 
-The most important part is the line `export where match_route();`. It forces all
-routes to pass from `match_route` function before are exported::
+The most important part is the line ``export where match_route();``. It forces
+all routes to pass from `match_route` function before are exported::
 
     include "/etc/bird.d/*.conf";
     protocol device {
@@ -209,7 +209,7 @@ The list ACAST_PS_ADVERTISE of IP prefixes is defined in /etc/bird.d/anycast-pre
     define ACAST_PS_ADVERTISE =
         [
             10.189.200.255/32,
-            10.2.3.1
+            10.2.3.1/32
         ];
 
 Configuring the daemon
@@ -234,10 +234,10 @@ This is an example configuration file for the daemon (anycast-healthchecker.conf
     stdout_file          = /var/log/anycast-healthchecker/stdout.log
     dummy_ip_prefix      = 10.189.200.255/32
 
-The daemon doesn't need to run as root as long as it has sufficient privileges
+The daemon **doesn't** need to run as root as long as it has sufficient privileges
 to modify the Bird configuration (anycast-prefixes.conf) and trigger a
-reconfiguration on bird by running `birdc configure`. In the above example we
-use sudo and for that purpose (sudoers has been properly configured).
+reconfiguration on bird by running ``birdc configure``. In the above example we
+use ``sudo`` and for that purpose (``sudoers`` file has been properly configured).
 
 DEFAULT section
 ***************
@@ -257,8 +257,9 @@ Daemon section
 **************
 
 :pidfile: a file to store pid of the daemon
-:bird_conf: a file with the variable containing IP prefixes allowed to be exported
-:bird_variable: the name of the variable
+:bird_conf: a file with the ``bird_variable`` which contains IP prefixes allowed
+            to be exported
+:bird_variable: the name of the variable in ``bird_conf``
 :bird_reconfigure_cmd: a command to trigger a reconfiguration of Bird
 :loglevel: log level
 :log_maxbytes: maximum sizes in bytes for log files
@@ -266,16 +267,17 @@ Daemon section
 :log_file: a file to log messages
 :stderr_file: a file to redirect standard error messages emitted by the daemon
 :stdout_file: a file to redirect standard output messages emitted by the daemon
-:dummy_ip_prefix: a IP prefix in form of <IP>/<prefixlength> which will be always
-                  present in the `bird_variable` to avoid having an empty list.
+:dummy_ip_prefix: an IP prefix in form of <IP>/<prefix length> which will be
+                  always present in the ``bird_variable`` to avoid having an empty
+                  list.
 
 
-:NOTE: The dummy_ip_prefix **must** not be used by a service, assigned to
+:NOTE: The dummy_ip_prefix **must not** be used by a service, assigned to
        loopback interface and configured anywhere on the network as
        anycast-healthchecker **does not** perform any checks for it.
 
-:NOTE: Make sure there isn't any other process which modifies the file set in
-       `bird_conf` as this file is managed by anycast-healthchecker.
+:NOTE: Make sure there **is not** any other process which modifies the file set
+       in ``bird_conf`` as this file is managed by anycast-healthchecker.
 
 Configuring checks for services
 ###############################
@@ -301,16 +303,23 @@ the log files for easier searching of errors/warnings messages.
             in a script file. Output is ignored.
 :check_interval: how often to run the check in seconds
 :check_timeout: set timeout in seconds for the check command
-:check_fail: a service considered as down after <n> consecutive unsuccessful health checks
-:check_rise: a service considered as up after <n> consecutive successful health checks
-:check_disabled: either disable the check with `true` or enable it with `false`
-:on_disabled: what to do when check is disabled, either withdraw or advertise
+:check_fail: a service considered as down after <n> consecutive unsuccessful
+             health checks
+:check_rise: a service considered as up after <n> consecutive successful health
+             checks
+:check_disabled: either disable the check with ``true`` or enable it with
+                 ``false``
+:on_disabled: what to do when check is disabled, either ``withdraw`` or
+              ``advertise``
 :ip_prefix: IP prefix associated with the service. It **must be** assigned to
-            the interface set in `interface` parameter
-:interface: the name of the interface that `ip_prefix` is assigned to
+            the interface set in ``interface`` parameter
+:interface: the name of the interface that ``ip_prefix`` is assigned to
+:NOTE: anycast-healthchecker emits a warning when ``ip_prefix`` isn't assigned
+       to ``interface`` and doesn't remove the ``ip_prefix`` from
+       ``bird_variable`` as `direct`_ protocol removes route from `RIB`_.
+       It also marks the service as **DOWN**.
 
-You can squeeze multiple sections in one file or one provide different files
-per section.
+You can squeeze multiple sections in one file or provide one file per section.
 
 Starting the daemon
 ###################
