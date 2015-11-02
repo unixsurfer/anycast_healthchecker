@@ -1,6 +1,26 @@
 CHANGES
 =======
 
+0.4.1
+-----
+
+* RELEASE 0.4.1 version
+* mention the use of virtualenvwrapper tool in Testing section
+* another set of small updates on README
+* fix broken reference in README
+* several changes on README
+* fix typo in README
+* use correct statement to include images
+* add drawings to illustrate how anycasted traffic is routed
+* tiny fixes in README
+* local_run: get only the list of IPv4 addresses
+* tiny fixes on README
+* fix typos in README
+* add details in README on how someone can test the software
+* fix typo in README
+* local_run: report if bird is running
+* several clean ups on local_run
+
 0.4.0
 -----
 
