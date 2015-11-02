@@ -407,17 +407,18 @@ feedback. Please post your comments, bug reports, wishes on my `issues page
 Testing
 #######
 
-At the root of the project there is a `local_run.sh` script which is being used
+At the root of the project there is a `local_run.sh` script which you can use
 for testing purposes and does the following:
 
-#. Create the necessary directory structure under $PWD/var to store
+#. Creates the necessary directory structure under $PWD/var to store
    configuration and log files
 
 #. Generates configuration for the daemon and for 2 service checks
 
 #. Generates bird configuration(anycast-prefixes.conf)
 
-#. Installes anycast-healthchecker using python3.4 setup.py install --user
+#. Installs anycast-healthchecker with ``python3.4 setup.py install``,
+   *requires* python virtualenvironment, use the excellent tool virtualenvwrapper
 
 #. Assigns 4 IPs (10.52.12.[1-4]) to loopback interface
 
