@@ -13,15 +13,17 @@ anycast-healthchecker
 Introduction
 ------------
 
-**anycast-healthchecker** is a Python program to monitor a service and instruct
-`Bird`_ daemon to advertise or withdraw a route associated with the service
-based on the result of a health check. It uses the Python `daemon`_ library to
-implement a well-behaved Unix daemon process and it also utilizes threading for
-running each service check.
+**anycast-healthchecker** monitors a service by doing 
+peridic health checks and based on the result instructing `Bird`_ daemon 
+to either advertise or withdraw the coresponding route. As a result Bird 
+will only advertise routes to healthy services. 
 
-It makes sure that a route is only advertised from the local node if and only if
-the service associated with that route is healthy. It works together with Bird
-daemon to achieve this by utilizing a specific configuration logic.
+You'll have to configure Bird properly in order to interface it to 
+anycast-healthchecker. The configuration is detailed later in this document.
+
+anycast-healthchecker is a Python program, it uses the `daemon`_ library 
+to implement a well-behaved Unix daemon process and threading to run 
+multiple service checks in parallel.
 
 What is Anycast
 ---------------
