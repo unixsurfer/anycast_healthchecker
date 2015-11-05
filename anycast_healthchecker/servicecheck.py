@@ -8,6 +8,7 @@ A library which provides the ServiceCheck class.
 import subprocess
 import time
 from threading import Thread
+import shlex
 
 
 class ServiceCheck(Thread):
@@ -38,7 +39,7 @@ class ServiceCheck(Thread):
         Returns:
             True if the exit code of the command was 0 otherwise False.
         """
-        cmd = self.config['check_cmd'].split()
+        cmd = shlex.split(self.config['check_cmd'])
         self.log.info("Running {}".format(' '.join(cmd)))
         proc = subprocess.Popen(cmd,
                                 stdin=None,

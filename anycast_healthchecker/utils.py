@@ -11,6 +11,7 @@ import sys
 import subprocess
 import logging
 import configparser
+import shlex
 
 
 OPTIONS_TYPE = {
@@ -112,7 +113,7 @@ def service_configuration_check(config, services):
                      "ip/prefixlen.".format(name=service,
                                             val=config[service]['ip_prefix']))
 
-        cmd = config[service]['check_cmd'].split()
+        cmd = shlex.split(config[service]['check_cmd'])
         try:
             proc = subprocess.Popen(cmd, stdin=None, stdout=None, stderr=None)
             proc.kill()

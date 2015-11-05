@@ -9,6 +9,7 @@ import subprocess
 import sys
 import time
 from queue import Queue, Empty
+import shlex
 
 from anycast_healthchecker.servicecheck import ServiceCheck
 from anycast_healthchecker.utils import OPTIONS_TYPE, get_ip_prefixes_from_bird
@@ -168,7 +169,7 @@ class HealthChecker(object):
             -- Returns zero exit code when reload was successful.
             -- Should never timeout, if it does then it is a bug.
         """
-        _cmd = self.config['daemon']['bird_reconfigure_cmd'].split()
+        _cmd = shlex.split(self.config['daemon']['bird_reconfigure_cmd'])
         try:
             _output = subprocess.check_output(
                 _cmd,
