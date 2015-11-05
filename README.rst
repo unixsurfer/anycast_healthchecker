@@ -13,22 +13,24 @@ anycast-healthchecker
 Introduction
 ------------
 
-**anycast-healthchecker** is a Python program to monitor a service and instruct
-`Bird`_ daemon to advertise or withdraw a route associated with the service
-based on the result of a health check. It uses the Python `daemon`_ library to
-implement a well-behaved Unix daemon process and it also utilizes threading for
-running each service check.
+**anycast-healthchecker** monitors a service by doing periodic health checks
+and based on the result instructs `Bird`_ daemon to either advertise or
+withdraw the corresponding route. As a result Bird will only advertise routes
+for healthy services.
 
-It makes sure that a route is only advertised from the local node if and only if
-the service associated with that route is healthy. It works together with Bird
-daemon to achieve this by utilizing a specific configuration logic.
+You'll have to configure Bird properly in order to interface with
+anycast-healthchecker. The configuration is detailed later in this document.
+
+anycast-healthchecker is a Python program, it uses the `daemon`_ library
+to implement a well-behaved Unix daemon process and threading to run
+multiple service checks in parallel.
 
 What is Anycast
 ---------------
 
 Anycast is a network address scheme where traffic from a sender has more than
 one potential receivers, but only one of them receives it. Routing protocols,
-`BGP`_ or `OSPF`_, decides which one of the potential receivers will actually
+`BGP`_ or `OSPF`_, decide which one of the potential receivers will actually
 receive traffic based on the topology of the network. The main attribute which
 contributes to the decision is the distance in terms of hops between the sender
 and the receiver. The nearest receiver to a sender always receives the traffic
@@ -46,7 +48,7 @@ multiple potential receivers when something changes on network.
    :scale: 60%
 
 These potential receivers use `BGP`_ or `OSPF`_ by running an Internet Routing
-daemon, Bird or quagga, to simultaneously announce the same destination IP
+daemon, Bird or Quagga, to simultaneously announce the same destination IP
 address from different places on the network. Due to the nature of Anycast
 receivers can be located on any network across a global network infrastructure.
 
@@ -62,8 +64,8 @@ data-centers for the following main reasons:
 
 * the switch of traffic occurs without the need to enforce a change to the clients
 
-In case of disaster of a service in one location, traffic from location will be
-switched to another DC without any manual intervention and most importantly
+In case of loss of a service in one location, traffic to that location will be
+switched to another data-center without any manual intervention and most importantly
 without pushing a change to the clients which you don't always control.
 
 * the switch happens within few milliseconds
@@ -86,28 +88,28 @@ the following four properties of IP packets:
 * destination PORT
 
 Each unique combination of values for those four properties is called
-`network flow`. For each different network flow a different destination server
+network flow. For each different network flow a different destination server
 is selected so traffic is evenly balanced across all servers.
 These servers run an Internet Routing daemon in the same way as with Anycast
 case but with the major difference that all servers receive traffic.
 The main characteristic of this type of load-balancing is that is stateless.
-Router balances traffic for a destination IP address based on the quadruple
-flow without the need to understand and inspect protocols above Layer 3.
+Router balances traffic to a destination IP address based on the quadruple
+network flow without the need to understand and inspect protocols above Layer 3.
 As a result it is very cheap in terms of resources and very fast at the same
-time. This is commonly advertised as balancing of traffic at wire-speed.
+time. This is commonly advertised as traffic balancing at wire-speed.
 
 How anycast-healthchecker works
 -------------------------------
 
-Current release of **anycast-healthchecker** supports only Bird daemon which
-has to be configured in a specific way. Thus, it is mandatory to explain very
+The current release of **anycast-healthchecker** supports only the Bird daemon which
+you have to configure in a specific way. Thus, it is mandatory to explain very
 briefly how Bird handles advertisements for routes.
 
 Bird maintains a routing information base (`RIB`_) and various protocols
 import/export routes to/from it. The diagram below illustrates how Bird
-advertises routes for IPs assigned to loopback interface to the rest of the
-network using BGP protocol. Bird can also imports routes learned via BGP/OSPF
-protocols, but this part of the routing process is irrelevant to the work of
+advertises routes for IPs assigned to the loopback interface to the rest of the
+network using BGP protocol. Bird can also import routes learned via BGP/OSPF
+protocols, but this part of the routing process is irrelevant to the functionality of
 anycast-healthchecker.
 
 
@@ -121,9 +123,9 @@ route exists in RIB and it's advertised by Bird.
 
 As it is exhibited in the above diagram a route is advertised only when:
 
-#. IP is assigned to loopback interface
-#. `direct`_ protocol from Bird imports a route in RIB for that IP
-#. BGP/OSPF protocols exports that route from RIB to a network peer
+#. The IP is assigned to the loopback interface.
+#. `direct`_ protocol from Bird imports a route for that IP in RIB.
+#. BGP/OSPF protocols export that route from RIB to a network peer.
 
 The route associated with the Anycasted service must be either advertised or
 withdrawn based on the health status of the service, otherwise traffic will
@@ -143,8 +145,8 @@ The following diagram illustrates how this technique works:
    :scale: 60%
 
 This configuration logic allows a separate process to update the list by adding
-or removing IP prefixes and trigger a reconfigure on Bird in order to advertise
-or withdraw routes.  **anycast-healthchecker** is the process which monitors
+or removing IP prefixes and triggering a reconfiguration of Bird in order to advertise
+or withdraw routes.  **anycast-healthchecker** is that separate process. It monitors
 Anycasted services and based on the status of the health checks updates the list
 of IP prefixes.
 
@@ -157,20 +159,20 @@ Configuring anycast-healthchecker
 ---------------------------------
 
 Because anycast-healthchecker is very much tied in with Bird daemon, we first
-explain the configuration you need to make in Bird. Then, we will cover the
-configuration of anycast-healthchecker daemon, and then the configuration of
-the health checks in particular and finally we'll cover the invocation of the
-program from the command line.
+explain the configuration of Bird. We will then cover the configuration of
+anycast-healthchecker (including the configuration for the health checks) and
+finally we'll describe the options for invoking the program from the command
+line.
 
 Bird configuration
 ##################
 
 Below is an example configuration for Bird which establishes the logic described
-`How anycast-healthchecker works`_. It is the minimum configuration required by
-anycast-healthchecker to function properly.
+in `How anycast-healthchecker works`_. It is the minimum configuration required
+to interface with Bird and anycast-healthchecker.
 
 The most important part is the line ``export where match_route();``. It forces
-all routes to pass from `match_route` function before are exported::
+all routes to pass from the `match_route` function before they are exported::
 
     include "/etc/bird.d/*.conf";
     protocol device {
@@ -195,16 +197,15 @@ all routes to pass from `match_route` function before are exported::
         neighbor 10.248.7.254 as 64814;
     }
 
-The match_function (/etc/bird.d/match-route.conf) look up the IP prefix of
-the route to a list and accept the export if it finds the IP prefix in that
-list::
+The match_function (/etc/bird.d/match-route.conf) looks up the IP prefix of
+the route in a list and accepts the export if it finds a matching entry::
 
     function match_route()
     {
         return net ~ ACAST_PS_ADVERTISE;
     }
 
-The list ACAST_PS_ADVERTISE of IP prefixes is defined in /etc/bird.d/anycast-prefixes.conf::
+The list of IP prefixes ACAST_PS_ADVERTISE is defined in /etc/bird.d/anycast-prefixes.conf::
 
     define ACAST_PS_ADVERTISE =
         [
@@ -236,14 +237,14 @@ This is an example configuration file for the daemon (anycast-healthchecker.conf
 
 The daemon **doesn't** need to run as root as long as it has sufficient privileges
 to modify the Bird configuration (anycast-prefixes.conf) and trigger a
-reconfiguration on bird by running ``birdc configure``. In the above example we
-use ``sudo`` and for that purpose (``sudoers`` file has been properly configured).
+reconfiguration of Bird by running ``birdc configure``. In the above example we
+use ``sudo`` for that purpose (``sudoers`` file has been properly configured).
 
 DEFAULT section
 ***************
 
 Below are the default settings for all service checks, see `Configuring checks
-for services`_ for explanation on the parameters.
+for services`_ for and explanation of the parameters.
 
 :interface: lo
 :check_interval: 10
@@ -256,33 +257,34 @@ for services`_ for explanation on the parameters.
 Daemon section
 **************
 
-:pidfile: a file to store pid of the daemon
+:pidfile: a file to store the pid of the daemon
 :bird_conf: a file with the ``bird_variable`` which contains IP prefixes allowed
             to be exported
 :bird_variable: the name of the variable in ``bird_conf``
 :bird_reconfigure_cmd: a command to trigger a reconfiguration of Bird
 :loglevel: log level
-:log_maxbytes: maximum sizes in bytes for log files
+:log_file: where to log messages to
+:log_maxbytes: maximum size in bytes for log files
 :log_backups: number of old log files to maintain
-:log_file: a file to log messages
-:stderr_file: a file to redirect standard error messages emitted by the daemon
-:stdout_file: a file to redirect standard output messages emitted by the daemon
-:dummy_ip_prefix: an IP prefix in form of <IP>/<prefix length> which will be
-                  always present in the ``bird_variable`` to avoid having an empty
+:stderr_file: a file to redirect standard error to
+:stdout_file: a file to redirect standard output to
+:dummy_ip_prefix: an IP prefix in the form <IP>/<prefix length> which will alway be
+                  present in the ``bird_variable`` to avoid having an empty
                   list.
 
 
 :NOTE: The dummy_ip_prefix **must not** be used by a service, assigned to
-       loopback interface and configured anywhere on the network as
+       the loopback interface and configured anywhere on the network as
        anycast-healthchecker **does not** perform any checks for it.
 
-:NOTE: Make sure there **is not** any other process which modifies the file set
+:NOTE: Make sure that **no** other process modifies the file set
        in ``bird_conf`` as this file is managed by anycast-healthchecker.
 
 Configuring checks for services
 ###############################
 
-An example of a service check configuration::
+The configuration for a single service check is defined in one section.
+Here is an example::
 
     [foo.bar.com]
     check_cmd = /usr/bin/curl -A 'anycast-healthchecker' --fail --silent http://10.52.12.1/
@@ -294,26 +296,26 @@ An example of a service check configuration::
     on_disabled = withdraw
     ip_prefix = 10.52.12.1/32
 
-The configuration for a single service check is defined in one section.
 The name of the section becomes the name of the service check and appears in
-the log files for easier searching of errors/warnings messages.
+the log files for easier searching of error/warning messages.
 
 :check_cmd: the command to run to determine the status of the service based
             on the return code. Complex health checking should be wrapped
             in a script file. Output is ignored.
-:check_interval: how often to run the check in seconds
-:check_timeout: set timeout in seconds for the check command
-:check_fail: a service considered as down after <n> consecutive unsuccessful
+:check_interval: how often to run the check (seconds)
+:check_timeout: timeout for the check command to complete (seconds)
+:check_fail: a service is considered DOWN after this many consecutive unsuccessful
              health checks
-:check_rise: a service considered as up after <n> consecutive successful health
+:check_rise: a service is considered HEALTHY after this many consecutive successful health
              checks
-:check_disabled: either disable the check with ``true`` or enable it with
-                 ``false``
+:check_disabled:  ``true`` disables this check, ``false`` enables it
+
 :on_disabled: what to do when check is disabled, either ``withdraw`` or
               ``advertise``
 :ip_prefix: IP prefix associated with the service. It **must be** assigned to
             the interface set in ``interface`` parameter
 :interface: the name of the interface that ``ip_prefix`` is assigned to
+
 :NOTE: anycast-healthchecker emits a warning when ``ip_prefix`` isn't assigned
        to ``interface`` and doesn't remove the ``ip_prefix`` from
        ``bird_variable`` as `direct`_ protocol removes route from `RIB`_.
@@ -349,8 +351,8 @@ configuration for service checks::
   % anycast-healthchecker -f ./anycast-healthchecker.conf -d ./anycast-healthchecker.d
 
 
-At the root of the project there is System V init and a Systemd unit files for
-a proper integration with OS startup tools.
+At the root of the project there is System V init and a Systemd unit file for
+proper integration with OS startup tools.
 
 Installation
 ------------
@@ -401,14 +403,14 @@ Release
 Development
 -----------
 I would love to hear what other people think about **anycast_healthchecker** and provide
-feedback. Please post your comments, bug reports, wishes on my `issues page
+feedback. Please post your comments, bug reports and wishes on my `issues page
 <https://github.com/unixsurfer/anycast_healthchecker/issues>`_.
 
 Testing
 #######
 
 At the root of the project there is a `local_run.sh` script which you can use
-for testing purposes and does the following:
+for testing purposes. It does the following:
 
 #. Creates the necessary directory structure under $PWD/var to store
    configuration and log files
