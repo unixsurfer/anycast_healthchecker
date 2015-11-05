@@ -54,16 +54,11 @@ class ServiceCheck(Thread):
             self.log.error("Check timed out")
             if proc.poll() is None:
                 proc.kill()
-            returncode = False
+            return False
         else:
-            self.log.debug("Check duration {}secs".format(
-                time.time() - start_time))
-            if proc.returncode == 0:
-                returncode = True
-            else:
-                returncode = False
-
-        return returncode
+            self.log.debug("Check duration {t:.3f}ms".format(
+                t=(time.time() - start_time) * 1000))
+            return proc.returncode == 0
 
     def _ip_assigned(self):
         """Checks if IP prefix is assigned to loopback interface.
