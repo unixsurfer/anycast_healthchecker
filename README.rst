@@ -13,16 +13,16 @@ anycast-healthchecker
 Introduction
 ------------
 
-**anycast-healthchecker** monitors a service by doing 
-peridic health checks and based on the result instructing `Bird`_ daemon 
-to either advertise or withdraw the coresponding route. As a result Bird 
-will only advertise routes to healthy services. 
+**anycast-healthchecker** monitors a service by doing periodic health checks
+and based on the result instructs `Bird`_ daemon to either advertise or
+withdraw the corresponding route. As a result Bird will only advertise routes
+for healthy services.
 
-You'll have to configure Bird properly in order to interface it to 
+You'll have to configure Bird properly in order to interface with
 anycast-healthchecker. The configuration is detailed later in this document.
 
-anycast-healthchecker is a Python program, it uses the `daemon`_ library 
-to implement a well-behaved Unix daemon process and threading to run 
+anycast-healthchecker is a Python program, it uses the `daemon`_ library
+to implement a well-behaved Unix daemon process and threading to run
 multiple service checks in parallel.
 
 What is Anycast
@@ -34,8 +34,8 @@ one potential receivers, but only one of them receives it. Routing protocols,
 receive traffic based on the topology of the network. The main attribute which
 contributes to the decision is the distance in terms of hops between the sender
 and the receiver. The nearest receiver to a sender always receives the traffic
-and this only changes if something changes on the network (another receiver
-closest to the sender appears or current receiver disappears).
+and this only changes if something changes on the network, another receiver
+closest to the sender appears or current receiver disappears.
 
 The three drawings below exhibit how traffic is routed between a sender and
 multiple potential receivers when something changes on network.
@@ -88,7 +88,7 @@ the following four properties of IP packets:
 * destination PORT
 
 Each unique combination of values for those four properties is called
-`network flow`. For each different network flow a different destination server
+network flow. For each different network flow a different destination server
 is selected so traffic is evenly balanced across all servers.
 These servers run an Internet Routing daemon in the same way as with Anycast
 case but with the major difference that all servers receive traffic.
@@ -159,17 +159,17 @@ Configuring anycast-healthchecker
 ---------------------------------
 
 Because anycast-healthchecker is very much tied in with Bird daemon, we first
-explain the configuration of Bird. We will then cover the
-configuration of anycast-healthchecker (including the configuration for the 
-health checks) and finally we'll describe the options for invoking the program
-from the command line.
+explain the configuration of Bird. We will then cover the configuration of
+anycast-healthchecker (including the configuration for the health checks) and
+finally we'll describe the options for invoking the program from the command
+line.
 
 Bird configuration
 ##################
 
 Below is an example configuration for Bird which establishes the logic described
-in `How anycast-healthchecker works`_. It is the minimum configuration required 
-to interface Bird and anycast-healthchecker.
+in `How anycast-healthchecker works`_. It is the minimum configuration required
+to interface with Bird and anycast-healthchecker.
 
 The most important part is the line ``export where match_route();``. It forces
 all routes to pass from the `match_route` function before they are exported::
@@ -309,7 +309,7 @@ the log files for easier searching of error/warning messages.
 :check_rise: a service is considered HEALTHY after this many consecutive successful health
              checks
 :check_disabled:  ``true`` disables this check, ``false`` enables it
-                 
+
 :on_disabled: what to do when check is disabled, either ``withdraw`` or
               ``advertise``
 :ip_prefix: IP prefix associated with the service. It **must be** assigned to
