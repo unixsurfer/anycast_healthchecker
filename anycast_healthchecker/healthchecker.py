@@ -200,7 +200,6 @@ class HealthChecker(object):
     def run(self):
         """Lunches checks and triggers updates on BIRD configuration."""
         self.log.info("Lunching checks")
-        _workers = []
 
         # Lunch a thread for each configuration
         self.log.info("Going to lunch {} threads".format(len(self.services)))
@@ -215,7 +214,6 @@ class HealthChecker(object):
                 self.action,
                 self.log)
             _thread.start()
-            _workers.append(_thread)
 
         # Stay running until we are stopped
         while True:
@@ -235,9 +233,6 @@ class HealthChecker(object):
             except Empty:
                 # Just keep trying to fetch items
                 continue
-
-        for _thread in _workers:
-            _thread.join()
 
     def catch_signal(self, signum, frame):
         """A signal catcher.
