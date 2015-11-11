@@ -217,22 +217,18 @@ class HealthChecker(object):
 
         # Stay running until we are stopped
         while True:
-            try:
-                # Fetch items from action queue
-                health_action = self.action.get(1)
-                self.log.info(("Returned an item from the queue for {} with "
-                               "IP prefix {} and action to {} from Bird "
-                               "configuration").format(health_action[0],
-                                                       health_action[1],
-                                                       health_action[2]))
+            # Fetch items from action queue
+            health_action = self.action.get(block=True)
+            self.log.info(("Returned an item from the queue for {} with "
+                           "IP prefix {} and action to {} from Bird "
+                           "configuration").format(health_action[0],
+                                                   health_action[1],
+                                                   health_action[2]))
 
-                bird_updated = self._update_bird_prefix_conf(health_action)
-                self.action.task_done()
-                if bird_updated:
-                    self._reload_bird()
-            except Empty:
-                # Just keep trying to fetch items
-                continue
+            bird_updated = self._update_bird_prefix_conf(health_action)
+            self.action.task_done()
+            if bird_updated:
+                self._reload_bird()
 
     def catch_signal(self, signum, frame):
         """A signal catcher.
