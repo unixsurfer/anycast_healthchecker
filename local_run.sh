@@ -1,7 +1,7 @@
 #!/bin/bash
 TEST_DIR="${PWD}/var"
 DOTDIR="${TEST_DIR}/etc/anycast-healthchecker.d"
-DAEMON="${HOME}/.local/bin/anycast-healthchecker"
+DAEMON=anycast-healthchecker
 DAEMONCONF="${TEST_DIR}/etc/anycast-healthchecker.conf"
 PIDIFILE="${TEST_DIR}/var/run/anycast-healthchecker/anycast-healthchecker.pid"
 directories=("${TEST_DIR}"/var/log/anycast-healthchecker \
