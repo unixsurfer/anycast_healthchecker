@@ -138,11 +138,8 @@ class HealthChecker(object):
                 # all entries of the array constant need a trailing comma
                 # except the last one. A single element array doesn't need the
                 # trailing comma.
-                for prefix in prefixes[:-1]:
-                    bird_conf.write("{}{},\n".format(8 * ' ', prefix))
-                bird_conf.write("{}{}\n".format(8 * ' ',
-                                                prefixes[len(prefixes) - 1]))
-                bird_conf.write("{}];\n".format(4 * ' '))
+                bird_conf.write(',\n'.join(map(lambda p: ' '*8 + p, prefixes)))
+                bird_conf.write("{spaces}];\n".format(spaces=4 * ' '))
                 bird_conf.truncate()
                 bird_conf.close()
                 self.log.info("Bird configuration is updated")
