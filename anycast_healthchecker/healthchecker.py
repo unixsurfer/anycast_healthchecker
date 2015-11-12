@@ -139,7 +139,7 @@ class HealthChecker(object):
                 # except the last one. A single element array doesn't need the
                 # trailing comma.
                 bird_conf.write(',\n'.join(map(lambda p: ' '*8 + p, prefixes)))
-                bird_conf.write("{spaces}];\n".format(spaces=4 * ' '))
+                bird_conf.write("\n{spaces}];\n".format(spaces=4 * ' '))
                 bird_conf.truncate()
                 bird_conf.close()
                 self.log.info("Bird configuration is updated")
