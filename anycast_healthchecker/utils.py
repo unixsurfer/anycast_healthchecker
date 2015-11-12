@@ -245,3 +245,38 @@ def get_ip_prefixes_from_bird(filename, die=True):
                 prefixes.append(line.rstrip(','))
 
     return prefixes
+
+
+class BaseOperation(object):
+    def __init__(self, name, ip_prefix, log):
+        self.name = name
+        self.ip_prefix = ip_prefix
+        self.log = log
+
+
+class AddOperation(BaseOperation):
+    def __str__(self):
+        return 'add to'
+
+    def update(self, prefixes):
+        if self.ip_prefix not in prefixes:
+            prefixes.append(self.ip_prefix)
+            self.log.info("Announcing {i} for {n}".format(
+                i=self.ip_prefix, n=self.name))
+            return True
+
+        return False
+
+
+class DeleteOperation(BaseOperation):
+    def __str__(self):
+        return 'delete from'
+
+    def update(self, prefixes):
+        if self.ip_prefix in prefixes:
+            prefixes.remove(self.ip_prefix)
+            self.log.info("Withdrawing {i} for {n}".format(
+                i=self.ip_prefix, n=self.name))
+            return True
+
+        return False

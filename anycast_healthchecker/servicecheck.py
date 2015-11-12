@@ -10,6 +10,8 @@ import time
 from threading import Thread
 import shlex
 
+from anycast_healthchecker.utils import AddOperation, DeleteOperation
+
 
 class ServiceCheck(Thread):
     """Handles a check for a service.
@@ -181,9 +183,11 @@ class ServiceCheck(Thread):
                     # reloads when a service flaps between states.
                     if check_state != 'UP':
                         check_state = 'UP'
-                        self.action.put((self.name,
-                                         self.config['ip_prefix'],
-                                         'add'))
+                        operation = AddOperation(
+                            name=self.name,
+                            ip_prefix=self.config['ip_prefix'],
+                            log=self.log)
+                        self.action.put(operation)
                         self.log.info(
                             "Queued {}".format(self.config['ip_prefix']))
                 elif up_cnt < self.config['check_rise']:
@@ -202,9 +206,11 @@ class ServiceCheck(Thread):
                     # unnecessary bird reloads when a service flaps between states
                     if check_state != 'DOWN':
                         check_state = 'DOWN'
-                        self.action.put((self.name,
-                                         self.config['ip_prefix'],
-                                         'del'))
+                        operation = DeleteOperation(
+                            name=self.name,
+                            ip_prefix=self.config['ip_prefix'],
+                            log=self.log)
+                        self.action.put(operation)
                         self.log.info(
                             "Queued {}".format(self.config['ip_prefix']))
                 elif down_cnt < self.config['check_fail']:

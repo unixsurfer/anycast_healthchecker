@@ -68,17 +68,14 @@ class HealthChecker(object):
 
         self.log.debug("Initialize healthchecker")
 
-    def _update_bird_prefix_conf(self, health_action):
+    def _update_bird_prefix_conf(self, operation):
         """Updates BIRD configuration.
 
         Adds/removes entries from a list and updates generation time stamp.
         Main program will exit if configuration file cant be read/written.
 
         Arguments:
-            health_action (tuple): A 3 element tuple:
-            1st: The name of the thread (str)
-            2nd: ip_prefix (str)
-            3nd: Action to take, either 'add' or 'del' (str)
+            operation (obj): Either an AddOperation or DeleteOperation object
 
         Returns:
             True if BIRD configuration was updated otherwise False.
@@ -86,9 +83,6 @@ class HealthChecker(object):
         """
         conf_updated = False
         prefixes = []
-        name = health_action[0]
-        ip_prefix = health_action[1]
-        action = health_action[2]
         comment = ("# {} is a dummy IP Prefix. It should NOT be used and "
                    "REMOVED from the constant.".format(self.dummy_ip_prefix))
 
@@ -112,15 +106,8 @@ class HealthChecker(object):
             prefixes.insert(0, self.dummy_ip_prefix)
             conf_updated = True
 
-        if action == 'del' and ip_prefix in prefixes:
-            self.log.info("Withdrawing {} for {}".format(ip_prefix, name))
-            prefixes.remove(ip_prefix)
-            conf_updated = True
-        elif action == 'add' and ip_prefix not in prefixes:
-            self.log.info("Announcing {} for {}".format(ip_prefix, name))
-            prefixes.append(ip_prefix)
-            conf_updated = True
-
+        # Update the list of IP prefixes.
+        conf_updated = operation.update(prefixes)
         if not conf_updated:
             self.log.info("No updates for bird configuration")
             return conf_updated
@@ -215,14 +202,14 @@ class HealthChecker(object):
         # Stay running until we are stopped
         while True:
             # Fetch items from action queue
-            health_action = self.action.get(block=True)
-            self.log.info(("Returned an item from the queue for {} with "
-                           "IP prefix {} and action to {} from Bird "
-                           "configuration").format(health_action[0],
-                                                   health_action[1],
-                                                   health_action[2]))
+            operation = self.action.get(block=True)
+            self.log.info(("Returned an item from the queue for {n} with "
+                           "IP prefix {i} and action to {o} Bird "
+                           "configuration").format(n=operation.name,
+                                                   i=operation.ip_prefix,
+                                                   o=operation))
 
-            bird_updated = self._update_bird_prefix_conf(health_action)
+            bird_updated = self._update_bird_prefix_conf(operation)
             self.action.task_done()
             if bird_updated:
                 self._reload_bird()
