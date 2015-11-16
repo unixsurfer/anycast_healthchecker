@@ -438,6 +438,15 @@ Requirements for running local_run.sh and having a workable setup
 
 #. sudo access to assign IPs on the loopback interface
 
+Contributers
+############
+
+The following people have contributed to project with feedback, commits and
+code reviews
+
+- Károly Nagy (@charlesnagy)
+- Nick Demou (@ndemou)
+
 Licensing
 ---------
 
