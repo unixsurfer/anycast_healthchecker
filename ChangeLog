@@ -1,6 +1,12 @@
 CHANGES
 =======
 
+0.4.3
+-----
+
+* RELEASE 0.4.3 version
+* Fix a regression introduced by 168f9aab
+
 0.4.2
 -----
 
