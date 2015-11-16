@@ -120,14 +120,20 @@ class ServiceCheck(Thread):
         if (self.config['check_disabled']
                 and self.config['on_disabled'] == 'withdraw'):
             self.log.info("Check is disabled and ip_prefix will be withdrawn")
-            self.action.put((self.name, self.config['ip_prefix'], 'del'))
+            operation = DeleteOperation(name=self.name,
+                                        ip_prefix=self.config['ip_prefix'],
+                                        log=self.log)
+            self.action.put(operation)
             self.log.info("{} in queue".format(self.config['ip_prefix']))
             self.log.info("Check is now permanently disabled")
             return True
         elif (self.config['check_disabled']
               and self.config['on_disabled'] == 'advertise'):
             self.log.info("Check is disabled, ip_prefix wont be withdrawn")
-            self.action.put((self.name, self.config['ip_prefix'], 'add'))
+            operation = AddOperation(name=self.name,
+                                     ip_prefix=self.config['ip_prefix'],
+                                     log=self.log)
+            self.action.put(operation)
             self.log.info("{} in queue".format(self.config['ip_prefix']))
             self.log.info("Check is now permanently disabled")
             return True
