@@ -1,6 +1,22 @@
 CHANGES
 =======
 
+0.4.2
+-----
+
+* RELEASE 0.4.2 version
+* Change the way threads pass operations
+* Fix a regression introduced by 37aa574b1159
+* Simplify the update of bird configuration
+* Call anycast-healthchecker from the virtualenvironment
+* Remove unnecessary catch of Empty exception
+* Remove unnecessary block on threads
+* ServiceCheck: simplify code by removing superfluous lines
+* switch to split from shlex
+* tiny changes on modifications from @ndemou
+* New Introduction + minor spelling, grammar syntax
+* More clear and simple introduction
+
 0.4.1
 -----
 
