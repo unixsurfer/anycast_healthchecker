@@ -30,16 +30,22 @@ What is Anycast
 
 Anycast is a network address scheme where traffic from a sender has more than
 one potential receiver, but only one of them receives it. Routing protocols,
-`BGP`_ or `OSPF`_, decide which one of the potential receivers will actually
+decide which one of the potential receivers will actually
 receive traffic based on the topology of the network. The main attribute which
 contributes to the decision is the cost of the network path between a sender and
-a receiver. `Distance-vector routing protocols`_ like BGP associates the cost of
-the path with the number of hops between the sender and the receiver.
-`Link-state routing protocols`_ like OSPF calculates the shortest path by taking
-inconsideration the bandwidth of the network links.
+a receiver. Cost is a protocol specific (usually integer) value that only has
+meaning within a protocol that is used as a metric of distance. Routing
+protocols provide default values for common topologies (BGP associates the cost of
+a path with the number of autonomous systems between the sender and the
+receiver, OSPF calculates the default cost based on the bandwidth of links),
+but its main use is to allow administrative control over traffic flow by
+specifying cost according to business needs.
+
 The nearest receiver to a sender always receives the traffic and this only changes
 if something changes on the network, another receiver with best path to the sender
-appears or current receiver disappears.
+appears or current receiver disappears. If multiple receivers have the same
+distance from the sender more than one of the receivers might receive traffic,
+based on further details of the network configuration.
 
 The three drawings below exhibit how traffic is routed between a sender and
 multiple potential receivers when something changes on network. In this example
