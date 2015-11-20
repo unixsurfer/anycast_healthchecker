@@ -18,8 +18,8 @@ and based on the result instructs `Bird`_ daemon to either advertise or
 withdraw the route to reach the monitored service. As a result Bird will only
 advertise routes for healthy services.
 
-Bird must be configured in order to interface with anycast-healthchecker.
-The configuration is detailed later in this document.
+Bird must be configured in a certain way to interface properly with
+anycast-healthchecker. The configuration is detailed later in this document.
 
 anycast-healthchecker is a Python program, which uses the `daemon`_ library
 to implement a well-behaved Unix daemon process and threading to run
@@ -35,9 +35,9 @@ receive traffic based on the topology of the network. The main attribute which
 contributes to the decision is the cost of the network path between a sender and
 a receiver. Cost is a protocol specific (usually integer) value that only has
 meaning within a protocol that is used as a metric of distance. Routing
-protocols provide default values for common topologies (BGP associates the cost of
-a path with the number of autonomous systems between the sender and the
-receiver, OSPF calculates the default cost based on the bandwidth of links),
+protocols provide default values for common topologies (`BGP`_ associates the
+cost of a path with the number of autonomous systems between the sender and the
+receiver, `OSPF`_ calculates the default cost based on the bandwidth of links),
 but its main use is to allow administrative control over traffic flow by
 specifying cost according to business needs.
 
@@ -49,7 +49,7 @@ based on further details of the network configuration.
 
 The three drawings below exhibit how traffic is routed between a sender and
 multiple potential receivers when something changes on network. In this example
-distance-vector routing protocol is used(BGP):
+BGP routing protocol is used:
 
 .. image:: anycast-receivers-example1.png
    :scale: 60%
@@ -140,8 +140,8 @@ As it is exhibited in the above diagram a route is advertised only when:
 #. BGP/OSPF protocols export that route from the RIB to a network peer.
 
 The route associated with the Anycasted service must be either advertised or
-withdrawn based on the health status of the service, otherwise traffic will
-always be routed to the local node regardless of the status of the service.
+withdrawn based on the health of the service, otherwise traffic will always
+be routed to the local node regardless of the status of the service.
 
 Bird provides `filtering`_ capabilities with the help of a simple programming
 language. A filter can be used to either accept or reject routes before they
@@ -157,7 +157,7 @@ The following diagram illustrates how this technique works:
    :scale: 60%
 
 This configuration logic allows a separate process to update the list by adding
-or removing IP prefixes and triggering a reconfiguration of Bird in order to advertise
+or removing IP prefixes and trigger a reconfiguration of Bird in order to advertise
 or withdraw routes.  **anycast-healthchecker** is that separate process. It monitors
 Anycasted services and based on the status of the health checks updates the list
 of IP prefixes.
@@ -234,10 +234,10 @@ route in a list and accepts the export if it finds a matching entry::
 anycast-prefixes.conf
 *********************
 
-``anycast-prefixes.conf`` file defines a list of IP prefixes which is store in
+``anycast-prefixes.conf`` file defines a list of IP prefixes which is stored in
 a variable with the name ``ACAST_PS_ADVERTISE``. The name of the variable can
 be anything meaningful but ``bird_variable`` setting **must** be changed
-accordingly in order for anycastr-healthchecker to modify it.
+accordingly in order for anycast-healthchecker to modify it.
 Because anycast-healthchecker does not install ``anycast-prefixes.conf``
 file, administrators should install an initial version with the following
 content and after the launch of anycast-healthchecker daemon the
@@ -253,7 +253,7 @@ modified by other processes.
 
 anycast-healthchecker daemon removes IP prefixes from the list for which a
 service check is not configured. But, the IP prefix set in ``dummy_ip_prefix``
-does not need a service check configured.
+does not need a service check configuration.
 
 Configuring the daemon
 ######################
@@ -306,7 +306,7 @@ Daemon section
 :bird_conf: file with the list of IP prefixes allowed to be exported
 :bird_variable: the name of the list defined in ``bird_conf``
 :bird_reconfigure_cmd: command to trigger a reconfiguration of Bird
-:loglevel: log level
+:loglevel: log level, possible values are: debug, info, warning, error, critical
 :log_file: file to log messages to
 :log_maxbytes: maximum size in bytes for log files
 :log_backups: number of old log files to maintain
@@ -341,7 +341,7 @@ The name of the section becomes the name of the service check and appears in
 the log files for easier searching of error/warning messages.
 
 :check_cmd: the command to run to determine the status of the service based
-            on the return code. Complex health checking should be wrapped
+            **on the return code**. Complex health checking should be wrapped
             in a script file. Output is ignored.
 :check_interval: how often to run the check (seconds)
 :check_timeout: timeout for the check command to complete (seconds)
