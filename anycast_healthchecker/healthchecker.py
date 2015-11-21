@@ -12,7 +12,9 @@ from queue import Queue, Empty
 import shlex
 
 from anycast_healthchecker.servicecheck import ServiceCheck
-from anycast_healthchecker.utils import OPTIONS_TYPE, get_ip_prefixes_from_bird
+from anycast_healthchecker.utils import (OPTIONS_TYPE,
+                                         get_ip_prefixes_from_bird,
+                                         ip_prefixes_without_config)
 
 
 class HealthChecker(object):
@@ -68,7 +70,7 @@ class HealthChecker(object):
 
         self.log.debug("Initialize healthchecker")
 
-    def _update_bird_prefix_conf(self, operation):
+    def _update_bird_conf_file(self, operation):
         """Updates BIRD configuration.
 
         Adds/removes entries from a list and updates generation time stamp.
@@ -106,8 +108,29 @@ class HealthChecker(object):
             prefixes.insert(0, self.dummy_ip_prefix)
             conf_updated = True
 
-        # Update the list of IP prefixes.
-        conf_updated = operation.update(prefixes)
+        # Remove IP prefixes for which we don't have a configuration for them.
+        notconfigured_ip_prefixes = ip_prefixes_without_config(prefixes,
+                                                               self.config,
+                                                               self.services)
+        if notconfigured_ip_prefixes:
+            self.log.warning("found {i} IP prefixes in Bird configuration "
+                             "but we aren't configured to run health checks "
+                             "on them. Either someone modified the "
+                             "configuration manually or something went "
+                             "horrible wrong. Thus, we remove them from "
+                             "Bird configuration".format(
+                                 i=','.join(notconfigured_ip_prefixes)))
+            # This is faster than using lambda and filter.
+            # NOTE: We don't use remove method as we want to remove more than
+            # occurrences of the IP prefixes without check.
+            prefixes[:] = (ip for ip in prefixes
+                           if ip not in notconfigured_ip_prefixes)
+            conf_updated = True
+
+        # Update the list of IP prefixes based on the status of health check.
+        if operation.update(prefixes):
+            conf_updated = True
+
         if not conf_updated:
             self.log.info("No updates for bird configuration")
             return conf_updated
@@ -209,7 +232,7 @@ class HealthChecker(object):
                                                    i=operation.ip_prefix,
                                                    o=operation))
 
-            bird_updated = self._update_bird_prefix_conf(operation)
+            bird_updated = self._update_bird_conf_file(operation)
             self.action.task_done()
             if bird_updated:
                 self._reload_bird()

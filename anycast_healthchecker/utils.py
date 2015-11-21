@@ -124,6 +124,25 @@ def service_configuration_check(config, services):
                                             err=str(error)))
 
 
+def ip_prefixes_without_config(ip_prefixes_in_bird, config, services):
+    """Find IP prefixes in Bird configuration without a check.
+
+    Arguments:
+        ip_prefixes_in_bird (list): A list of IP prefixes configured in Bird.
+        config (obg): A configparser object which holds our configuration.
+        services (list): A list of section names which are the name of the
+        service checks.
+
+    Returns:
+        A sequence (set) with IP prefixes without a check associated with them.
+    """
+    configured = get_ip_prefixes(config, services)
+    # dummy_ip_prefix doesn't have a config by design
+    configured.add(config['daemon']['dummy_ip_prefix'])
+
+    return set(ip_prefixes_in_bird).difference(configured)
+
+
 def ip_prefixes_check(config, services):
     """Finds IP prefixes in Bird configuration with missing check
 
@@ -136,25 +155,26 @@ def ip_prefixes_check(config, services):
         services (list): A list of section names which are the name of the
         service checks.
     """
-    ip_prefixes = get_ip_prefixes(config, services)
-    ip_prefixes.add(config['daemon']['dummy_ip_prefix'])
-    ip_prefixes_in_bird = set(get_ip_prefixes_from_bird(
-        config['daemon']['bird_conf']))
+    ip_prefixes_in_bird = get_ip_prefixes_from_bird(
+        config['daemon']['bird_conf'])
 
     if not ip_prefixes_in_bird:
-        sys.exit("Found zero IP prefixes in {}".format(
+        print("Found zero IP prefixes in {}".format(
             config['daemon']['bird_conf']))
+        return None
 
-    unconfigured_ip_prefixes = ip_prefixes_in_bird.difference(ip_prefixes)
-    if unconfigured_ip_prefixes:
-        sys.exit("There are IP prefixes in {fh} for which a configuration "
-                 "isn't supplied".format(fh=config['daemon']['bird_conf']))
+    notconfigured_ip_prefixes = ip_prefixes_without_config(ip_prefixes_in_bird,
+                                                           config,
+                                                           services)
+    if notconfigured_ip_prefixes:
+        print("Found IP prefixes {i} in {fh} without a check configured"
+              .format(fh=config['daemon']['bird_conf'],
+                      i=','.join(notconfigured_ip_prefixes)))
 
-    # Dummy ip prefix should be in the bird conf
     if config['daemon']['dummy_ip_prefix'] not in ip_prefixes_in_bird:
-        sys.exit("Dummy IP prefix ({ip}) is missing from bird configuration "
-                 "{fh}".format(ip=config['daemon']['dummy_ip_prefix'],
-                               fh=config['daemon']['bird_conf']))
+        print("Dummy IP prefix ({ip}) is missing from bird configuration "
+              "{fh}".format(ip=config['daemon']['dummy_ip_prefix'],
+                            fh=config['daemon']['bird_conf']))
 
 
 def configuration_check(config):
