@@ -8,7 +8,7 @@ A library which provides the HealthChecker class.
 import subprocess
 import sys
 import time
-from queue import Queue, Empty
+from queue import Queue
 import shlex
 
 from anycast_healthchecker.servicecheck import ServiceCheck
