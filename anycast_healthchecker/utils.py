@@ -144,11 +144,11 @@ def ip_prefixes_without_config(ip_prefixes_in_bird, config, services):
 
 
 def ip_prefixes_check(config, services):
-    """Finds IP prefixes in Bird configuration with missing check
+    """Reports issues with IP prefixes.
 
-    Checks IP prefixes configured in Bird configuration for which we don't
-    have a service check associated with. If it finds any it exits the main
-    program.
+    - Report IP prefixes found in Bird configuration for which we don't have
+    a service check associated with.
+    - Report missing ``dummy_ip_prefix`` in Bird configuration
 
     Arguments:
         config (obg): A configparser object which holds our configuration.
