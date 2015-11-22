@@ -1,6 +1,18 @@
 CHANGES
 =======
 
+0.4.4
+-----
+
+* RELEASE 0.4.4 version
+* Update docstring of ip_prefixes_check(
+* Remove import of an unused exception
+* Change the way we handle IP prefixes without check
+* Add Ralf Ertzinger in the contributers list
+* Add some corrections in README
+* Rewrite routing protcol overview
+* Add contributers section
+
 0.4.3
 -----
 
@@ -17,6 +29,7 @@ CHANGES
 * Call anycast-healthchecker from the virtualenvironment
 * Remove unnecessary catch of Empty exception
 * Remove unnecessary block on threads
+* Modify README based on the feedback received
 * ServiceCheck: simplify code by removing superfluous lines
 * switch to split from shlex
 * tiny changes on modifications from @ndemou
