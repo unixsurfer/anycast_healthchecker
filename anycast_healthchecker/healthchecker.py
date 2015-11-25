@@ -151,7 +151,6 @@ class HealthChecker(object):
                 bird_conf.write(',\n'.join(map(lambda p: ' '*8 + p, prefixes)))
                 bird_conf.write("\n{spaces}];\n".format(spaces=4 * ' '))
                 bird_conf.truncate()
-                bird_conf.close()
                 self.log.info("Bird configuration is updated")
         except OSError as error:
             self.log.critical("Failed to update bird configuration")
