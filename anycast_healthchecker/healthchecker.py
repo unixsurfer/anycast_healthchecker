@@ -191,6 +191,10 @@ class HealthChecker(object):
             self.log.error(("Reloading BIRD failed, most likely BIRD daemon"
                             " is down:{}").format(error.output))
             return
+        except FileNotFoundError as error:
+            self.log.error(("Reloading BIRD failed with: {e}").format(
+                e=error))
+            return
 
         # 'Reconfigured' string will be in the output if and only if conf is
         # valid.
