@@ -321,6 +321,32 @@ Daemon section
        the loopback interface and configured anywhere on the network as
        anycast-healthchecker **does not** perform any checks for it.
 
+JSON logging
+************
+
+anycast-healthchecker daemon can be configured to send logging messages over
+HTTP to a central place in addition to write them to log files.
+It builds a JSON blob with a specific data structure, which **is not**
+configurable at the moment.
+
+The following settings can be added to the [daemon] section for enabling
+JSON logging.
+
+:json_logging: ``true`` enables JSON logging ``false`` disables it, it **is
+               not** enabled by default.
+:http_server: server name to send JSON logging over HTTP protocol
+:http_server_port: port to connect
+:http_server_protocol: HTTP protocol to use, either ``http`` or ``https``
+:http_server_timeout: how long to wait for the server to send data before giving
+                      up, as a float number.
+:NOTE: There are not default values for the above settings, except
+       ``json_logging``, thus have to be configured explicitly.
+:WARNING: The http POST requests are done in blocking mode which means that
+          possible long delays will make the health checks to be delayed.
+          ``http_server_timeout`` accepts floating point numbers as values
+          which are passed to underlying request module as a single timeout
+          which will be applied to both the connect and the read timeouts.
+
 Configuring checks for services
 ###############################
 

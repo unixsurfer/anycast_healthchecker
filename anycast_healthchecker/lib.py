@@ -8,50 +8,13 @@ A library which provides helper functions and classes.
 """
 
 import logging
+import logging.handlers
 import os
 import sys
+import socket
+import json
 import daemon
-import logging.handlers
-
-
-class FileLikeLogger(object):
-    """Wraps a logging.Logger class into a file like object.
-
-    This is a handy way to redirect stdout/stdin to a logger.
-
-    Arguments:
-        logger (logger obj): A logger object.
-
-    Methods:
-        write(string): Writes string to logger with newlines removed.
-        flush(): Flushes logger messages.
-        close(): Closes logger.
-    """
-
-    def __init__(self, logger):
-        self.logger = logger
-
-    def write(self, string):
-        """Erases newline from a string and writes to the logger."""
-        string = string.rstrip()
-        if string:  # Don't log emtpy lines
-            for line in string.split('\n'):
-                # Critical to log at any log level.
-                self.logger.critical(line)
-
-    def flush(self):
-        """Flushes logger's data."""
-        # In case multiple handlers are attached to the logger make sure
-        # they are flushed.
-        for handler in self.logger.handlers:
-            handler.flush()
-
-    def close(self):
-        """Calls the closer method of the logger."""
-        # In case multiple handlers are attached to the logger make sure
-        # they are flushed.
-        for handler in self.logger.handlers:
-            handler.close()
+import requests
 
 
 class LoggingDaemonContext(daemon.DaemonContext):
@@ -122,9 +85,9 @@ class LoggingDaemonContext(daemon.DaemonContext):
         self._add_logger_files()
         daemon.DaemonContext.open(self)
         if self.stdout_logger:
-            sys.stdout = FileLikeLogger(self.stdout_logger)
+            sys.stdout = self.stdout_logger
         if self.stderr_logger:
-            sys.stderr = FileLikeLogger(self.stderr_logger)
+            sys.stderr = self.stderr_logger
 
 
 def open_files_from_loggers(loggers):
@@ -138,29 +101,34 @@ def open_files_from_loggers(loggers):
     """
     open_files = []
     for logger in loggers:
-        for handler in logger.handlers:
+        for handler in logger.logger.handlers:
             if hasattr(handler, 'stream') and \
                hasattr(handler.stream, 'fileno'):
                 open_files.append(handler.stream)
     return open_files
 
 
-def get_file_logger(
-        name,
-        file_path,
-        log_level=logging.DEBUG,
-        log_format=None,
-        maxbytes=104857600,
-        backupcount=8):
-    """Sets up a rotating file logger.
+class LoggerExt(object):
+    """Builds a logging.Logger class with extended factionally
 
-    Arguments:
+    It wraps a Logger class into a file like object, which provides a handy
+    way to redirect stdout/stdin to a logger. It also builds a JSON blob,
+    which contains a certain data structure and sent over HTTP to a central
+    location.
+
+    Arguments
         name (str): The name for the logger.
         file_path (str): The absolute path of the log file.
         log_level (logging.level obj): The threshold for this logger.
         log_format (logging.Formatter): The format of this logger.
         maxbytes (int): Max size of the log before it is rotated.
         backupcount (int): Number of backup file to keep.
+
+
+    Methods:
+        write(string): Writes string to logger with newlines removed.
+        flush(): Flushes logger messages.
+        close(): Closes logger.
 
     Returns:
         A logger object.
@@ -169,17 +137,138 @@ def get_file_logger(
         See logging module for acceptable values for log_level
         and log_format.
     """
-    if log_format is None:
-        log_format = ('%(asctime)s [%(process)d] %(levelname)-8s '
-                      '%(threadName)-32s %(message)s')
-    my_logger = logging.getLogger(name)
-    my_logger.setLevel(log_level)
-    handler = logging.handlers.RotatingFileHandler(
-        file_path,
-        maxBytes=maxbytes,
-        backupCount=backupcount)
-    formatter = logging.Formatter(log_format)
-    handler.setFormatter(formatter)
-    my_logger.addHandler(handler)
+    def __init__(self,
+                 name,
+                 file_path,
+                 log_level=logging.DEBUG,
+                 log_format=None,
+                 maxbytes=104857600,
+                 backupcount=8,):
 
-    return my_logger
+        if log_format is None:
+            log_format = ('%(asctime)s [%(process)d] %(levelname)-8s '
+                          '%(threadName)-32s %(message)s')
+        self.logger = logging.getLogger(name)
+        self.logger.setLevel(log_level)
+        handler = logging.handlers.RotatingFileHandler(file_path,
+                                                       maxBytes=maxbytes,
+                                                       backupCount=backupcount)
+        formatter = logging.Formatter(log_format)
+        handler.setFormatter(formatter)
+        self.logger.addHandler(handler)
+
+        self.jid = "anycast-healthchecker-{h}".format(
+            h=socket.gethostname().split('.')[0])
+
+    def __getattr__(self, name):
+        """Return a logger function for emitting messages
+
+        Because it acts as a proxy for all undefined attributes, we only
+        allow the ones that we know Logger will accept.
+        """
+        _valid_methods = [
+            'critical',
+            'warning',
+            'warn',
+            'info',
+            'notice',
+            'debug',
+            'error',
+        ]
+        if name in _valid_methods:
+            def log(msg, priority=10, **kwargs):
+                _logger = getattr(self.logger, name)
+                _logger(msg)
+
+                # send msg over http only if we are configured
+                if hasattr(self, 'server'):
+                    self._send_http(msg, priority, **kwargs)
+
+            return log
+        else:
+            raise AttributeError
+
+    def write(self, string):
+        """Erases newline from a string and writes to the logger."""
+        string = string.rstrip()
+        if string:  # Don't log empty lines
+            if hasattr(self, 'server'):
+                self._send_http(string, priority=80)
+            for line in string.split('\n'):
+                # Critical to log at any log level.
+                self.logger.critical(line)
+
+    def flush(self):
+        """Flushes logger's data."""
+        # In case multiple handlers are attached to the logger make sure
+        # they are flushed.
+        for handler in self.logger.handlers:
+            handler.flush()
+
+    def close(self):
+        """Calls the closer method of the logger."""
+        for handler in self.logger.handlers:
+            handler.close()
+
+    def add_central_logging(self,
+                            server='127.0.0.1',
+                            timeout=1,
+                            protocol='http',
+                            port=2813,
+                            path='/'):
+        """Extends logger to a HTTP client"""
+        self.server = server
+        self.timeout = timeout
+        self.protocol = protocol
+        self.port = port
+        self.path = path
+
+    def _send_http(self, msg, priority=10, **kwargs):
+        """Send msg as a JSON blob"""
+        # These are the mandatory elements of the data structure which we send
+        data = {
+            'id': self.jid,
+            'msg_type': 'anycast-healthchecker',
+            'priority': priority,
+            'msg_text': msg,
+            'extra': kwargs,
+        }
+        # since we send JSON make sure we set Content-Type accordigly
+        headers = {
+            'Content-type': 'application/json',
+            'Accept': 'text/plain',
+        }
+        url = "{proto}://{host}:{port}{path}".format(proto=self.protocol,
+                                                     host=self.server,
+                                                     port=self.port,
+                                                     path=self.path)
+        try:
+            req = requests.post(url, timeout=self.timeout,
+                                data=json.dumps(data), headers=headers)
+        except (requests.exceptions.Timeout,
+                requests.exceptions.ConnectionError,
+                requests.exceptions.RequestException) as error:
+            self.logger.warning("failed to send data to {s}: {e}".format(
+                s=self.server, e=error))
+        else:
+            if req.status_code == 200:
+                try:
+                    response = req.json()
+                except ValueError as error:
+                    self.logger.warning("failed to decode JSON response ({r}): "
+                                        "{e}".format(r=req.text, e=error))
+                else:
+                    # a valid response(JSON) looks like
+                    # {"Status":"OK","Responses":["OK"]}
+                    if (response['Status'] == 'OK'
+                            and 'OK' in response['Responses']):
+                        self.logger.debug('JSON data sent successfully')
+                    else:
+                        self.logger.warning("something went wrong when we sent "
+                                            "({d}) as response is ({r})".format(
+                                                d=data, r=req.text))
+            else:
+                self.logger.warning("failed to send JSON data, received HTTP "
+                                    "status code {s} with response content "
+                                    "({r})".format(s=req.status_code,
+                                                   r=req.text))

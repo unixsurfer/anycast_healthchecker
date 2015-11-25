@@ -23,7 +23,7 @@ OPTIONS_TYPE = {
     'check_disabled': 'getboolean',
     'on_disabled': 'get',
     'ip_prefix': 'get',
-    'interface': 'get'
+    'interface': 'get',
 }
 
 
@@ -36,10 +36,7 @@ def valid_ip_prefix(ip_prefix):
         (\/([0-9]|[1-2][0-9]|3[0-2]))$                      # prefixlen
         ''', re.VERBOSE)
 
-    if pattern.match(ip_prefix):
-        return True
-    else:
-        return False
+    return pattern.match(ip_prefix)
 
 
 def touch(file_path):

@@ -33,7 +33,10 @@ class ServiceCheck(Thread):
         self.config = config
         self.action = action
         self.log = log
-        self.log.info("Loading check for {}".format(self.name))
+        self.log.info("Loading check for {n}".format(n=self.name))
+        self.extra = {
+            'servicename': self.name,
+        }
 
     def _run_check(self):
         """Executes a check command.
@@ -42,7 +45,7 @@ class ServiceCheck(Thread):
             True if the exit code of the command was 0 otherwise False.
         """
         cmd = shlex.split(self.config['check_cmd'])
-        self.log.info("Running {}".format(' '.join(cmd)))
+        self.log.info("Running {}".format(' '.join(cmd)), **self.extra)
         proc = subprocess.Popen(cmd,
                                 stdin=None,
                                 stdout=None,
@@ -53,13 +56,14 @@ class ServiceCheck(Thread):
         try:
             proc.wait(self.config['check_timeout'])
         except subprocess.TimeoutExpired:
-            self.log.error("Check timed out")
+            self.log.error("Check timed out", priority=80, **self.extra)
             if proc.poll() is None:
                 proc.kill()
             return False
         else:
-            self.log.debug("Check duration {t:.3f}ms".format(
-                t=(time.time() - start_time) * 1000))
+            msg = "Check duration {t:.3f}ms".format(
+                t=(time.time() - start_time) * 1000)
+            self.log.debug(msg, **self.extra)
             return proc.returncode == 0
 
     def _ip_assigned(self):
@@ -78,33 +82,37 @@ class ServiceCheck(Thread):
             "{}".format(self.config['ip_prefix']),
         ]
 
-        self.log.debug("running {}".format(' '.join(cmd)))
+        self.log.debug("running {}".format(' '.join(cmd)), **self.extra)
         try:
             out = subprocess.check_output(
                 cmd,
                 universal_newlines=True,
                 timeout=1)
         except subprocess.CalledProcessError as error:
-            self.log.error("Error checking IP-PREFIX {} {}".format(
-                cmd,
-                error.output))
+            msg = "Error checking IP-PREFIX {c} {e}".format(c=cmd,
+                                                            e=error.output)
+            self.log.error(msg, priority=60, **self.extra)
             # Because it is unlikely to ever get an error I return True
             return True
         except subprocess.TimeoutExpired:
-            self.log.error("Timeout running {}".format(' '.join(cmd)))
+            msg = "Timeout running {c}".format(c=' '.join(cmd))
+            self.log.error(msg, priority=50, **self.extra)
             # Because it is unlikely to ever get a timeout I return True
             return True
         else:
             if self.config['ip_prefix'] in out:
-                self.log.debug("{} assigned to loopback interface".format(
-                    self.config['ip_prefix']))
+                msg = "{i} assigned to loopback interface".format(
+                    i=self.config['ip_prefix'])
+                self.log.debug(msg, **self.extra)
                 return True
             else:
-                self.log.debug("{} NOT assigned to loopback interface".format(
-                    self.config['ip_prefix']))
+                msg = "{i} NOT assigned to loopback interface".format(
+                    i=self.config['ip_prefix'])
+                self.log.debug(msg, priority=20, **self.extra)
                 return False
 
-        self.log.debug("I shouldn't land here!, it is a BUG")
+        self.log.debug("I shouldn't land here!, it is a BUG",
+                       priority=50, **self.extra)
 
         return False
 
@@ -119,23 +127,29 @@ class ServiceCheck(Thread):
         """
         if (self.config['check_disabled']
                 and self.config['on_disabled'] == 'withdraw'):
-            self.log.info("Check is disabled and ip_prefix will be withdrawn")
-            operation = DeleteOperation(name=self.name,
-                                        ip_prefix=self.config['ip_prefix'],
-                                        log=self.log)
-            self.action.put(operation)
-            self.log.info("{} in queue".format(self.config['ip_prefix']))
-            self.log.info("Check is now permanently disabled")
+            self.log.info("Check is disabled and ip_prefix will be withdrawn",
+                          priority=20, **self.extra)
+            del_operation = DeleteOperation(name=self.name,
+                                            ip_prefix=self.config['ip_prefix'],
+                                            log=self.log)
+            self.action.put(del_operation)
+            msg = "{i} added in queue".format(i=self.config['ip_prefix'])
+            self.log.info(msg, **self.extra)
+            self.log.info("Check is now permanently disabled",
+                          priority=20, **self.extra)
             return True
         elif (self.config['check_disabled']
               and self.config['on_disabled'] == 'advertise'):
-            self.log.info("Check is disabled, ip_prefix wont be withdrawn")
-            operation = AddOperation(name=self.name,
-                                     ip_prefix=self.config['ip_prefix'],
-                                     log=self.log)
-            self.action.put(operation)
-            self.log.info("{} in queue".format(self.config['ip_prefix']))
-            self.log.info("Check is now permanently disabled")
+            self.log.info("Check is disabled, ip_prefix wont be withdrawn",
+                          priority=80, **self.extra)
+            add_operation = AddOperation(name=self.name,
+                                         ip_prefix=self.config['ip_prefix'],
+                                         log=self.log)
+            self.action.put(add_operation)
+            msg = "{i} add in queue".format(i=self.config['ip_prefix'])
+            self.log.info(msg, **self.extra)
+            self.log.info('Check is now permanently disabled',
+                          priority=20, **self.extra)
             return True
 
         return False
@@ -168,21 +182,20 @@ class ServiceCheck(Thread):
 
         # Go in a loop until we are told to stop
         while True:
-
             if not self._ip_assigned():
                 up_cnt = 0
-                self.log.info(("Status DOWN because {0} isn't assigned to"
-                               " to loopback interface. {0} prefix isn't"
-                               " removed from BIRD configuration as direct"
-                               " protocol in BIRD has already withdrawn the"
-                               " route for that prefix. In nutshell traffic"
-                               " is NOT routed anymore to this"
-                               " node").format(self.config['ip_prefix']))
+                msg = ("Status DOWN because {i} isn't assigned to to loopback "
+                       "interface. {i} prefix isn't removed from BIRD "
+                       "configuration as direct protocol in BIRD has already "
+                       "withdrawn the route for that prefix. In nutshell "
+                       "traffic is NOT routed anymore to this node").format(
+                           i=self.config['ip_prefix'])
+                self.log.info(msg, priority=80, **self.extra)
                 if check_state != 'DOWN':
                     check_state = 'DOWN'
             elif self._run_check():
                 if up_cnt == (self.config['check_rise'] - 1):
-                    self.log.info("Status UP")
+                    self.log.info("Status UP", **self.extra)
                     # Service exceeded all consecutive checks. Set its state
                     # accordingly and put an item in queue. But to it only if
                     # previous state was different, to catch unnecessary bird
@@ -194,38 +207,40 @@ class ServiceCheck(Thread):
                             ip_prefix=self.config['ip_prefix'],
                             log=self.log)
                         self.action.put(operation)
-                        self.log.info(
-                            "Queued {}".format(self.config['ip_prefix']))
+                        msg = "{i} added in queue".format(i=self.config['ip_prefix'])
+                        self.log.info(msg, **self.extra)
                 elif up_cnt < self.config['check_rise']:
                     up_cnt += 1
-                    self.log.info("Going UP {}".format(up_cnt))
+                    self.log.info("Going UP {n}".format(n=up_cnt), **self.extra)
                 else:
-                    self.log.error("up_cnt higher, it's a BUG! {}".format(
-                        up_cnt))
+                    msg = "up_cnt higher, it's a BUG! {n}".format(n=up_cnt)
+                    self.log.error(msg, priority=70, **self.extra)
                 down_cnt = 0
             else:
                 if down_cnt == (self.config['check_fail'] - 1):
-                    self.log.info("Status DOWN")
+                    self.log.info("Status DOWN", priority=100, **self.extra)
                     # Service exceeded all consecutive checks.
                     # Set its state accordingly and put an item in queue.
                     # But to it only if previous state was different, to catch
-                    # unnecessary bird reloads when a service flaps between states
+                    # unnecessary bird reloads when a service flaps between
+                    # states
                     if check_state != 'DOWN':
                         check_state = 'DOWN'
-                        operation = DeleteOperation(
+                        del_operation = DeleteOperation(
                             name=self.name,
                             ip_prefix=self.config['ip_prefix'],
                             log=self.log)
-                        self.action.put(operation)
-                        self.log.info(
-                            "Queued {}".format(self.config['ip_prefix']))
+                        self.action.put(del_operation)
+                        msg = "{i} added in queue".format(i=self.config['ip_prefix'])
+                        self.log.info(msg, **self.extra)
                 elif down_cnt < self.config['check_fail']:
                     down_cnt += 1
-                    self.log.info("Going down {}".format(down_cnt))
+                    msg = "Going down {n}".format(n=down_cnt)
+                    self.log.info(msg, priority=40, **self.extra)
                 else:
-                    self.log.error("down_cnt higher, it's a BUG! {}".format(
-                        down_cnt))
+                    msg = "down_cnt higher, it's a BUG! {n}".format(n=down_cnt)
+                    self.log.error(msg, priority=70, **self.extra)
                 up_cnt = 0
-            self.log.debug("Sleeping {} secs".format(
-                self.config['check_interval']))
+            msg = "Sleeping {t} secs".format(t=self.config['check_interval'])
+            self.log.debug(msg, **self.extra)
             time.sleep(self.config['check_interval'])

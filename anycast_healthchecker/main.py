@@ -26,11 +26,11 @@ import os
 import sys
 import signal
 import logging
-from lockfile.pidlockfile import PIDLockFile
-from docopt import docopt
 import configparser
 import glob
 import copy
+from lockfile.pidlockfile import PIDLockFile
+from docopt import docopt
 
 from anycast_healthchecker import healthchecker
 from anycast_healthchecker import lib
@@ -118,14 +118,20 @@ def main():
     numeric_level = getattr(logging, config['daemon']['loglevel'].upper(), None)
 
     # Set up loggers for stdout, stderr and daemon stream
-    log = lib.get_file_logger(
+    log = lib.LoggerExt(
         'daemon',
         config['daemon']['log_file'],
         log_level=numeric_level,
         maxbytes=config.getint('daemon', 'log_maxbytes'),
         backupcount=config.getint('daemon', 'log_backups')
     )
-    stdout_log = lib.get_file_logger(
+    if config.getboolean('daemon', 'json_logging', fallback=False):
+        log.add_central_logging(
+            server=config['daemon']['http_server'],
+            timeout=config.getfloat('daemon', 'http_server_timeout'),
+            protocol=config['daemon']['http_server_protocol'],
+            port=config['daemon']['http_server_port'])
+    stdout_log = lib.LoggerExt(
         'stdout',
         config['daemon']['stdout_file'],
         log_level=numeric_level)
@@ -133,11 +139,18 @@ def main():
     stderrformat = ('%(asctime)s [%(process)d] line:%(lineno)d '
                     'func:%(funcName)s %(levelname)-8s %(threadName)-32s '
                     '%(message)s')
-    stderr_log = lib.get_file_logger(
+    stderr_log = lib.LoggerExt(
         'stderr',
         config['daemon']['stderr_file'],
         log_level=numeric_level,
         log_format=stderrformat)
+
+    if config.getboolean('daemon', 'json_logging', fallback=False):
+        stderr_log.add_central_logging(
+            server=config['daemon']['http_server'],
+            timeout=config.getfloat('daemon', 'http_server_timeout'),
+            protocol=config['daemon']['http_server_protocol'],
+            port=config['daemon']['http_server_port'])
 
     # Make some noise.
     log.debug('Before we are daemonized')
