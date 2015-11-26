@@ -1,11 +1,18 @@
 CHANGES
 =======
 
+0.4.5
+-----
+
+* RELEASE 0.4.5 version
+* Catch the error on bird reload due to missing cmd
+* Remove unnecessary call to close()
+
 0.4.4
 -----
 
 * RELEASE 0.4.4 version
-* Update docstring of ip_prefixes_check(
+* Update docstring of ip_prefixes_check()
 * Remove import of an unused exception
 * Change the way we handle IP prefixes without check
 * Add Ralf Ertzinger in the contributers list
