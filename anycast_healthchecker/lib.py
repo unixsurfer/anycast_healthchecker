@@ -179,6 +179,21 @@ class LoggerExt(object):
         ]
         if name in _valid_methods:
             def log(msg, priority=10, **kwargs):
+                """A wrapper around logger method
+
+                It extends the capabilities by sending also the messages to
+                a HTTP server.
+
+                Arguments:
+                    msg(string): A message to emit
+                    priority(integer): The priority associated with the
+                    messsage
+                    kwargs(dictinary): A dictionary with extra information to
+                    add to the JSON blob
+
+                Returns:
+                    A logger function
+                """
                 _logger = getattr(self.logger, name)
                 _logger(msg)
 
