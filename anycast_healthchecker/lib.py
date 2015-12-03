@@ -280,7 +280,7 @@ class LoggerExt(object):
                     # {"Status":"OK","Responses":["OK"]}
                     if (response['Status'] == 'OK'
                             and 'OK' in response['Responses']):
-                        self.logger.debug("JSON sent successfully %s", data)
+                        self.logger.debug('JSON sent successfully')
                     else:
                         self.logger.warning("something went wrong when we sent"
                                             " (%s) as response from server "
