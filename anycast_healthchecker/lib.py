@@ -251,27 +251,26 @@ class LoggerExt(object):
         except (requests.exceptions.Timeout,
                 requests.exceptions.ConnectionError,
                 requests.exceptions.RequestException) as error:
-            self.logger.warning("failed to send data to {s}: {e}".format(
-                s=self.server, e=error))
+            self.logger.warning("failed to send data to %s: %s",
+                                self.server, error)
         else:
             if req.status_code == 200:
                 try:
                     response = req.json()
                 except ValueError as error:
-                    self.logger.warning("failed to decode JSON response ({r}): "
-                                        "{e}".format(r=req.text, e=error))
+                    self.logger.warning("failed to decode JSON response (%s)"
+                                        ": %s", req.text, error)
                 else:
                     # a valid response(JSON) looks like
                     # {"Status":"OK","Responses":["OK"]}
                     if (response['Status'] == 'OK'
                             and 'OK' in response['Responses']):
-                        self.logger.debug('JSON data sent successfully')
+                        self.logger.debug("JSON sent successfully %s", data)
                     else:
-                        self.logger.warning("something went wrong when we sent "
-                                            "({d}) as response is ({r})".format(
-                                                d=data, r=req.text))
+                        self.logger.warning("something went wrong when we sent"
+                                            " (%s) as response from server "
+                                            "was (%s)", data, req.text)
             else:
                 self.logger.warning("failed to send JSON data, received HTTP "
-                                    "status code {s} with response content "
-                                    "({r})".format(s=req.status_code,
-                                                   r=req.text))
+                                    "status code %s with response content "
+                                    "(%s)", req.status_code, req.text)
