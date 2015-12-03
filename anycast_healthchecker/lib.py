@@ -16,6 +16,8 @@ import json
 import daemon
 import requests
 
+from anycast_healthchecker import __version__ as version
+
 
 class LoggingDaemonContext(daemon.DaemonContext):
     """A subclass of daemom.DaemonContext to add support for loggers.
@@ -226,6 +228,7 @@ class LoggerExt(object):
     def _send_http(self, msg, priority=10, **kwargs):
         """Send msg as a JSON blob"""
         # These are the mandatory elements of the data structure which we send
+        kwargs['softwareversion'] = version
         data = {
             'id': self.jid,
             'msg_type': 'anycast-healthchecker',
