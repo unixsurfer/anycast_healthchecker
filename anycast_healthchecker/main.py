@@ -115,13 +115,13 @@ def main():
                 os.unlink(pidfile)
 
     # Map log level to numeric which can be accepted by loggers.
-    numeric_level = getattr(logging, config['daemon']['loglevel'].upper(), None)
+    num_level = getattr(logging, config['daemon']['loglevel'].upper(), None)
 
     # Set up loggers for stdout, stderr and daemon stream
     log = lib.LoggerExt(
         'daemon',
         config['daemon']['log_file'],
-        log_level=numeric_level,
+        log_level=num_level,
         maxbytes=config.getint('daemon', 'log_maxbytes'),
         backupcount=config.getint('daemon', 'log_backups')
     )
@@ -134,7 +134,7 @@ def main():
     stdout_log = lib.LoggerExt(
         'stdout',
         config['daemon']['stdout_file'],
-        log_level=numeric_level)
+        log_level=num_level)
 
     stderrformat = ('%(asctime)s [%(process)d] line:%(lineno)d '
                     'func:%(funcName)s %(levelname)-8s %(threadName)-32s '
@@ -142,7 +142,7 @@ def main():
     stderr_log = lib.LoggerExt(
         'stderr',
         config['daemon']['stderr_file'],
-        log_level=numeric_level,
+        log_level=num_level,
         log_format=stderrformat)
 
     if config.getboolean('daemon', 'json_logging', fallback=False):
