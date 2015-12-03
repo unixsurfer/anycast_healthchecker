@@ -119,6 +119,7 @@ pgrep -F "${PIDIFILE}" >/dev/null 2>&1
 if [ $? -eq 0 ]; then
     echo "Process $(cat "${PIDIFILE}") already running, killing it.."
     pkill -F "${PIDIFILE}"
+    sleep 1
 fi
 "${DAEMON}" -f "${DAEMONCONF}" -d "${DOTDIR}"
 if [ $? -eq 0 ]; then
