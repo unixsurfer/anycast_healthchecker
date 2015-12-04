@@ -4,6 +4,15 @@
 # pylint: disable=superfluous-parens
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-locals
+# pylint: disable=too-few-public-methods
+"""
+anycast_healthchecker.utils
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This module provides utility functions and classes that are used within
+anycast_healthchecker.
+
+"""
 
 import re
 import os
@@ -265,6 +274,15 @@ def get_ip_prefixes_from_bird(filename, die=True):
 
 
 class BaseOperation(object):
+    """Runs operation on a list
+
+
+    Arguments:
+        name(string): A name to log
+        ip_prefix(string): The value to run the operation
+        log(logger obj): A logger object to use for emitting messages
+        extra(dictinary): A possible dictinary structure to pass further
+    """
     def __init__(self, name, ip_prefix, log, **extra):
         self.name = name
         self.ip_prefix = ip_prefix
@@ -273,10 +291,20 @@ class BaseOperation(object):
 
 
 class AddOperation(BaseOperation):
+    """Adds a value to a list"""
     def __str__(self):
+        """Overwrite the behavior so the class
+
+        A handy way to pass the instantiated object to a string formatter
+        """
         return 'add to'
 
     def update(self, prefixes):
+        """Add a value to the list
+
+        Arguments:
+            prefixes(list): A list to add the value
+        """
         if self.ip_prefix not in prefixes:
             prefixes.append(self.ip_prefix)
             msg = ("announcing {i} for {n}".format(i=self.ip_prefix,
@@ -288,10 +316,16 @@ class AddOperation(BaseOperation):
 
 
 class DeleteOperation(BaseOperation):
+    """Removes a value to a list"""
     def __str__(self):
         return 'delete from'
 
     def update(self, prefixes):
+        """Remove a value to the list
+
+        Arguments:
+            prefixes(list): A list to remove the value
+        """
         if self.ip_prefix in prefixes:
             prefixes.remove(self.ip_prefix)
             msg = "withdrawing {i} for {n}".format(i=self.ip_prefix,
