@@ -131,7 +131,7 @@ class ServiceCheck(Thread):
                           priority=20, **self.extra)
             del_operation = DeleteOperation(name=self.name,
                                             ip_prefix=self.config['ip_prefix'],
-                                            log=self.log)
+                                            log=self.log, **self.extra)
             self.action.put(del_operation)
             msg = "{i} added in queue".format(i=self.config['ip_prefix'])
             self.log.info(msg, **self.extra)
@@ -144,7 +144,7 @@ class ServiceCheck(Thread):
                           priority=80, **self.extra)
             add_operation = AddOperation(name=self.name,
                                          ip_prefix=self.config['ip_prefix'],
-                                         log=self.log)
+                                         log=self.log, **self.extra)
             self.action.put(add_operation)
             msg = "{i} add in queue".format(i=self.config['ip_prefix'])
             self.log.info(msg, **self.extra)
@@ -205,7 +205,7 @@ class ServiceCheck(Thread):
                         operation = AddOperation(
                             name=self.name,
                             ip_prefix=self.config['ip_prefix'],
-                            log=self.log)
+                            log=self.log, **self.extra)
                         self.action.put(operation)
                         msg = "{i} added in queue".format(i=self.config['ip_prefix'])
                         self.log.info(msg, **self.extra)
@@ -229,7 +229,7 @@ class ServiceCheck(Thread):
                         del_operation = DeleteOperation(
                             name=self.name,
                             ip_prefix=self.config['ip_prefix'],
-                            log=self.log)
+                            log=self.log, **self.extra)
                         self.action.put(del_operation)
                         msg = "{i} added in queue".format(i=self.config['ip_prefix'])
                         self.log.info(msg, **self.extra)
