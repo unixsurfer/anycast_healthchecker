@@ -89,7 +89,8 @@ class HealthChecker(object):
                    "REMOVED from the constant.".format(self.dummy_ip_prefix))
 
         try:
-            prefixes = get_ip_prefixes_from_bird(self.bird_conf_file, die=False)
+            prefixes = get_ip_prefixes_from_bird(self.bird_conf_file,
+                                                 die=False)
         except OSError as err:
             msg = "Failed to open bird configuration, {e}".format(e=err)
             self.log.error(msg, priority=80)
@@ -146,7 +147,8 @@ class HealthChecker(object):
                 bird_conf.write("# Generated {time} by anycast-healthchecker"
                                 "\n".format(time=time.ctime()))
                 bird_conf.write("{}\n".format(comment))
-                bird_conf.write("define {} =\n".format(self.bird_constant_name))
+                bird_conf.write("define {} =\n".format(
+                    self.bird_constant_name))
                 bird_conf.write("{}[\n".format(4 * ' '))
                 # all entries of the array constant need a trailing comma
                 # except the last one. A single element array doesn't need the
