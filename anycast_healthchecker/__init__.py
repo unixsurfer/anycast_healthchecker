@@ -1,7 +1,13 @@
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 #
+"""
+anycast healthchecker daemon
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+A healthchecker for Anycasted services.
+
+"""
 __title__ = 'anycast_healthchecker'
 __author__ = 'Pavlos Parissis'
 __license__ = 'Apache 2.0'
