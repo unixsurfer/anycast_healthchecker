@@ -1,7 +1,7 @@
 # pylint: disable=superfluous-parens
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-locals
-#
+# pylint: disable=attribute-defined-outside-init
 
 """
 A library which provides helper functions and classes.
