@@ -139,6 +139,12 @@ class HealthChecker(object):
             self.log.info('No updates for bird configuration')
             return conf_updated
 
+        # dummy_ip_prefix is always there
+        if len(prefixes) == 1:
+            self.log.warning('Bird configuration wont have IP prefixes for '
+                             'any of the services we monitor!. It means local '
+                             'node wont receive any traffic', priority=80)
+
         # some IP prefixes are either removed or added, truncate configuration
         # with new data.
         try:
