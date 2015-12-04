@@ -178,7 +178,7 @@ class LoggerExt(object):
             'error',
         ]
         if name in _valid_methods:
-            def log(msg, priority=10, **kwargs):
+            def log(msg, priority=10, json_blob=True, **kwargs):
                 """A wrapper around logger method
 
                 It extends the capabilities by sending also the messages to
@@ -188,6 +188,7 @@ class LoggerExt(object):
                     msg(string): A message to emit
                     priority(integer): The priority associated with the
                     messsage
+                    json_blob(boolean): ``True`` to send a JSON blob
                     kwargs(dictinary): A dictionary with extra information to
                     add to the JSON blob
 
@@ -198,7 +199,7 @@ class LoggerExt(object):
                 _logger(msg)
 
                 # send msg over http only if we are configured
-                if hasattr(self, 'server'):
+                if hasattr(self, 'server') and json_blob:
                     self._send_http(msg, priority, **kwargs)
 
             return log
