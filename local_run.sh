@@ -9,6 +9,7 @@ directories=("${TEST_DIR}"/var/log/anycast-healthchecker \
 "${DOTDIR}" \
 "${TEST_DIR}"/var/run/anycast-healthchecker \
 "${TEST_DIR}"/var/log/anycast-healthchecker \
+"${TEST_DIR}"/var/lib/anycast-healthchecker \
 "${TEST_DIR}"/var/run/anycast-healthchecker)
 
 echo "--------create directory structure--------"
@@ -17,7 +18,13 @@ for dir in ${directories[@]}; do
         mkdir -p "${dir}"
     fi
 done
+if [ ! /etc/bird.d ]; then
+    sudo mkdir /etc/bird.d
+fi
 echo "--------create files----------------------"
+if [ ! -h /etc/bird.d/anycast-prefixes.conf ] || [ "$(readlink /etc/bird.d/anycast-prefixes.conf)" != "${TEST_DIR}/var/lib/anycast-healthchecker/anycast-prefixes.conf" ]; then
+    sudo ln -s "${TEST_DIR}/var/lib/anycast-healthchecker/anycast-prefixes.conf" /etc/bird.d/anycast-prefixes.conf
+fi
 if [ ! -e ${DAEMONCONF}  ]; then
     cat <<EOT > "${DAEMONCONF}"
 [DEFAULT]
@@ -25,7 +32,7 @@ interface        = lo
 
 [daemon]
 pidfile          = ${PIDIFILE}
-bird_conf        = ${TEST_DIR}/etc/bird.d/anycast-prefixes.conf
+bird_conf        = ${TEST_DIR}/var/lib/anycast-healthchecker/anycast-prefixes.conf
 bird_variable    = ACAST_PS_ADVERTISE
 loglevel         = debug
 log_maxbytes     = 104857600
@@ -34,12 +41,12 @@ log_file         = ${TEST_DIR}/var/log/anycast-healthchecker/anycast-healthcheck
 stderr_file      = ${TEST_DIR}/var/log/anycast-healthchecker/stderr.log
 stdout_file      = ${TEST_DIR}/var/log/anycast-healthchecker/stdout.log
 dummy_ip_prefix  = 10.189.200.255/32
-bird_reconfigure_cmd = sudo /usr/sbin/birdc configure
+bird_reconfigure_cmd = /usr/bin/sudo /usr/sbin/birdc configure
 EOT
 fi
 
-if [ ! -e ${TEST_DIR}/etc/bird.d/anycast-prefixes.conf ]; then
-    cat <<EOT > ${TEST_DIR}/etc/bird.d/anycast-prefixes.conf
+if [ ! -e ${TEST_DIR}/var/lib/anycast-healthchecker/anycast-prefixes.conf ]; then
+    cat <<EOT > ${TEST_DIR}/var/lib/anycast-healthchecker/anycast-prefixes.conf
 # 10.189.200.255 is a dummy. It should NOT be used and REMOVED from the constant.
 define ACAST_PS_ADVERTISE =
     [
