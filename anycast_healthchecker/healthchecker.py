@@ -1,5 +1,5 @@
 # pylint: disable=superfluous-parens
-#
+# pylint: disable=too-many-arguments
 
 """
 A library which provides the HealthChecker class.
