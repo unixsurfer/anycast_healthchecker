@@ -228,7 +228,7 @@ class HealthChecker(object):
             # birdc returns 0 even when it fails due to invalid config,
             # but it returns 1 when BIRD is down.
             msg = ("Reloading BIRD failed, most likely BIRD daemon is down"
-                   ":{e}").format(e=error.output)
+                   ":{e}").format(e=error.output.strip())
             self.log.error(msg, priority=80)
             return
         except FileNotFoundError as error:
