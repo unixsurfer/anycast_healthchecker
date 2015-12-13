@@ -289,6 +289,7 @@ class HealthChecker(object):
             signum (int): The signal number.
             frame (str): The stack frame at the time the signal was received.
         """
-        self.log.info("Received {n} signal".format(n=signum), priority=80)
+        self.log.info("received {n} signal {f}".format(n=signum,
+                                                       f=frame), priority=80)
         self.log.info('Going down', priority=80)
         sys.exit(0)
