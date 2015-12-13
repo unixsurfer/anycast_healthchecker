@@ -1,6 +1,18 @@
 CHANGES
 =======
 
+0.5.2
+-----
+
+* RELEASE 0.5.2 version
+* Update TODO
+* Use lowercase everywhere to simplify log parsing
+* Print also the frame stuck
+* Remove newline character from the error output
+* Implement a more atomic way to update bird conf
+* Disable pylint warnings for too-many-arguments
+* Store anycast-prefixes.conf under /var/lib/
+
 0.5.1
 -----
 
