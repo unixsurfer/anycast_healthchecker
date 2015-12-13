@@ -69,7 +69,7 @@ class HealthChecker(object):
         self.services = config.sections()
         self.services.remove('daemon')
 
-        self.log.info('Initialize healthchecker')
+        self.log.info('initialize healthchecker')
 
     def _write_temp_bird_conf(self, prefixes):
         """Writes in a temporary file the list of IP-Prefixes
@@ -144,7 +144,7 @@ class HealthChecker(object):
             sys.exit(1)
 
         if self.dummy_ip_prefix not in prefixes:
-            msg = ("Dummy IP prefix {i} wasn't found in bird configuration, "
+            msg = ("dummy IP prefix {i} wasn't found in bird configuration, "
                    "adding it. This shouldn't have happened!").format(
                        i=self.dummy_ip_prefix)
             self.log.warning(msg, priority=20)
@@ -175,7 +175,7 @@ class HealthChecker(object):
             conf_updated = True
 
         if not conf_updated:
-            self.log.info('No updates for bird configuration')
+            self.log.info('no updates for bird configuration')
             return conf_updated
 
         # dummy_ip_prefix is always there
@@ -222,12 +222,12 @@ class HealthChecker(object):
                 stderr=subprocess.STDOUT,
                 universal_newlines=True)
         except subprocess.TimeoutExpired:
-            self.log.error("Reloading bird timed out", priority=80)
+            self.log.error("reloading bird timed out", priority=80)
             return
         except subprocess.CalledProcessError as error:
             # birdc returns 0 even when it fails due to invalid config,
             # but it returns 1 when BIRD is down.
-            msg = ("Reloading BIRD failed, most likely BIRD daemon is down"
+            msg = ("reloading BIRD failed, most likely BIRD daemon is down"
                    ":{e}").format(e=error.output.strip())
             self.log.error(msg, priority=80)
             return
@@ -243,7 +243,7 @@ class HealthChecker(object):
         else:
             # We will end up here only if we generated an invalid conf
             # or someone broke bird.conf.
-            msg = ("Reloading BIRD returned error, most likely we generated "
+            msg = ("reloading BIRD returned error, most likely we generated "
                    "an invalid configuration file or Bird configuration in "
                    "general is broken:{e}").format(e=_output)
             self.log.error(msg, priority=80)
@@ -252,10 +252,10 @@ class HealthChecker(object):
         """Lunches checks and triggers updates on BIRD configuration."""
 
         # Lunch a thread for each configuration
-        msg = "Going to lunch {n} threads".format(n=len(self.services))
+        msg = "going to lunch {n} threads".format(n=len(self.services))
         self.log.info(msg)
         for service in self.services:
-            msg = "Lunching thread for {n}".format(n=service)
+            msg = "lunching thread for {n}".format(n=service)
             self.log.debug(msg)
             _config = {}
             for option, getter in OPTIONS_TYPE.items():
@@ -271,7 +271,7 @@ class HealthChecker(object):
         while True:
             # Fetch items from action queue
             operation = self.action.get(block=True)
-            msg = ("Returned an item from the queue for {n} with IP prefix {i}"
+            msg = ("returned an item from the queue for {n} with IP prefix {i}"
                    " and action to {o} Bird configuration").format(
                        n=operation.name,
                        i=operation.ip_prefix,
@@ -291,5 +291,5 @@ class HealthChecker(object):
         """
         self.log.info("received {n} signal {f}".format(n=signum,
                                                        f=frame), priority=80)
-        self.log.info('Going down', priority=80)
+        self.log.info('going down', priority=80)
         sys.exit(0)

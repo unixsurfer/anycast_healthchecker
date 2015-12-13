@@ -154,8 +154,8 @@ def main():
 
     # Make some noise.
     log.debug('Before we are daemonized')
-    stdout_log.debug('Before we are daemonized')
-    stderr_log.debug('Before we are daemonized')
+    stdout_log.debug('before we are daemonized')
+    stderr_log.debug('before we are daemonized')
 
     # Get and set the DaemonContext.
     context = lib.LoggingDaemonContext()
@@ -183,7 +183,7 @@ def main():
 
     # OK boy go and daemonize yourself.
     with context:
-        log.info("Starting daemon {}".format(version))
+        log.info("starting daemon {}".format(version))
         checker.run()
 # This is the standard boilerplate that calls the main() function.
 if __name__ == '__main__':
