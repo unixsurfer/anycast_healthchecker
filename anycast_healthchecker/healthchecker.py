@@ -4,10 +4,11 @@
 """
 A library which provides the HealthChecker class.
 """
-
+import os
 import subprocess
 import sys
 import time
+import datetime
 from queue import Queue
 import shlex
 
@@ -70,6 +71,46 @@ class HealthChecker(object):
 
         self.log.info('Initialize healthchecker')
 
+    def _write_temp_bird_conf(self, prefixes):
+        """Writes in a temporary file the list of IP-Prefixes
+
+        A failure to create and write the temporary file will exit main
+        program.
+
+        Arguments:
+            prefixes (list): The list of IP-Prefixes to write
+        Returns:
+            The filename of the temporary file
+        """
+        comment = ("# {i} is a dummy IP Prefix. It should NOT be used and "
+                   "REMOVED from the constant.".format(i=self.dummy_ip_prefix))
+
+        # the temporary file must be on the same filesystem as the bird config
+        # as we use os.rename to perform an atomic update on the bird config.
+        # Thus, we create it in the same directory that bird config is stored.
+        tm_file = os.path.dirname(self.bird_conf_file) + '/' + str(time.time())
+        self.log.debug("going to write to {f}".format(f=tm_file))
+        try:
+            with open(tm_file, 'w') as tmpf:
+                tmpf.write("# Generated {time} by anycast-healthchecker"
+                           "\n".format(time=datetime.datetime.now()))
+                tmpf.write("{c}\n".format(c=comment))
+                tmpf.write("define {n} =\n".format(n=self.bird_constant_name))
+                tmpf.write("{s}[\n".format(s=4 * ' '))
+                # all entries of the array constant need a trailing comma
+                # except the last one. A single element array doesn't need
+                # the trailing comma.
+                tmpf.write(',\n'.join([' '*8 + n for n in prefixes]))
+                tmpf.write("\n{s}];\n".format(s=4 * ' '))
+        except OSError as error:
+            msg = ("failed to write temporary file {f}: {e}. This is a FATAL "
+                   "error, this exiting main program".format(f=tm_file,
+                                                             e=error))
+            self.log.critical(msg, priority=80)
+            sys.exit(1)
+        else:
+            return tm_file
+
     def _update_bird_conf_file(self, operation):
         """Updates BIRD configuration.
 
@@ -85,23 +126,21 @@ class HealthChecker(object):
         """
         conf_updated = False
         prefixes = []
-        comment = ("# {} is a dummy IP Prefix. It should NOT be used and "
-                   "REMOVED from the constant.".format(self.dummy_ip_prefix))
 
         try:
             prefixes = get_ip_prefixes_from_bird(self.bird_conf_file,
                                                  die=False)
-        except OSError as err:
-            msg = "Failed to open bird configuration, {e}".format(e=err)
+        except OSError as error:
+            msg = ('failed to open Bird configuration {e}, this is a FATAL'
+                   'error, thus exiting main program').format(e=error)
             self.log.error(msg, priority=80)
-            self.log.critical('This is a FATAL error, exiting', priority=80)
             sys.exit(1)
 
         if not prefixes:
-            msg = "Found empty bird configuration:{f}".format(
-                f=self.bird_conf_file)
+            msg = ("found empty bird configuration:{f}, this is a FATAL"
+                   "error, thus exiting main program").format(
+                       f=self.bird_conf_file)
             self.log.error(msg, priority=80)
-            self.log.critical('This is a FATAL error, exiting', priority=80)
             sys.exit(1)
 
         if self.dummy_ip_prefix not in prefixes:
@@ -145,30 +184,18 @@ class HealthChecker(object):
                              'any of the services we monitor!. It means local '
                              'node wont receive any traffic', priority=80)
 
-        # some IP prefixes are either removed or added, truncate configuration
-        # with new data.
+        # some IP prefixes are either removed or added, create
+        # configuration with new data.
+        tempname = self._write_temp_bird_conf(prefixes)
         try:
-            with open(self.bird_conf_file, 'r+') as bird_conf:
-                bird_conf.seek(0)
-                bird_conf.write("# Generated {time} by anycast-healthchecker"
-                                "\n".format(time=time.ctime()))
-                bird_conf.write("{}\n".format(comment))
-                bird_conf.write("define {} =\n".format(
-                    self.bird_constant_name))
-                bird_conf.write("{}[\n".format(4 * ' '))
-                # all entries of the array constant need a trailing comma
-                # except the last one. A single element array doesn't need the
-                # trailing comma.
-                bird_conf.write(',\n'.join(map(lambda p: ' '*8 + p, prefixes)))
-                bird_conf.write("\n{spaces}];\n".format(spaces=4 * ' '))
-                bird_conf.truncate()
-                self.log.info('Bird configuration is updated')
+            os.rename(tempname, self.bird_conf_file)
         except OSError as error:
-            self.log.critical('Failed to update bird configuration',
-                              priority=80)
-            self.log.critical(error, priority=80)
-            self.log.critical('This is a FATAL error, exiting', priority=80)
+            msg = ('failed to create Bird configuration {e}, this is a FATAL '
+                   'error, thus exiting main program').format(e=error)
+            self.log.critical(msg, priority=80)
             sys.exit(1)
+        else:
+            self.log.info('Bird configuration is updated')
 
         return conf_updated
 
