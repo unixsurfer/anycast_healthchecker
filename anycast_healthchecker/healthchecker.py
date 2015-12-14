@@ -92,8 +92,9 @@ class HealthChecker(object):
         self.log.debug("going to write to {f}".format(f=tm_file))
         try:
             with open(tm_file, 'w') as tmpf:
-                tmpf.write("# Generated {time} by anycast-healthchecker"
-                           "\n".format(time=datetime.datetime.now()))
+                tmpf.write("# Generated {t} by anycast-healthchecker (pid={p})"
+                           "\n".format(t=datetime.datetime.now(),
+                                       p=os.getpid()))
                 tmpf.write("{c}\n".format(c=comment))
                 tmpf.write("define {n} =\n".format(n=self.bird_constant_name))
                 tmpf.write("{s}[\n".format(s=4 * ' '))
