@@ -179,12 +179,6 @@ class HealthChecker(object):
             self.log.info('no updates for bird configuration')
             return conf_updated
 
-        # dummy_ip_prefix is always there
-        if len(prefixes) == 1:
-            self.log.warning('Bird configuration wont have IP prefixes for '
-                             'any of the services we monitor!. It means local '
-                             'node wont receive any traffic', priority=80)
-
         # some IP prefixes are either removed or added, create
         # configuration with new data.
         tempname = self._write_temp_bird_conf(prefixes)
@@ -197,6 +191,12 @@ class HealthChecker(object):
             sys.exit(1)
         else:
             self.log.info('Bird configuration is updated')
+
+        # dummy_ip_prefix is always there
+        if len(prefixes) == 1:
+            self.log.warning("Bird configuration doesn't have IP prefixes for "
+                             "any of the services we monitor! It means local "
+                             "node doesn't receive any traffic", priority=80)
 
         return conf_updated
 
