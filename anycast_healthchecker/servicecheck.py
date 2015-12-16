@@ -108,7 +108,7 @@ class ServiceCheck(Thread):
             else:
                 msg = "{i} NOT assigned to loopback interface".format(
                     i=self.config['ip_prefix'])
-                self.log.debug(msg, priority=20, **self.extra)
+                self.log.warning(msg, priority=20, **self.extra)
                 return False
 
         self.log.debug("I shouldn't land here!, it is a BUG",
@@ -191,7 +191,7 @@ class ServiceCheck(Thread):
                        "withdrawn the route for that prefix. In nutshell "
                        "traffic is NOT routed anymore to this node").format(
                            i=self.config['ip_prefix'])
-                self.log.info(msg, priority=80, **self.extra)
+                self.log.warning(msg, priority=80, **self.extra)
                 if check_state != 'DOWN':
                     check_state = 'DOWN'
             elif self._run_check():
