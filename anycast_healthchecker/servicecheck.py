@@ -208,11 +208,12 @@ class ServiceCheck(Thread):
                             ip_prefix=self.config['ip_prefix'],
                             log=self.log, **self.extra)
                         self.action.put(operation)
-                        msg = "{i} added in queue".format(i=self.config['ip_prefix'])
+                        msg = "{i} in queue".format(i=self.config['ip_prefix'])
                         self.log.info(msg, **self.extra)
                 elif up_cnt < self.config['check_rise']:
                     up_cnt += 1
-                    self.log.info("going UP {n}".format(n=up_cnt), **self.extra)
+                    msg = "going up {n}".format(n=up_cnt)
+                    self.log.info(msg, **self.extra)
                 else:
                     msg = "up_cnt higher, it's a BUG! {n}".format(n=up_cnt)
                     self.log.error(msg, priority=70, **self.extra)
@@ -232,7 +233,7 @@ class ServiceCheck(Thread):
                             ip_prefix=self.config['ip_prefix'],
                             log=self.log, **self.extra)
                         self.action.put(del_operation)
-                        msg = "{i} added in queue".format(i=self.config['ip_prefix'])
+                        msg = "{i} in queue".format(i=self.config['ip_prefix'])
                         self.log.info(msg, **self.extra)
                 elif down_cnt < self.config['check_fail']:
                     down_cnt += 1
