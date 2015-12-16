@@ -1,6 +1,17 @@
 CHANGES
 =======
 
+0.5.3
+-----
+
+* RELEASE 0.5.3 version
+* Use lowercase for the status when is in transition
+* Change log level when IP isn't assigned to lo
+* Do not send JSON blob for debug messages
+* Log only failures when sending JSON blobs
+* Reorder the message about zero IP prefixes
+* Include the process ID in the header
+
 0.5.2
 -----
 
