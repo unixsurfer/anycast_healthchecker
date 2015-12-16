@@ -63,7 +63,7 @@ class ServiceCheck(Thread):
         else:
             msg = "check duration {t:.3f}ms".format(
                 t=(time.time() - start_time) * 1000)
-            self.log.debug(msg, **self.extra)
+            self.log.info(msg, **self.extra)
             return proc.returncode == 0
 
     def _ip_assigned(self):
@@ -82,7 +82,7 @@ class ServiceCheck(Thread):
             "{}".format(self.config['ip_prefix']),
         ]
 
-        self.log.debug("running {}".format(' '.join(cmd)), **self.extra)
+        self.log.debug("running {}".format(' '.join(cmd)), json_blob=False)
         try:
             out = subprocess.check_output(
                 cmd,
@@ -103,7 +103,7 @@ class ServiceCheck(Thread):
             if self.config['ip_prefix'] in out:
                 msg = "{i} assigned to loopback interface".format(
                     i=self.config['ip_prefix'])
-                self.log.debug(msg, **self.extra)
+                self.log.debug(msg, json_blob=False)
                 return True
             else:
                 msg = "{i} NOT assigned to loopback interface".format(
@@ -174,7 +174,8 @@ class ServiceCheck(Thread):
         check_state = 'Unknown'
 
         for key, value in self.config.items():
-            self.log.debug("{}={}:{}".format(key, value, type(value)))
+            self.log.debug("{}={}:{}".format(key, value, type(value)),
+                           json_blob=False)
 
         # Service check will abort if it is disabled.
         if self._check_disabled():
@@ -242,5 +243,5 @@ class ServiceCheck(Thread):
                     self.log.error(msg, priority=70, **self.extra)
                 up_cnt = 0
             msg = "sleeping {t} secs".format(t=self.config['check_interval'])
-            self.log.debug(msg, **self.extra)
+            self.log.debug(msg, json_blob=False)
             time.sleep(self.config['check_interval'])

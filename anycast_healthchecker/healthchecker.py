@@ -89,7 +89,8 @@ class HealthChecker(object):
         # as we use os.rename to perform an atomic update on the bird config.
         # Thus, we create it in the same directory that bird config is stored.
         tm_file = os.path.dirname(self.bird_conf_file) + '/' + str(time.time())
-        self.log.debug("going to write to {f}".format(f=tm_file))
+        self.log.debug("going to write to {f}".format(f=tm_file),
+                       json_blob=False)
         try:
             with open(tm_file, 'w') as tmpf:
                 tmpf.write("# Generated {t} by anycast-healthchecker (pid={p})"
@@ -257,7 +258,7 @@ class HealthChecker(object):
         self.log.info(msg)
         for service in self.services:
             msg = "lunching thread for {n}".format(n=service)
-            self.log.debug(msg)
+            self.log.debug(msg, json_blob=False)
             _config = {}
             for option, getter in OPTIONS_TYPE.items():
                 _config[option] = getattr(self.config, getter)(service, option)
