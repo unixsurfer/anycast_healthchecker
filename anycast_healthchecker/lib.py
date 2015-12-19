@@ -81,6 +81,11 @@ class LoggingDaemonContext(daemon.DaemonContext):
             stdout=devnull_out,
             stderr=devnull_out,
             signal_map=signal_map)
+        # python-daemon>=2.1 has initgroups=True by default which requires
+        # root privileges(CAP_SETGID capability).
+        # Older versions don't have it, so we set it manually instead of
+        # passing it to the supper()
+        self.initgroups = False
 
     def open(self):
         """Redirects stdout/stderr to loggers and calls DaemonContext.open."""
