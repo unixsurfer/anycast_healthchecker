@@ -1,6 +1,13 @@
 CHANGES
 =======
 
+0.5.4
+-----
+
+* RELEASE 0.5.4 version
+* Fix an indentation issue
+* Fix a crash with python-daemon>=2.1
+
 0.5.3
 -----
 
