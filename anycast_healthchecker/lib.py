@@ -245,6 +245,10 @@ class LoggerExt(object):
         self.protocol = protocol
         self.port = port
         self.path = path
+        # Use Session object from requests for enforcing HTTP persistence
+        # connection (HTTP keep-alive) so the underlying TCP connection will be
+        # reused and recycled. This reduces the stress on the HTTP entry point.
+        self._http_sess = requests.Session()
 
     def _send_http(self, msg, priority=10, **kwargs):
         """Send msg as a JSON blob"""
@@ -267,8 +271,8 @@ class LoggerExt(object):
                                                      port=self.port,
                                                      path=self.path)
         try:
-            req = requests.post(url, timeout=self.timeout,
-                                data=json.dumps(data), headers=headers)
+            req = self._http_sess.post(url, timeout=self.timeout,
+                                       data=json.dumps(data), headers=headers)
         except (requests.exceptions.Timeout,
                 requests.exceptions.ConnectionError,
                 requests.exceptions.RequestException) as error:
