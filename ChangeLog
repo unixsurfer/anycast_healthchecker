@@ -1,6 +1,13 @@
 CHANGES
 =======
 
+0.5.5
+-----
+
+* RELEASE 0.5.5 version
+* Update TODO.rst
+* Enforce HTTP keep-alive on requests
+
 0.5.4
 -----
 
