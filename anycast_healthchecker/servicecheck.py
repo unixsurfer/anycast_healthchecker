@@ -14,12 +14,13 @@ from anycast_healthchecker.utils import AddOperation, DeleteOperation
 
 
 class ServiceCheck(Thread):
-    """Handles a check for a service.
+    """Handles the health checking for a service.
 
     Arguments:
-        config_file (str): The absolute path of the configuration file for the
-        service check.
-        action (Queue obj): A queue object to put health actions.
+        service (str): The name of the service to monitor.
+        config (dict): A dictionary with the configuration of the service.
+        action (Queue obj): A queue object to place actions based on the result
+        of the health check.
         log (logger obj): A logger object to use.
 
     Methods:
@@ -117,9 +118,9 @@ class ServiceCheck(Thread):
         return False
 
     def _check_disabled(self):
-        """Checks if service check is disabled.
+        """Checks if health check is disabled.
 
-        It logs a message if check is disabled and it also adds an item
+        It logs a message if health check is disabled and it also adds an item
         to the action queue based on 'on_disabled' setting.
 
         Returns:
@@ -198,8 +199,8 @@ class ServiceCheck(Thread):
                 if up_cnt == (self.config['check_rise'] - 1):
                     self.log.info("status UP", **self.extra)
                     # Service exceeded all consecutive checks. Set its state
-                    # accordingly and put an item in queue. But to it only if
-                    # previous state was different, to catch unnecessary bird
+                    # accordingly and put an item in queue. But do it only if
+                    # previous state was different, to prevent unnecessary bird
                     # reloads when a service flaps between states.
                     if check_state != 'UP':
                         check_state = 'UP'
@@ -223,9 +224,9 @@ class ServiceCheck(Thread):
                     self.log.info("status DOWN", priority=100, **self.extra)
                     # Service exceeded all consecutive checks.
                     # Set its state accordingly and put an item in queue.
-                    # But to it only if previous state was different, to catch
-                    # unnecessary bird reloads when a service flaps between
-                    # states
+                    # But do it only if previous state was different, to
+                    # prevent unnecessary bird reloads when a service flaps
+                    # between states
                     if check_state != 'DOWN':
                         check_state = 'DOWN'
                         del_operation = DeleteOperation(
