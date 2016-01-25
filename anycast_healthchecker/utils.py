@@ -52,13 +52,13 @@ def touch(file_path):
     """Touch a file in the same way as touch tool does"""
 
     try:
-        with open(file_path, 'a') as fh:
+        with open(file_path, 'a') as file_hanle:
             os.utime(file_path, None)
     except OSError as error:
         print("Failed to touch file with error:{err}".format(err=error))
         return False
     else:
-        fh.close()
+        file_hanle.close()
         return True
 
 
