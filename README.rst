@@ -545,5 +545,3 @@ Contacts
 .. _RIB: https://en.wikipedia.org/wiki/Routing_table
 .. _INI: https://en.wikipedia.org/wiki/INI_file
 .. _daemon: https://pypi.python.org/pypi/python-daemon/
-.. _Distance-vector routing protocols: https://en.wikipedia.org/wiki/Distance-vector_routing_protocol
-.. _Link-state routing protocols: https://en.wikipedia.org/wiki/Link-state_routing_protocol
