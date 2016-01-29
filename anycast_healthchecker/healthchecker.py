@@ -293,5 +293,5 @@ class HealthChecker(object):
         """
         self.log.info("received {n} signal {f}".format(n=signum,
                                                        f=frame), priority=80)
-        self.log.info('going down', priority=80)
+        self.log.info('going down', priority=50)
         sys.exit(0)
