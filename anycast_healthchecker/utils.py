@@ -11,7 +11,6 @@ anycast_healthchecker.utils
 
 This module provides utility functions and classes that are used within
 anycast_healthchecker.
-
 """
 
 import re
@@ -49,7 +48,7 @@ def valid_ip_prefix(ip_prefix):
 
 
 def touch(file_path):
-    """Touch a file in the same way as touch tool does"""
+    """Touches a file in the same way as touch tool does"""
 
     try:
         with open(file_path, 'a') as file_hanle:
@@ -86,13 +85,13 @@ def service_configuration_check(config, services):
     """Performs a sanity check on options for each service check
 
     Arguments:
-        config (obg): A configparser object which holds our configuration.
+        config (obj): A configparser object which holds our configuration.
         services (list): A list of section names which are the name of the
-        service checks.
+        services to run checks.
 
     Returns:
-        None if all checks are successfully passed otherwise exits main
-        program
+        None if all sanity checks on configuration are successfully passed
+        otherwise exits main program
     """
     for service in services:
         for option, getter in OPTIONS_TYPE.items():
@@ -278,7 +277,7 @@ class BaseOperation(object):
 
 
     Arguments:
-        name(string): A name to log
+        name(string): The name of the service for the given ip_prefix
         ip_prefix(string): The value to run the operation
         log(logger obj): A logger object to use for emitting messages
         extra(dictinary): A possible dictinary structure to pass further
