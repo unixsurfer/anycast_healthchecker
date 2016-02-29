@@ -137,7 +137,7 @@ class ServiceCheck(Thread):
             msg = "{i} added in queue".format(i=self.config['ip_prefix'])
             self.log.info(msg, **self.extra)
             self.log.info("Check is now permanently disabled",
-                          priority=20, **self.extra)
+                          priority=20, status='disabled', **self.extra)
             return True
         elif (self.config['check_disabled'] and
                 self.config['on_disabled'] == 'advertise'):
@@ -150,7 +150,7 @@ class ServiceCheck(Thread):
             msg = "{i} add in queue".format(i=self.config['ip_prefix'])
             self.log.info(msg, **self.extra)
             self.log.info('check is now permanently disabled',
-                          priority=20, **self.extra)
+                          priority=20, status='disabled', **self.extra)
             return True
 
         return False
@@ -192,12 +192,12 @@ class ServiceCheck(Thread):
                        "withdrawn the route for that prefix. In nutshell "
                        "traffic is NOT routed anymore to this node").format(
                            i=self.config['ip_prefix'])
-                self.log.warning(msg, priority=80, **self.extra)
+                self.log.warning(msg, priority=80, status='down', **self.extra)
                 if check_state != 'DOWN':
                     check_state = 'DOWN'
             elif self._run_check():
                 if up_cnt == (self.config['check_rise'] - 1):
-                    self.log.info("status UP", **self.extra)
+                    self.log.info("status UP", status='up', **self.extra)
                     # Service exceeded all consecutive checks. Set its state
                     # accordingly and put an item in queue. But do it only if
                     # previous state was different, to prevent unnecessary bird
@@ -221,7 +221,8 @@ class ServiceCheck(Thread):
                 down_cnt = 0
             else:
                 if down_cnt == (self.config['check_fail'] - 1):
-                    self.log.info("status DOWN", priority=100, **self.extra)
+                    self.log.info("status DOWN", priority=100, status='down',
+                                  **self.extra)
                     # Service exceeded all consecutive checks.
                     # Set its state accordingly and put an item in queue.
                     # But do it only if previous state was different, to
