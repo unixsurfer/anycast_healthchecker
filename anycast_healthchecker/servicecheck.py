@@ -126,8 +126,8 @@ class ServiceCheck(Thread):
         Returns:
             True if check is disabled otherwise False.
         """
-        if (self.config['check_disabled']
-                and self.config['on_disabled'] == 'withdraw'):
+        if (self.config['check_disabled'] and
+                self.config['on_disabled'] == 'withdraw'):
             self.log.info("Check is disabled and ip_prefix will be withdrawn",
                           priority=20, **self.extra)
             del_operation = DeleteOperation(name=self.name,
@@ -139,8 +139,8 @@ class ServiceCheck(Thread):
             self.log.info("Check is now permanently disabled",
                           priority=20, **self.extra)
             return True
-        elif (self.config['check_disabled']
-              and self.config['on_disabled'] == 'advertise'):
+        elif (self.config['check_disabled'] and
+                self.config['on_disabled'] == 'advertise'):
             self.log.info("check is disabled, ip_prefix wont be withdrawn",
                           priority=80, **self.extra)
             add_operation = AddOperation(name=self.name,
