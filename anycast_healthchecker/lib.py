@@ -116,12 +116,13 @@ def open_files_from_loggers(loggers):
 
 
 class LoggerExt(object):
-    """Builds a logging.Logger class with extended factionally
+    """Create a logging.Logger class with extended functionality
 
     It wraps a Logger class into a file like object, which provides a handy
-    way to redirect stdout/stdin to a logger. It also builds a JSON blob,
-    which contains a certain data structure and sent over HTTP to a central
-    location.
+    way to redirect stdout/stdin to a logger. It also accepts a JSON blob as
+    input and forwards it over HTTP to a central location. The JSON blob is
+    built out of a certain data structure which isn't configurable. This
+    provides a easy way to pass messages to an ElasticSearch infrastructure.
 
     Arguments
         name (str): The name for the logger.
