@@ -1,6 +1,20 @@
 CHANGES
 =======
 
+0.5.6
+-----
+
+* RELEASE 0.5.6 version
+* Add 'status' key in the JSON blob
+* Fix line break before binary operator
+* Rewrite docstring of LoggerExt class
+* Another set of docstring updates
+* Update TODO
+* Update docstrings and comments
+* Use a more proper name for a variable
+* Remove unused reference from README
+* Update copyright
+
 0.5.5
 -----
 
