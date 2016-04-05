@@ -1,4 +1,5 @@
 # pylint: disable=superfluous-parens
+# pylint: disable=too-many-branches
 #
 
 """
@@ -101,7 +102,7 @@ class ServiceCheck(Thread):
             # Because it is unlikely to ever get a timeout I return True
             return True
         else:
-            if self.config['ip_prefix'] in out:
+            if self.config['ip_prefix'] in out:  # pylint: disable=E1135
                 msg = "{i} assigned to loopback interface".format(
                     i=self.config['ip_prefix'])
                 self.log.debug(msg, json_blob=False)
@@ -140,7 +141,7 @@ class ServiceCheck(Thread):
                           priority=20, status='disabled', **self.extra)
             return True
         elif (self.config['check_disabled'] and
-                self.config['on_disabled'] == 'advertise'):
+              self.config['on_disabled'] == 'advertise'):
             self.log.info("check is disabled, ip_prefix wont be withdrawn",
                           priority=80, **self.extra)
             add_operation = AddOperation(name=self.name,
