@@ -427,6 +427,10 @@ proper integration with OS startup tools.
 Installation
 ------------
 
+Use pip::
+
+    pip install anycast-healthchecker
+
 From Source::
 
    sudo python setup.py install
