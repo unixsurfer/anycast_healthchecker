@@ -135,9 +135,9 @@ class ServiceCheck(Thread):
             del_operation = DeleteOperation(name=self.name,
                                             ip_prefix=self.config['ip_prefix'],
                                             log=self.log, **self.extra)
-            self.action.put(del_operation)
             msg = "{i} added in queue".format(i=self.config['ip_prefix'])
             self.log.info(msg, **self.extra)
+            self.action.put(del_operation)
             self.log.info("Check is now permanently disabled",
                           priority=20, status='disabled', **self.extra)
             return True
@@ -148,9 +148,9 @@ class ServiceCheck(Thread):
             add_operation = AddOperation(name=self.name,
                                          ip_prefix=self.config['ip_prefix'],
                                          log=self.log, **self.extra)
-            self.action.put(add_operation)
             msg = "{i} add in queue".format(i=self.config['ip_prefix'])
             self.log.info(msg, **self.extra)
+            self.action.put(add_operation)
             self.log.info('check is now permanently disabled',
                           priority=20, status='disabled', **self.extra)
             return True
@@ -214,9 +214,9 @@ class ServiceCheck(Thread):
                             name=self.name,
                             ip_prefix=self.config['ip_prefix'],
                             log=self.log, **self.extra)
-                        self.action.put(operation)
                         msg = "{i} in queue".format(i=self.config['ip_prefix'])
                         self.log.info(msg, **self.extra)
+                        self.action.put(operation)
                 elif up_cnt < self.config['check_rise']:
                     up_cnt += 1
                     msg = "going up {n}".format(n=up_cnt)
@@ -240,9 +240,9 @@ class ServiceCheck(Thread):
                             name=self.name,
                             ip_prefix=self.config['ip_prefix'],
                             log=self.log, **self.extra)
-                        self.action.put(del_operation)
                         msg = "{i} in queue".format(i=self.config['ip_prefix'])
                         self.log.info(msg, **self.extra)
+                        self.action.put(del_operation)
                 elif down_cnt < self.config['check_fail']:
                     down_cnt += 1
                     msg = "going down {n}".format(n=down_cnt)
