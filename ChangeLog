@@ -1,6 +1,16 @@
 CHANGES
 =======
 
+0.5.7
+-----
+
+* RELEASE 0.5.7 version
+* Change the order of logging a message
+* Update bird config when IP isn't assigned to lo
+* Update installation instructions
+* Update setup.cfg
+* Make pylint happy
+
 0.5.6
 -----
 
