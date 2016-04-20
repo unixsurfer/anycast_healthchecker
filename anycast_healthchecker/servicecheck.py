@@ -1,5 +1,6 @@
 # pylint: disable=superfluous-parens
 # pylint: disable=too-many-branches
+# pylint: disable=too-many-statements
 #
 
 """
@@ -172,7 +173,7 @@ class ServiceCheck(Thread):
         down_cnt = 0
         # The current established state of the service check, it can be
         # either UP or DOWN but only after a number of consecutive successful
-        # or failure health checks.
+        # or unsuccessful health checks.
         check_state = 'Unknown'
 
         for key, value in self.config.items():
@@ -187,15 +188,19 @@ class ServiceCheck(Thread):
         while True:
             if not self._ip_assigned():
                 up_cnt = 0
-                msg = ("status DOWN because {i} isn't assigned to to loopback "
-                       "interface. {i} prefix isn't removed from BIRD "
-                       "configuration as direct protocol in BIRD has already "
-                       "withdrawn the route for that prefix. In nutshell "
-                       "traffic is NOT routed anymore to this node").format(
-                           i=self.config['ip_prefix'])
+                msg = ("status DOWN because {i} isn't assigned to loopback "
+                       "interface."
+                       .format(i=self.config['ip_prefix']))
                 self.log.warning(msg, priority=80, status='down', **self.extra)
                 if check_state != 'DOWN':
                     check_state = 'DOWN'
+                    del_operation = DeleteOperation(
+                        name=self.name,
+                        ip_prefix=self.config['ip_prefix'],
+                        log=self.log, **self.extra)
+                    msg = "{i} in queue".format(i=self.config['ip_prefix'])
+                    self.log.info(msg, **self.extra)
+                    self.action.put(del_operation)
             elif self._run_check():
                 if up_cnt == (self.config['check_rise'] - 1):
                     self.log.info("status UP", status='up', **self.extra)
