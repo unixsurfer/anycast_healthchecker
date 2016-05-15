@@ -1,6 +1,15 @@
 CHANGES
 =======
 
+0.5.8
+-----
+
+* RELEASE 0.5.8 version
+* Put keywords in 1 line
+* Remove empty line
+* Work around intermittent ValueErrors
+* Add more keywords in setup.cfg
+
 0.5.7
 -----
 
