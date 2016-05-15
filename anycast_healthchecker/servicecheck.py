@@ -120,7 +120,6 @@ class ServiceCheck(Thread):
                    .format(c=' '.join(cmd), e=error))
             self.log.error(msg, priority=50, **self.extra)
             return True
-
         else:
             if self.config['ip_prefix'] in out:  # pylint: disable=E1135
                 msg = "{i} assigned to loopback interface".format(
