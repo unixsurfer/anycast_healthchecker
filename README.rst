@@ -370,7 +370,12 @@ the log files for easier searching of error/warning messages.
             **on the return code**. Complex health checking should be wrapped
             in a script file. Output is ignored.
 :check_interval: how often to run the check (seconds)
-:check_timeout: timeout for the check command to complete (seconds)
+:check_timeout: maximum time in seconds for the check command to complete.
+                anycast-healthchecker will try kill the check if it doesn't
+                return after *check_timeout* seconds. If *check_cmd* runs under
+                another user account (root) via sudo then it isn't killed.
+                anycast-healthchecker could run as root to avoid this case,
+                but it is highly recommended to run it as normal user.
 :check_fail: a service is considered DOWN after this many consecutive unsuccessful
              health checks
 :check_rise: a service is considered HEALTHY after this many consecutive successful health

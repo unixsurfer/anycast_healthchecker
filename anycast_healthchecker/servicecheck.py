@@ -61,7 +61,14 @@ class ServiceCheck(Thread):
         except subprocess.TimeoutExpired:
             self.log.error("check timed out", priority=80, **self.extra)
             if proc.poll() is None:
-                proc.kill()
+                try:
+                    proc.kill()
+                except PermissionError:
+                    self.log.warning("failed to kill check due to adequate "
+                                     "access rights, check could be running "
+                                     "under another user(root) via sudo",
+                                     priority=80, **self.extra)
+
             return False
         else:
             msg = "check duration {t:.3f}ms".format(
