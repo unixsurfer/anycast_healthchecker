@@ -388,11 +388,6 @@ the log files for easier searching of error/warning messages.
             the interface set in ``interface`` parameter
 :interface: the name of the interface that ``ip_prefix`` is assigned to
 
-:NOTE: anycast-healthchecker emits a warning when ``ip_prefix`` is not assigned
-       to ``interface`` and does not remove the ``ip_prefix`` from
-       ``bird_variable`` as `direct`_ protocol removes route from `RIB`_.
-       It also marks the service as **DOWN**.
-
 Multiple sections may be combined in one file or provide one file per section.
 File must be stored under one directory and their name should use ``.conf``
 as suffix (foo.bar.com.conf).
