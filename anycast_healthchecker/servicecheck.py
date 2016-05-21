@@ -80,9 +80,9 @@ class ServiceCheck(Thread):
             'address',
             'show',
             'dev',
-            "{}".format(self.config['interface']),
+            self.config['interface'],
             'to',
-            "{}".format(self.config['ip_prefix']),
+            self.config['ip_prefix'],
         ]
 
         self.log.debug("running {}".format(' '.join(cmd)), json_blob=False)
