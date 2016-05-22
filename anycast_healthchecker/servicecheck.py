@@ -209,8 +209,11 @@ class ServiceCheck(Thread):
         if self._check_disabled():
             return
 
+        interval = self.config['check_interval']
+        start_offset = time.time() % interval
         # Go in a loop until we are told to stop
         while True:
+            timestamp = time.time()
             if not self._ip_assigned():
                 up_cnt = 0
                 msg = ("status DOWN because {i} isn't assigned to loopback "
@@ -276,6 +279,15 @@ class ServiceCheck(Thread):
                     msg = "down_cnt higher, it's a BUG! {n}".format(n=down_cnt)
                     self.log.error(msg, priority=70, **self.extra)
                 up_cnt = 0
-            msg = "sleeping {t} secs".format(t=self.config['check_interval'])
-            self.log.debug(msg, json_blob=False)
-            time.sleep(self.config['check_interval'])
+
+            msg = ("wall clock time {t:.3f}ms"
+                   .format(t=(time.time() - timestamp) * 1000))
+            self.log.info(msg, json_blob=False)
+
+            # calculate sleep time
+            sleep = start_offset - time.time() % interval
+            if sleep < 0:
+                sleep += interval
+            self.log.debug("sleep for {t:.3f}secs".format(t=sleep),
+                           json_blob=False)
+            time.sleep(sleep)
