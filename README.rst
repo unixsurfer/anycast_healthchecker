@@ -395,7 +395,6 @@ as suffix (foo.bar.com.conf).
 Starting the daemon
 ###################
 
-
 Daemon CLI usage::
 
     % anycast-healthchecker --help
@@ -423,6 +422,20 @@ configuration files for service checks::
 
 At the root of the project there is System V init and a Systemd unit file for
 proper integration with OS startup tools.
+
+
+Systemd and SysVinit integration
+################################
+
+Under contrib/systemd and contrib/SysVinit directories there are the necessary
+Unit service and startup files which can be used to start the daemon on boot.
+
+Nagios check
+############
+
+Under contrib/nagios directory there is a nagios plugin to check if daemon is
+up and if all threads are running.
+
 
 Installation
 ------------
