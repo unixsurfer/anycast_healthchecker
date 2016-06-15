@@ -1,6 +1,13 @@
 CHANGES
 =======
 
+0.5.10
+------
+
+* RELEASE 0.5.10 version
+* Set more accurate sleep time to avoid interval drifting
+* Add contrib dir and move files there
+
 0.5.9
 -----
 
