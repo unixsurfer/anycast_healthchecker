@@ -2,6 +2,7 @@
 Description=Anycast healthchecker
 After=network.service
 Requires=network.service
+Documentation=https://github.com/unixsurfer/anycast_healthchecker/blob/master/README.rst
 
 [Service]
 EnvironmentFile=/etc/sysconfig/anycast-healthchecker
