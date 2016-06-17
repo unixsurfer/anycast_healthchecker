@@ -49,15 +49,12 @@ class ServiceCheck(Thread):
         """
         cmd = shlex.split(self.config['check_cmd'])
         self.log.info("running {}".format(' '.join(cmd)), **self.extra)
-        proc = subprocess.Popen(cmd,
-                                stdin=None,
-                                stdout=None,
-                                stderr=None,
-                                close_fds=True)
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
 
         start_time = time.time()
         try:
-            proc.wait(self.config['check_timeout'])
+            outs, errs = proc.communicate(timeout=self.config['check_timeout'])
         except subprocess.TimeoutExpired:
             self.log.error("check timed out", priority=80, **self.extra)
             if proc.poll() is None:
@@ -74,7 +71,12 @@ class ServiceCheck(Thread):
             msg = "check duration {t:.3f}ms".format(
                 t=(time.time() - start_time) * 1000)
             self.log.info(msg, **self.extra)
-            return proc.returncode == 0
+            if proc.returncode == 0:
+                return True
+            else:
+                self.log.info("stderr from the check {}".format(errs))
+                self.log.info("stdout from the check {}".format(outs))
+                return False
 
     def _ip_assigned(self):
         """Checks if IP prefix is assigned to loopback interface.
