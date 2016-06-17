@@ -102,27 +102,25 @@ class ServiceCheck(Thread):
             msg = "error checking IP-PREFIX {c} {e}".format(c=cmd,
                                                             e=error.output)
             self.log.error(msg, priority=60, **self.extra)
-            # Because it is unlikely to ever get an error I return True
+            # Because it is unlikely to ever get an error we return True
             return True
         except subprocess.TimeoutExpired:
             msg = "timeout running {c}".format(c=' '.join(cmd))
             self.log.error(msg, priority=50, **self.extra)
-            # Because it is unlikely to ever get a timeout I return True
+            # Because it is unlikely to ever get a timeout we return True
             return True
         except ValueError as error:
             # We have been getting intermittent ValueErrors, see here
             # gist.github.com/unixsurfer/67db620d87f667423f6f6e3a04e0bff5
             # It has happened ~5 times and this code is executed from multiple
-            # threads and every ~10secs on several(~40) production servers for
+            # threads and every ~10secs on several (~40) production servers for
             # more than 18months.
             # It could be a bug in Python or system returns corrupted data.
             # As a consequence of the raised exception thread dies and the
-            # service isn't monitored anymore!.
-            # In order to avoid this we catch the exception.
-            # While checking if IP is assigned, we get an error unrelated to
-            # the IP which prevents  us from knowing if it's assigned.
-            # We simply don't know.
-            # A retry logic icould be a more proper solution.
+            # service isn't monitored anymore!. So, we now catch the exception.
+            # While checking if an IP is assigned, we get an error unrelated to
+            # that prevents us from knowing if it's assigned. We simply don't
+            # know. A retry logic could be a more proper solution.
             msg = ("running {c} raised ValueError exception:{e}"
                    .format(c=' '.join(cmd), e=error))
             self.log.error(msg, priority=50, **self.extra)
