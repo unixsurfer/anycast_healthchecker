@@ -26,41 +26,14 @@ import os
 import sys
 import signal
 import logging
-import configparser
-import glob
-import copy
 from lockfile.pidlockfile import PIDLockFile
 from docopt import docopt
 
+from anycast_healthchecker import DEFAULT_OPTIONS
 from anycast_healthchecker import healthchecker
 from anycast_healthchecker import lib
 from anycast_healthchecker import __version__ as version
-from anycast_healthchecker.utils import configuration_check, running
-
-DEFAULT_OPTIONS = {
-    'DEFAULT': {
-        'interface': 'lo',
-        'check_interval': '10',
-        'check_timeout': '2',
-        'check_rise': '2',
-        'check_fail': '2',
-        'check_disabled': 'true',
-        'on_disable': 'withdraw',
-    },
-    'daemon': {
-        'pidfile': '/var/run/anycast-healthchecker/anycast-healthchecker.pid',
-        'bird_conf': '/etc/bird.d/anycast-prefixes.conf',
-        'bird_variable': 'ACAST_PS_ADVERTISE',
-        'loglevel': 'debug',
-        'log_maxbytes': '104857600',
-        'log_backups': '8',
-        'log_file': '/var/log/anycast-healthchecker/anycast-healthchecker.log',
-        'stderr_file': '/var/log/anycast-healthchecker/stderr.log',
-        'stdout_file': '/var/log/anycast-healthchecker/stdout.log',
-        'dummy_ip_prefix': '10.189.200.255/32',
-        'bird_reconfigure_cmd': 'sudo /usr/sbin/birdc configure',
-    }
-}
+from anycast_healthchecker.utils import load_configuration, running
 
 
 def main():
@@ -75,14 +48,16 @@ def main():
             print()
         sys.exit(0)
 
-    # Parse configuration.
-    defaults = copy.copy(DEFAULT_OPTIONS['DEFAULT'])
-    daemon_defaults = {'daemon': copy.copy(DEFAULT_OPTIONS['daemon'])}
-    config = configparser.ConfigParser(defaults=defaults)
-    config.read_dict(daemon_defaults)
-    config_files = [args['--file']]
-    config_files.extend(glob.glob(os.path.join(args['--dir'], '*.conf')))
-    config.read(config_files)
+    config_file = args['--file']
+    config_dir = args['--dir']
+    try:
+        config = load_configuration(config_file, config_dir)
+    except ValueError as exc:
+        sys.exit('Invalid configuration: ' + str(exc))
+
+    if args['--check']:
+        print("OK")
+        sys.exit(0)
 
     if args['--print-conf']:
         for section in config:
@@ -92,11 +67,6 @@ def main():
             print()
         sys.exit(0)
 
-    # Perform a sanity check on the configuration
-    configuration_check(config)
-    if args['--check']:
-        print("OK")
-        sys.exit(0)
 
     # Catch already running process and clean up stale pid file.
     pidfile = config['daemon']['pidfile']

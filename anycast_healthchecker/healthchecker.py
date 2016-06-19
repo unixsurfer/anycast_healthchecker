@@ -13,7 +13,7 @@ from queue import Queue
 import shlex
 
 from anycast_healthchecker.servicecheck import ServiceCheck
-from anycast_healthchecker.utils import (OPTIONS_TYPE,
+from anycast_healthchecker.utils import (SERVICE_OPTIONS_TYPE,
                                          get_ip_prefixes_from_bird,
                                          ip_prefixes_without_config)
 
@@ -260,7 +260,7 @@ class HealthChecker(object):
             msg = "lunching thread for {n}".format(n=service)
             self.log.debug(msg, json_blob=False)
             _config = {}
-            for option, getter in OPTIONS_TYPE.items():
+            for option, getter in SERVICE_OPTIONS_TYPE.items():
                 _config[option] = getattr(self.config, getter)(service, option)
             _thread = ServiceCheck(
                 service,

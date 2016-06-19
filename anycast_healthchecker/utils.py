@@ -19,10 +19,13 @@ import sys
 import subprocess
 import logging
 import configparser
+import glob
+import copy
 import shlex
 
+from anycast_healthchecker import DEFAULT_OPTIONS
 
-OPTIONS_TYPE = {
+SERVICE_OPTIONS_TYPE = {
     'check_cmd': 'get',
     'check_interval': 'getint',
     'check_timeout': 'getint',
@@ -33,10 +36,20 @@ OPTIONS_TYPE = {
     'ip_prefix': 'get',
     'interface': 'get',
 }
+DAEMON_OPTIONS_TYPE = {
+    'pidfile': 'get',
+    'bird_conf': 'get',
+    'bird_variable': 'get',
+    'log_maxbytes': 'getint',
+    'log_backups': 'getint',
+    'log_file': 'get',
+    'stderr_file': 'get',
+    'stdout_file': 'get',
+}
 
 
 def valid_ip_prefix(ip_prefix):
-    """Returns true if input is a valid IP Prefix otherwhise False."""
+    """Returns a match object if input is a valid IP Prefix otherwhise None."""
 
     pattern = re.compile(r'''
         ^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}  # 1-3 octets
@@ -48,17 +61,13 @@ def valid_ip_prefix(ip_prefix):
 
 
 def touch(file_path):
-    """Touches a file in the same way as touch tool does"""
+    """Touch a file in the same way as touch tool does.
 
-    try:
-        with open(file_path, 'a') as file_hanle:
-            os.utime(file_path, None)
-    except OSError as error:
-        print("Failed to touch file with error:{err}".format(err=error))
-        return False
-    else:
-        file_hanle.close()
-        return True
+    Arguments:
+        file_path (str): The absolute file path
+    """
+    with open(file_path, 'a'):
+        os.utime(file_path, None)
 
 
 def get_ip_prefixes(config, services):
@@ -87,46 +96,49 @@ def service_configuration_check(config, services):
     Arguments:
         config (obj): A configparser object which holds our configuration.
         services (list): A list of section names which are the name of the
-        services to run checks.
+        services.
 
     Returns:
-        None if all sanity checks on configuration are successfully passed
-        otherwise exits main program
+        None if all sanity checks are successfully passed otherwise raises a
+        ValueError exception.
     """
     for service in services:
-        for option, getter in OPTIONS_TYPE.items():
+        for option, getter in SERVICE_OPTIONS_TYPE.items():
             try:
                 getattr(config, getter)(service, option)
             except configparser.Error as error:
-                sys.exit(str(error))
-            except ValueError as error:
-                sys.exit("invalid data for '{opt}' option in service check "
-                         "{name}: {err}".format(opt=option, name=service,
-                                                err=error))
+                raise ValueError(error)
+            except ValueError as exc:
+                msg = ("invalid data for '{opt}' option in service check "
+                       "{name}: {err}".
+                       format(opt=option, name=service, err=exc))
+                raise ValueError(msg)
 
         if (config[service]['on_disabled'] != 'withdraw' and
                 config[service]['on_disabled'] != 'advertise'):
-            sys.exit("'on_disable' option has invalid value ({val}) for "
-                     "service check {name} should be either 'withdraw' or "
-                     "'advertise'".format(name=service,
-                                          val=config[service]['on_disabled']))
+            msg = ("'on_disable' option has invalid value ({val}) for "
+                   "service check {name} should be either 'withdraw' or "
+                   "'advertise'".
+                   format(name=service, val=config[service]['on_disabled']))
+            raise ValueError(msg)
 
-        # check if it is a valid IP
         if not valid_ip_prefix(config[service]['ip_prefix']):
-            sys.exit("invalid value ({val}) for 'ip_prefix' option in service "
-                     "check {name}. It should be an IP PREFIX in form of "
-                     "ip/prefixlen.".format(name=service,
-                                            val=config[service]['ip_prefix']))
+            msg = ("invalid value ({val}) for 'ip_prefix' option in service "
+                   "check {name}. It should be an IP PREFIX in form of "
+                   "ip/prefixlen.".
+                   format(name=service, val=config[service]['ip_prefix']))
+            raise ValueError(msg)
 
         cmd = shlex.split(config[service]['check_cmd'])
         try:
-            proc = subprocess.Popen(cmd, stdin=None, stdout=None, stderr=None)
+            proc = subprocess.Popen(cmd)
             proc.kill()
-        except (OSError, subprocess.SubprocessError) as error:
-            sys.exit("failed to run check command '{cmd}' for service check "
-                     "{name}: {err}".format(name=service,
-                                            cmd=config[service]['check_cmd'],
-                                            err=str(error)))
+        except (OSError, subprocess.SubprocessError) as exc:
+            msg = ("failed to run check command '{cmd}' for service check "
+                   "{name}: {err}".
+                   format(name=service, cmd=config[service]['check_cmd'],
+                          err=exc))
+            raise ValueError(msg)
 
 
 def ip_prefixes_without_config(ip_prefixes_in_bird, config, services):
@@ -164,7 +176,7 @@ def ip_prefixes_check(config, services):
         config['daemon']['bird_conf'])
 
     if not ip_prefixes_in_bird:
-        print("Found zero IP prefixes in {}".format(
+        print("WARNING: Found zero IP prefixes in {}".format(
             config['daemon']['bird_conf']))
         return None
 
@@ -172,14 +184,37 @@ def ip_prefixes_check(config, services):
                                                            config,
                                                            services)
     if notconfigured_ip_prefixes:
-        print("Found IP prefixes {i} in {fh} without a check configured"
-              .format(fh=config['daemon']['bird_conf'],
-                      i=','.join(notconfigured_ip_prefixes)))
+        print("WARNING: Found IP prefixes {i} in {fh} without a service check "
+              "configured".
+              format(fh=config['daemon']['bird_conf'],
+                     i=','.join(notconfigured_ip_prefixes)))
 
     if config['daemon']['dummy_ip_prefix'] not in ip_prefixes_in_bird:
-        print("Dummy IP prefix ({ip}) is missing from bird configuration "
-              "{fh}".format(ip=config['daemon']['dummy_ip_prefix'],
-                            fh=config['daemon']['bird_conf']))
+        print("WARNING: Dummy IP prefix ({ip}) is missing from bird "
+              "configuration {fh}".
+              format(ip=config['daemon']['dummy_ip_prefix'],
+                     fh=config['daemon']['bird_conf']))
+
+
+def load_configuration(config_file, config_dir):
+    """Load configuration after running sanity check"""
+    config_files = [config_file]
+    defaults = copy.copy(DEFAULT_OPTIONS['DEFAULT'])
+    daemon_defaults = {
+        'daemon': copy.copy(DEFAULT_OPTIONS['daemon'])
+    }
+    config = configparser.ConfigParser(defaults=defaults)
+    config.read_dict(daemon_defaults)
+    config_files.extend(glob.glob(os.path.join(config_dir, '*.conf')))
+
+    try:
+        config.read(config_files)
+    except configparser.Error as exc:
+        raise ValueError(exc)
+
+    configuration_check(config)
+
+    return config
 
 
 def configuration_check(config):
@@ -189,27 +224,38 @@ def configuration_check(config):
         config (obg): A configparser object which holds our configuration.
 
     Returns:
-        None if all checks are successfully passed otherwise exits main
-        program
+        None if all checks are successfully passed otherwise raises a
+        ValueError exception.
     """
-    num_level = getattr(logging, config['daemon']['loglevel'].upper(), None)
+    log_level = config['daemon']['loglevel']
+    num_level = getattr(logging, log_level.upper(), None)
     if not isinstance(num_level, int):
-        sys.exit('Invalid log level: {}'.format(config['daemon']['loglevel']))
+        raise ValueError('Invalid log level: {}'.format(log_level))
 
-    if not touch(config['daemon']['log_file']):
-        sys.exit(1)
-    if not touch(config['daemon']['stdout_file']):
-        sys.exit(1)
-    if not touch(config['daemon']['stderr_file']):
-        sys.exit(1)
+    for _file in 'log_file', 'stdout_file', 'stderr_file':
+        try:
+            touch(config['daemon'].get(_file))
+        except OSError as exc:
+            raise ValueError(exc)
+
     if not valid_ip_prefix(config['daemon']['dummy_ip_prefix']):
-        sys.exit("Invalid dummy IP prefix:{}".format(
-            config['daemon']['dummy_ip_prefix']))
+        raise ValueError("Invalid dummy IP prefix:{}".
+                         format(config['daemon']['dummy_ip_prefix']))
+
+    for option, getter in DAEMON_OPTIONS_TYPE.items():
+        try:
+            getattr(config, getter)('daemon', option)
+        except configparser.Error as error:
+            raise ValueError(error)
+        except ValueError as exc:
+            msg = ("invalid data for '{opt}' option in daemon section: {err}".
+                   format(opt=option, err=exc))
+            raise ValueError(msg)
 
     services = config.sections()
     services.remove('daemon')
     if not services:
-        sys.exit('No service checks are configured')
+        raise ValueError('No service checks are configured')
 
     service_configuration_check(config, services)
     ip_prefixes_check(config, services)
@@ -232,8 +278,8 @@ def running(processid):
         os.kill(processid, 0)
     except OSError:
         return False
-
-    return True
+    else:
+        return True
 
 
 def get_ip_prefixes_from_bird(filename, die=True):
@@ -280,7 +326,7 @@ class BaseOperation(object):
         name(string): The name of the service for the given ip_prefix
         ip_prefix(string): The value to run the operation
         log(logger obj): A logger object to use for emitting messages
-        extra(dictinary): A possible dictinary structure to pass further
+        extra(dictionary): A possible dictionary structure to pass further
     """
     def __init__(self, name, ip_prefix, log, **extra):
         self.name = name
@@ -315,7 +361,7 @@ class AddOperation(BaseOperation):
 
 
 class DeleteOperation(BaseOperation):
-    """Removes a value to a list"""
+    """Removes a value from a list"""
     def __str__(self):
         return 'delete from'
 
