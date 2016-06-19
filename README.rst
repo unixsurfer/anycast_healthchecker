@@ -289,7 +289,8 @@ DEFAULT section
 ***************
 
 Below are the default settings for all service checks, see `Configuring checks
-for services`_ for and explanation of the parameters.
+for services`_ for and explanation of the parameters. Settings in this section
+can be overwritten in other sections.
 
 :interface: lo
 :check_interval: 10
@@ -303,24 +304,56 @@ for services`_ for and explanation of the parameters.
 Daemon section
 **************
 
-:pidfile: file to store the pid of the daemon
-:bird_conf: file with the list of IP prefixes allowed to be exported
-:bird_variable: the name of the list defined in ``bird_conf``
-:bird_reconfigure_cmd: command to trigger a reconfiguration of Bird
-:loglevel: log level, possible values are: debug, info, warning, error, critical
-:log_file: file to log messages to
-:log_maxbytes: maximum size in bytes for log files
-:log_backups: number of old log files to maintain
-:stderr_file: file to redirect standard error to
-:stdout_file: file to redirect standard output to
-:dummy_ip_prefix: an IP prefix in the form <IP>/<prefix length> which will be
-                  always available in the list defined by ``bird_variable`` to
-                  avoid having an empty list.
+Settings for anycast-healthchecker daemon
 
+* **pidfile** Defaults to **/var/run/anycast-healthchecker/anycast-healthchecker.pid**
 
-:NOTE: The dummy_ip_prefix **must not** be used by a service, assigned to
-       the loopback interface and configured anywhere on the network as
-       anycast-healthchecker **does not** perform any checks for it.
+File to store the process id of the daemon
+
+* **bird_conf** Defaults to **/etc/bird.d/anycast-prefixes.conf**
+
+File with the list of IP prefixes allowed to be exported
+
+* **bird_variable** Defaults to **ACAST_PS_ADVERTISE**
+
+The name of the list defined in ``bird_conf``
+
+* **bird_reconfigure_cmd** Defaults to **sudo /usr/sbin/birdc configure**
+
+Command to trigger a reconfiguration of Bird daemon
+
+* **loglevel** Defaults to **debug**
+
+Log level to use, possible values are: debug, info, warning, error, critical
+
+* **log_file** Defaults to **/var/log/anycast-healthchecker/anycast-healthchecker.log**
+
+File to log messages to
+
+* **log_maxbytes** Defaults to **104857600**
+
+Maximum size in bytes for log files
+
+* **log_backups** Defaults to **8**
+
+Number of old log files to maintain
+
+* **stderr_file** Defaults to **/var/log/anycast-healthchecker/stderr.log**
+
+File to redirect standard error to
+
+* **stdout_file** Defaults to **/var/log/anycast-healthchecker/stdout.log**
+
+File to redirect standard output to
+
+* **dummy_ip_prefix** Defaults to **10.189.200.255/32**
+
+An IP prefix in the form <IP>/<prefix length> which will be always available in
+the list defined by ``bird_variable`` to avoid having an empty list.
+
+The ``dummy_ip_prefix`` **must not** be used by any service or assigned to the
+interface set with ``interface`` or configured anywhere on the network as
+anycast-healthchecker **does not** perform any checks for it.
 
 JSON logging
 ************
@@ -333,20 +366,31 @@ configurable at the moment.
 The following settings can be added to the [daemon] section for enabling
 JSON logging.
 
-:json_logging: ``true`` enables JSON logging ``false`` disables it, it **is
-               not** enabled by default.
-:http_server: server name to send JSON logging over HTTP protocol
-:http_server_port: port to connect
-:http_server_protocol: HTTP protocol to use, either ``http`` or ``https``
-:http_server_timeout: how long to wait for the server to send data before giving
-                      up, as a float number.
-:NOTE: There are not default values for the above settings, except
-       ``json_logging``, thus have to be configured explicitly.
-:WARNING: The http POST requests are done in blocking mode which means that
-          possible long delays will make the health checks to be delayed.
-          ``http_server_timeout`` accepts floating point numbers as values
-          which are passed to underlying request module as a single timeout
-          which will be applied to both the connect and the read timeouts.
+* **json_logging** Defaults to **false**
+
+``true`` enables JSON logging ``false`` disables it
+
+* **http_server** Unset by default
+
+Server name to send JSON logging over HTTP protocol
+
+* **http_server_port**  Unset by default
+
+Port to connect
+
+* **http_server_protocol** Unset by default
+
+HTTP protocol to use, either ``http`` or ``https``
+
+* **http_server_timeout** Unset by default
+
+How long to wait for the server to send data before giving up, as a float number.
+JSON messages are send using http POST requests which are executed in blocking
+mode which means that possible long delays will make the health checks to be
+delayed as well.
+``http_server_timeout`` accepts floating point numbers as values which are
+passed to underlying request module as a single timeout which will be applied
+to both the connect and the read timeouts.
 
 Configuring checks for services
 ###############################
@@ -355,43 +399,67 @@ The configuration for a single service check is defined in one section.
 Here is an example::
 
     [foo.bar.com]
-    check_cmd = /usr/bin/curl -A 'anycast-healthchecker' --fail --silent http://10.52.12.1/
-    check_interval = 10
-    check_timeout = 5
-    check_fail = 2
-    check_rise = 2
-    check_disabled = false
-    on_disabled = withdraw
-    ip_prefix = 10.52.12.1/32
+    check_cmd       = /usr/bin/curl --fail --silent http://10.52.12.1/
+    check_interval  = 10
+    check_timeout   = 2
+    check_fail      = 2
+    check_rise      = 2
+    check_disabled  = false
+    on_disabled     = withdraw
+    ip_prefix       = 10.52.12.1/32
 
 The name of the section becomes the name of the service check and appears in
 the log files for easier searching of error/warning messages.
 
-:check_cmd: the command to run to determine the status of the service based
-            **on the return code**. Complex health checking should be wrapped
-            in a script file. Output is ignored.
-:check_interval: how often to run the check (seconds)
-:check_timeout: maximum time in seconds for the check command to complete.
-                anycast-healthchecker will try kill the check if it doesn't
-                return after *check_timeout* seconds. If *check_cmd* runs under
-                another user account (root) via sudo then it isn't killed.
-                anycast-healthchecker could run as root to avoid this case,
-                but it is highly recommended to run it as normal user.
-:check_fail: a service is considered DOWN after this many consecutive unsuccessful
-             health checks
-:check_rise: a service is considered HEALTHY after this many consecutive successful health
-             checks
-:check_disabled:  ``true`` disables this check, ``false`` enables it
+* **check_cmd** Unset by default
 
-:on_disabled: what to do when check is disabled, either ``withdraw`` or
-              ``advertise``
-:ip_prefix: IP prefix associated with the service. It **must be** assigned to
-            the interface set in ``interface`` parameter unless
-            ``ip_check_disabled`` parameter is set to ``true``
-:ip_check_disabled: ``true`` disables the assignment check of ``ip_prefix`` to
-                    interface set in ``interface`` parameter, ``false``
-                    enables it
-:interface: the name of the interface that ``ip_prefix`` is assigned to
+The command to run to determine the status of the service based
+**on the return code**. Complex health checking should be wrapped in a script.
+
+* **check_interval** Defaults to **2** (seconds)
+
+How often to run the check
+
+* **check_timeout** Defaults to **2** (seconds)
+
+Maximum time in seconds for the check command to complete.
+anycast-healthchecker will try kill the check if it doesn't return after
+*check_timeout* seconds. If *check_cmd* runs under another user account (root)
+via sudo then it wouldn't be killed.  anycast-healthchecker could run as root
+to overcome this problem, but it is highly recommended to run it as normal user.
+
+* **check_fail** Defaults to **2**
+
+A service is considered DOWN after this many consecutive unsuccessful health
+checks
+
+* **check_rise** Defaults to **2**
+
+A service is considered HEALTHY after this many consecutive successful health
+checks
+
+* **check_disabled** Defaults to **false**
+
+``true`` disables the check, ``false`` enables it
+
+* **on_disable** Defaults to **withdraw**
+
+What to do when check is disabled, either ``withdraw`` or ``advertise``
+
+* **ip_prefix** Unset by default
+
+IP prefix associated with the service. It **must be** assigned to the
+interface set in **interface** parameter unless **ip_check_disabled** is set to
+``true``
+
+* **ip_check_disabled** Defaults to **false**
+
+``true`` disables the assignment check of **ip_prefix** to interface set in
+**interface**, ``false`` enables it
+
+* **interface** Defaults to **lo**
+
+The name of the interface that **ip_prefix** is assigned to
 
 Multiple sections may be combined in one file or provide one file per section.
 File must be stored under one directory and their name should use ``.conf``
@@ -402,7 +470,7 @@ Starting the daemon
 
 Daemon CLI usage::
 
-    % anycast-healthchecker --help
+    anycast-healthchecker --help
     A simple healthchecker for Anycasted services.
 
     Usage:
@@ -422,7 +490,7 @@ Daemon CLI usage::
 The daemon can be launched by supplying a configuration file and a directory with
 configuration files for service checks::
 
-  % anycast-healthchecker -f ./anycast-healthchecker.conf -d ./anycast-healthchecker.d
+  anycast-healthchecker -f ./anycast-healthchecker.conf -d ./anycast-healthchecker.d
 
 
 At the root of the project there is System V init and a Systemd unit file for
