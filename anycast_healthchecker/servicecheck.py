@@ -1,6 +1,7 @@
 # pylint: disable=superfluous-parens
 # pylint: disable=too-many-branches
 # pylint: disable=too-many-statements
+# pylint: disable=too-many-return-statements
 #
 
 """
@@ -40,6 +41,7 @@ class ServiceCheck(Thread):
         self.extra = {
             'servicename': self.name,
         }
+        self.ip_check_disabled = self.config['ip_check_disabled']
 
     def _run_check(self):
         """Executes a check command.
@@ -93,6 +95,12 @@ class ServiceCheck(Thread):
             'to',
             self.config['ip_prefix'],
         ]
+
+        if self.ip_check_disabled:
+            msg = ("checking for IP assignment on interface {} is disabled".
+                   format(self.config['interface']))
+            self.log.info(msg, priority=50, **self.extra)
+            return True
 
         self.log.debug("running {}".format(' '.join(cmd)), json_blob=False)
         try:

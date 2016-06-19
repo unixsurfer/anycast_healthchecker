@@ -23,6 +23,7 @@ DEFAULT_OPTIONS = {
         'check_fail': '2',
         'check_disabled': 'true',
         'on_disable': 'withdraw',
+        'ip_check_disabled': 'false',
     },
     'daemon': {
         'pidfile': '/var/run/anycast-healthchecker/anycast-healthchecker.pid',

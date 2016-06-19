@@ -35,6 +35,7 @@ SERVICE_OPTIONS_TYPE = {
     'on_disabled': 'get',
     'ip_prefix': 'get',
     'interface': 'get',
+    'ip_check_disabled': 'getboolean',
 }
 DAEMON_OPTIONS_TYPE = {
     'pidfile': 'get',

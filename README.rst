@@ -298,6 +298,7 @@ for services`_ for and explanation of the parameters.
 :check_fail: 2
 :check_disabled: true
 :on_disable: withdraw
+:ip_check_disabled: false
 
 Daemon section
 **************
@@ -385,7 +386,11 @@ the log files for easier searching of error/warning messages.
 :on_disabled: what to do when check is disabled, either ``withdraw`` or
               ``advertise``
 :ip_prefix: IP prefix associated with the service. It **must be** assigned to
-            the interface set in ``interface`` parameter
+            the interface set in ``interface`` parameter unless
+            ``ip_check_disabled`` parameter is set to ``true``
+:ip_check_disabled: ``true`` disables the assignment check of ``ip_prefix`` to
+                    interface set in ``interface`` parameter, ``false``
+                    enables it
 :interface: the name of the interface that ``ip_prefix`` is assigned to
 
 Multiple sections may be combined in one file or provide one file per section.
