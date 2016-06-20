@@ -29,23 +29,24 @@ What is Anycast
 ---------------
 
 Anycast is a network address scheme where traffic from a sender has more than
-one potential receiver, but only one of them receives it. Routing protocols,
-decide which one of the potential receivers will actually
-receive traffic based on the topology of the network. The main attribute which
-contributes to the decision is the cost of the network path between a sender and
-a receiver. Cost is a protocol specific (usually integer) value that only has
-meaning within a protocol that is used as a metric of distance. Routing
-protocols provide default values for common topologies (`BGP`_ associates the
+one potential receivers, but only one of them receives it. Routing protocols,
+decide which one of the potential receivers will actually receive traffic based
+on the topology of the network. The main attribute which contributes to the
+decision is the cost of the network path between a sender and a receiver.
+
+Cost is a protocol specific (usually integer) value that only has meaning
+within a protocol that is used as a metric of distance. Routing protocols
+provide default values for common topologies (`BGP`_ associates the
 cost of a path with the number of autonomous systems between the sender and the
 receiver, `OSPF`_ calculates the default cost based on the bandwidth of links),
 but its main use is to allow administrative control over traffic flow by
 specifying cost according to business needs.
 
-The nearest receiver to a sender always receives the traffic and this only changes
-if something changes on the network, another receiver with best path to the sender
-appears or current receiver disappears. If multiple receivers have the same
-distance from the sender more than one of the receivers might receive traffic,
-based on further details of the network configuration.
+The nearest receiver to a sender always receives the traffic and this only
+changes if something changes on the network, another receiver with best path to
+the sender appears or current receiver disappears. If multiple receivers have
+the same distance from the sender more than one of the receivers might receive
+traffic, based on further details of the network configuration.
 
 The three drawings below exhibit how traffic is routed between a sender and
 multiple potential receivers when something changes on network. In this example
@@ -72,11 +73,11 @@ uneven way.
 Anycast is being used as a mechanism to switch traffic between and within
 data-centers for the following main reasons:
 
-* the switch of traffic occurs without the need to enforce a change to the clients
+* the switch of traffic occurs without the need to enforce a change to clients
 
 In case of loss of a service in one location, traffic to that location will be
-switched to another data-center without any manual intervention and most importantly
-without pushing a change to the clients which you don't always control.
+switched to another data-center without any manual intervention and most
+importantly without pushing a change to clients which you don't always control.
 
 * the switch happens within few milliseconds
 
@@ -87,6 +88,7 @@ ECMP routing is a network technology where traffic can be routed over multiple
 paths. In the context of routing protocols, path is the route a packet has to
 take in order to be delivered to a destination. Because these multiple paths
 have the same cost, traffic is balanced across them.
+
 This provides the possibility to perform load-balancing of traffic across
 multiple servers. Routers are the devices which perform load-balancing of
 traffic and most of them use a deterministic way to select the server based on
@@ -97,11 +99,12 @@ the following four properties of IP packets:
 * destination IP
 * destination PORT
 
-Each unique combination of values for those four properties is called
-network flow. For each different network flow a different destination server
-is selected so traffic is evenly balanced across all servers.
+Each unique combination of values for those four properties is called network
+flow. For each different network flow a different destination server is
+selected so traffic is evenly balanced across all servers.
 These servers run an Internet Routing daemon in the same way as with Anycast
 case but with the major difference that all servers receive traffic.
+
 The main characteristic of this type of load-balancing is that is stateless.
 Router balances traffic to a destination IP address based on the quadruple
 network flow without the need to understand and inspect protocols above Layer 3.
@@ -238,11 +241,12 @@ anycast-prefixes.conf
 a variable with the name ``ACAST_PS_ADVERTISE``. The name of the variable can
 be anything meaningful but ``bird_variable`` setting **must** be changed
 accordingly in order for anycast-healthchecker to modify it.
-Because anycast-healthchecker does not install ``anycast-prefixes.conf``
-file, administrators should install an initial version with the following
-content and after the launch of anycast-healthchecker daemon the
-file is managed by anycast-healthchecker. Therefore, it **should not** be
-modified by other processes.
+
+``anycast-prefixes.conf`` file is not part of the anycast-healthchecker
+package, thus administrators need install an initial version with the following
+content and after the launch of anycast-healthchecker it **should not**
+modified by any other process(es) as its content is managed by
+anycast-healthchecker.
 
 ::
 
@@ -289,7 +293,7 @@ DEFAULT section
 ***************
 
 Below are the default settings for all service checks, see `Configuring checks
-for services`_ for and explanation of the parameters. Settings in this section
+for services`_ for an explanation of the parameters. Settings in this section
 can be overwritten in other sections.
 
 :interface: lo
@@ -330,7 +334,7 @@ Log level to use, possible values are: debug, info, warning, error, critical
 
 File to log messages to
 
-* **log_maxbytes** Defaults to **104857600**
+* **log_maxbytes** Defaults to **104857600** (bytes)
 
 Maximum size in bytes for log files
 
@@ -415,6 +419,7 @@ the log files for easier searching of error/warning messages.
 
 The command to run to determine the status of the service based
 **on the return code**. Complex health checking should be wrapped in a script.
+When check command fails, the stdout and stderr appears in the log file.
 
 * **check_interval** Defaults to **2** (seconds)
 
@@ -449,17 +454,27 @@ What to do when check is disabled, either ``withdraw`` or ``advertise``
 * **ip_prefix** Unset by default
 
 IP prefix associated with the service. It **must be** assigned to the
-interface set in **interface** parameter unless **ip_check_disabled** is set to
+interface set in ``interface`` parameter unless ``ip_check_disabled`` is set to
 ``true``
 
 * **ip_check_disabled** Defaults to **false**
 
-``true`` disables the assignment check of **ip_prefix** to interface set in
-**interface**, ``false`` enables it
+``true`` disables the assignment check of ``ip_prefix`` to the interface set in
+``interface``, ``false`` enables it.
+
+If the ``check_cmd`` checks the availability of the service by sending a
+request to the Anycasted IP address then that request may be served by another
+node which advertises the same IP address on the network. This usually happens
+when the Anycasted IP address is not assigned to loopback or any other
+interface on the local node.
+
+Therefore, it should be only enabled in environments where the network or the
+network configuration of the local node prevents the request from ``check_cmd``
+to be forwarded to another node.
 
 * **interface** Defaults to **lo**
 
-The name of the interface that **ip_prefix** is assigned to
+The name of the interface that ``ip_prefix`` is assigned to
 
 Multiple sections may be combined in one file or provide one file per section.
 File must be stored under one directory and their name should use ``.conf``
@@ -487,15 +502,14 @@ Daemon CLI usage::
         -v, --version      show version
         -h, --help         show this screen
 
-The daemon can be launched by supplying a configuration file and a directory with
-configuration files for service checks::
+The daemon can be launched by supplying a configuration file and a directory
+with configuration files for service checks::
 
   anycast-healthchecker -f ./anycast-healthchecker.conf -d ./anycast-healthchecker.d
 
 
 At the root of the project there is System V init and a Systemd unit file for
 proper integration with OS startup tools.
-
 
 Systemd and SysVinit integration
 ################################
@@ -508,7 +522,6 @@ Nagios check
 
 Under contrib/nagios directory there is a nagios plugin to check if daemon is
 up and if all threads are running.
-
 
 Installation
 ------------
@@ -582,7 +595,7 @@ for testing purposes. It does the following:
 #. Installs anycast-healthchecker with ``python3.4 setup.py install``,
    *requires* python virtualenvironment, use the excellent tool virtualenvwrapper
 
-#. Assigns 4 IPs (10.52.12.[1-4]) to loopback interface
+#. Assigns 4 IP addresses (10.52.12.[1-4]) to loopback interface
 
 #. Checks if bird daemon runs but it does not try to start if it's running
 
