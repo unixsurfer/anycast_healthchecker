@@ -1,6 +1,18 @@
 CHANGES
 =======
 
+0.6.0
+-----
+
+* RELEASE 0.6.0 version
+* Rephrase sentences and fix typos in README
+* Restructure documentation about settings in README
+* Add option to disable the IP assignment check
+* Simplify sanity check on configuration
+* Log stderr and stdout of check cmd when it fails
+* Rephrase some comments
+* Add Documentation option in the Systemd unit file
+
 0.5.10
 ------
 
