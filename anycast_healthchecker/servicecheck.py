@@ -36,10 +36,15 @@ class ServiceCheck(Thread):
         self.daemon = True
         self.config = config
         self.action = action
+        self.ip_address = self.config['ip_prefix'].split('/')[0]
+        self.prefix_length = self.config['ip_prefix'].split('/')[1]
+
         self.log = log
         self.log.info("loading check for {n}".format(n=self.name))
         self.extra = {
             'servicename': self.name,
+            'ip_address': self.ip_address,
+            'prefix_length': self.prefix_length,
         }
         self.ip_check_disabled = self.config['ip_check_disabled']
 
