@@ -1,6 +1,12 @@
 CHANGES
 =======
 
+0.6.1
+-----
+
+* RELEASE 0.6.1 version
+* Include IP address and prefix length in JSON blob
+
 0.6.0
 -----
 
