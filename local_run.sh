@@ -116,7 +116,7 @@ done
 version=$("${DAEMON}" -v)
 echo "---------check if Bird is running--------"
 bird_pid=$(pgrep bird)
-if [ ! -z ${bird_pid} ]; then
+if [ ! -z "${bird_pid}" ]; then
     echo "bird seems to run pid:${bird_pid}"
 else
     echo "######bird seems to not be running#####"
