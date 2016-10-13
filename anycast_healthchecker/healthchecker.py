@@ -5,17 +5,15 @@
 A library which provides the HealthChecker class.
 """
 import os
-import subprocess
 import sys
-import time
-import datetime
 from queue import Queue
-import shlex
 
 from anycast_healthchecker.servicecheck import ServiceCheck
 from anycast_healthchecker.utils import (SERVICE_OPTIONS_TYPE,
                                          get_ip_prefixes_from_bird,
-                                         ip_prefixes_without_config)
+                                         ip_prefixes_without_config,
+                                         reconfigure_bird,
+                                         write_temp_bird_conf)
 
 
 class HealthChecker(object):
@@ -70,48 +68,6 @@ class HealthChecker(object):
         self.services.remove('daemon')
 
         self.log.info('initialize healthchecker')
-
-    def _write_temp_bird_conf(self, prefixes):
-        """Writes in a temporary file the list of IP-Prefixes
-
-        A failure to create and write the temporary file will exit main
-        program.
-
-        Arguments:
-            prefixes (list): The list of IP-Prefixes to write
-        Returns:
-            The filename of the temporary file
-        """
-        comment = ("# {i} is a dummy IP Prefix. It should NOT be used and "
-                   "REMOVED from the constant.".format(i=self.dummy_ip_prefix))
-
-        # the temporary file must be on the same filesystem as the bird config
-        # as we use os.rename to perform an atomic update on the bird config.
-        # Thus, we create it in the same directory that bird config is stored.
-        tm_file = os.path.dirname(self.bird_conf_file) + '/' + str(time.time())
-        self.log.debug("going to write to {f}".format(f=tm_file),
-                       json_blob=False)
-        try:
-            with open(tm_file, 'w') as tmpf:
-                tmpf.write("# Generated {t} by anycast-healthchecker (pid={p})"
-                           "\n".format(t=datetime.datetime.now(),
-                                       p=os.getpid()))
-                tmpf.write("{c}\n".format(c=comment))
-                tmpf.write("define {n} =\n".format(n=self.bird_constant_name))
-                tmpf.write("{s}[\n".format(s=4 * ' '))
-                # all entries of the array constant need a trailing comma
-                # except the last one. A single element array doesn't need
-                # the trailing comma.
-                tmpf.write(',\n'.join([' '*8 + n for n in prefixes]))
-                tmpf.write("\n{s}];\n".format(s=4 * ' '))
-        except OSError as error:
-            msg = ("failed to write temporary file {f}: {e}. This is a FATAL "
-                   "error, this exiting main program".format(f=tm_file,
-                                                             e=error))
-            self.log.critical(msg, priority=80)
-            sys.exit(1)
-        else:
-            return tm_file
 
     def _update_bird_conf_file(self, operation):
         """Updates BIRD configuration.
@@ -182,7 +138,11 @@ class HealthChecker(object):
 
         # some IP prefixes are either removed or added, create
         # configuration with new data.
-        tempname = self._write_temp_bird_conf(prefixes)
+        tempname = write_temp_bird_conf(self.log,
+                                        self.dummy_ip_prefix,
+                                        self.bird_conf_file,
+                                        self.bird_constant_name,
+                                        prefixes)
         try:
             os.rename(tempname, self.bird_conf_file)
         except OSError as error:
@@ -200,55 +160,6 @@ class HealthChecker(object):
                              "node doesn't receive any traffic", priority=80)
 
         return conf_updated
-
-    def _reload_bird(self):
-        """Reloads BIRD daemon.
-
-        Runs 'birdc configure' to reload BIRD. Some useful information on how
-        birdc tool works:
-            -- Returns a non-zero exit code only when it can't access BIRD
-            daemon via the control socket (/var/run/bird.ctl).
-            This happens when BIRD daemon is either down or when the caller of
-            birdc doesn't have access to the control socket.
-            -- Returns zero exit code when reload fails due to invalid
-            configuration. Thus, we catch this case by looking at the output
-            and not at the exit code.
-            -- Returns zero exit code when reload was successful.
-            -- Should never timeout, if it does then it is a bug.
-        """
-        _cmd = shlex.split(self.config['daemon']['bird_reconfigure_cmd'])
-        try:
-            _output = subprocess.check_output(
-                _cmd,
-                timeout=2,
-                stderr=subprocess.STDOUT,
-                universal_newlines=True)
-        except subprocess.TimeoutExpired:
-            self.log.error("reloading bird timed out", priority=80)
-            return
-        except subprocess.CalledProcessError as error:
-            # birdc returns 0 even when it fails due to invalid config,
-            # but it returns 1 when BIRD is down.
-            msg = ("reloading BIRD failed, most likely BIRD daemon is down"
-                   ":{e}").format(e=error.output.strip())
-            self.log.error(msg, priority=80)
-            return
-        except FileNotFoundError as error:
-            msg = "Reloading BIRD failed with: {e}".format(e=error)
-            self.log.error(msg, priority=80)
-            return
-
-        # 'Reconfigured' string will be in the output if and only if conf is
-        # valid.
-        if 'Reconfigured' in _output:
-            self.log.info('Reloaded BIRD daemon')
-        else:
-            # We will end up here only if we generated an invalid conf
-            # or someone broke bird.conf.
-            msg = ("reloading BIRD returned error, most likely we generated "
-                   "an invalid configuration file or Bird configuration in "
-                   "general is broken:{e}").format(e=_output)
-            self.log.error(msg, priority=80)
 
     def run(self):
         """Lunches checks and triggers updates on BIRD configuration."""
@@ -282,7 +193,8 @@ class HealthChecker(object):
             bird_updated = self._update_bird_conf_file(operation)
             self.action.task_done()
             if bird_updated:
-                self._reload_bird()
+                reconfigure_bird(self.log,
+                                 self.config['daemon']['bird_reconfigure_cmd'])
 
     def catch_signal(self, signum, frame):
         """A signal catcher.

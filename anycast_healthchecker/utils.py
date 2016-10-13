@@ -18,6 +18,8 @@ import os
 import sys
 import subprocess
 import logging
+import time
+import datetime
 import configparser
 import glob
 import copy
@@ -380,3 +382,107 @@ class DeleteOperation(BaseOperation):
             return True
 
         return False
+
+
+def reconfigure_bird(log, cmd):
+    """Reload BIRD daemon.
+
+    Arguments:
+        log(logger obj): A logger object to use for emitting messages
+        cmd(string): A command to trigger a reconfiguration of Bird daemon
+
+    Notes:
+        Runs 'birdc configure' to reload BIRD. Some useful information on how
+        birdc tool works:
+            -- Returns a non-zero exit code only when it can't access BIRD
+            daemon via the control socket (/var/run/bird.ctl).
+            This happens when BIRD daemon is either down or when the caller of
+            birdc doesn't have access to the control socket.
+            -- Returns zero exit code when reload fails due to invalid
+            configuration. Thus, we catch this case by looking at the output
+            and not at the exit code.
+            -- Returns zero exit code when reload was successful.
+            -- Should never timeout, if it does then it is a bug.
+    """
+    cmd = shlex.split(cmd)
+    try:
+        output = subprocess.check_output(
+            cmd,
+            timeout=2,
+            stderr=subprocess.STDOUT,
+            universal_newlines=True,
+            )
+    except subprocess.TimeoutExpired:
+        log.error("reloading bird timed out", priority=80)
+        return
+    except subprocess.CalledProcessError as error:
+        # birdc returns 0 even when it fails due to invalid config,
+        # but it returns 1 when BIRD is down.
+        msg = ("reloading BIRD failed, either BIRD daemon is down or we don't "
+               "have privileges to reconfigure it (sudo problems?):{e}"
+               .format(e=error.output.strip()))
+        log.error(msg, priority=80)
+        return
+    except FileNotFoundError as error:
+        msg = "reloading BIRD failed with: {e}".format(e=error)
+        log.error(msg, priority=80)
+        return
+
+    # 'Reconfigured' string will be in the output if and only if conf is valid.
+    pattern = re.compile('^Reconfigured$', re.MULTILINE)
+    if pattern.search(str(output)):
+        log.info('reloaded BIRD daemon')
+    else:
+        # We will end up here only if we generated an invalid conf
+        # or someone broke bird.conf.
+        msg = ("reloading BIRD returned error, most likely we generated "
+               "an invalid configuration file or Bird configuration in "
+               "general is broken:{e}".format(e=output))
+        log.error(msg, priority=80)
+
+
+def write_temp_bird_conf(log,
+                         dummy_ip_prefix,
+                         bird_conf_file,
+                         bird_constant_name,
+                         prefixes):
+    """Writes in a temporary file the list of IP-Prefixes
+
+    A failure to create and write the temporary file will exit main program.
+
+    Arguments:
+        log(logger obj): A logger object to use for emitting messages
+        prefixes (list): The list of IP-Prefixes to write
+
+    Returns:
+        The filename of the temporary file
+    """
+    comment = ("# {i} is a dummy IP Prefix. It should NOT be used and "
+               "REMOVED from the constant.".format(i=dummy_ip_prefix))
+
+    # the temporary file must be on the same filesystem as the bird config
+    # as we use os.rename to perform an atomic update on the bird config.
+    # Thus, we create it in the same directory that bird config is stored.
+    tm_file = os.path.dirname(bird_conf_file) + '/' + str(time.time())
+    log.debug("going to write to {f}".format(f=tm_file), json_blob=False)
+
+    try:
+        with open(tm_file, 'w') as tmpf:
+            tmpf.write("# Generated {t} by anycast-healthchecker (pid={p})\n"
+                       .format(t=datetime.datetime.now(), p=os.getpid()))
+            tmpf.write("{c}\n".format(c=comment))
+            tmpf.write("define {n} =\n".format(n=bird_constant_name))
+            tmpf.write("{s}[\n".format(s=4 * ' '))
+            # all entries of the array constant need a trailing comma
+            # except the last one. A single element array doesn't need
+            # the trailing comma.
+            tmpf.write(',\n'.join([' '*8 + n for n in prefixes]))
+            tmpf.write("\n{s}];\n".format(s=4 * ' '))
+    except OSError as error:
+        msg = ("failed to write temporary file {f}: {e}. This is a FATAL "
+               "error, this exiting main program"
+               .format(f=tm_file, e=error))
+        log.critical(msg, priority=80)
+        sys.exit(1)
+    else:
+        return tm_file
