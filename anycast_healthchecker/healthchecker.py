@@ -199,8 +199,10 @@ class HealthChecker(object):
             bird_updated = self._update_bird_conf_file(operation)
             self.action.task_done()
             if bird_updated:
-                reconfigure_bird(self.log,
-                                 self.config['daemon']['bird_reconfigure_cmd'])
+                reconfigure_bird(
+                    self.log,
+                    self.config.get('daemon', 'bird_reconfigure_cmd')
+                )
 
     def catch_signal(self, signum, frame):
         """A signal catcher.

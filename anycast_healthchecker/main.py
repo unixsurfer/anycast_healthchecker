@@ -70,7 +70,7 @@ def main():
 
 
     # Catch already running process and clean up stale pid file.
-    pidfile = config['daemon']['pidfile']
+    pidfile = config.get('daemon', 'pidfile')
     if os.path.exists(pidfile):
         pid = open(pidfile).read().rstrip()
         try:
@@ -86,25 +86,30 @@ def main():
                 os.unlink(pidfile)
 
     # Map log level to numeric which can be accepted by loggers.
-    num_level = getattr(logging, config['daemon']['loglevel'].upper(), None)
+    num_level = getattr(
+        logging,
+        config.get('daemon', 'loglevel').upper(),  # pylint: disable=no-member
+        None
+    )
 
     # Set up loggers for stdout, stderr and daemon stream
     log = lib.LoggerExt(
         'daemon',
-        config['daemon']['log_file'],
+        config.get('daemon', 'log_file'),
         log_level=num_level,
         maxbytes=config.getint('daemon', 'log_maxbytes'),
         backupcount=config.getint('daemon', 'log_backups')
     )
     if config.getboolean('daemon', 'json_logging', fallback=False):
         log.add_central_logging(
-            server=config['daemon']['http_server'],
+            server=config.get('daemon', 'http_server'),
             timeout=config.getfloat('daemon', 'http_server_timeout'),
-            protocol=config['daemon']['http_server_protocol'],
-            port=config['daemon']['http_server_port'])
+            protocol=config.get('daemon', 'http_server_protocol'),
+            port=config.get('daemon', 'http_server_port')
+        )
     stdout_log = lib.LoggerExt(
         'stdout',
-        config['daemon']['stdout_file'],
+        config.get('daemon', 'stdout_file'),
         log_level=num_level)
 
     stderrformat = ('%(asctime)s [%(process)d] line:%(lineno)d '
@@ -112,16 +117,17 @@ def main():
                     '%(message)s')
     stderr_log = lib.LoggerExt(
         'stderr',
-        config['daemon']['stderr_file'],
+        config.get('daemon', 'stderr_file'),
         log_level=num_level,
         log_format=stderrformat)
 
     if config.getboolean('daemon', 'json_logging', fallback=False):
         stderr_log.add_central_logging(
-            server=config['daemon']['http_server'],
+            server=config.get('daemon', 'http_server'),
             timeout=config.getfloat('daemon', 'http_server_timeout'),
-            protocol=config['daemon']['http_server_protocol'],
-            port=config['daemon']['http_server_port'])
+            protocol=config.get('daemon', 'http_server_protocol'),
+            port=config.get('daemon', 'http_server_port')
+        )
 
     # Perform a sanity check on IP-Prefixes
     ip_prefixes_check(log, config)
@@ -138,16 +144,16 @@ def main():
     context.stderr_logger = stderr_log
 
     # Set pidfile for DaemonContext
-    pid_lockfile = PIDLockFile(config['daemon']['pidfile'])
+    pid_lockfile = PIDLockFile(config.get('daemon', 'pidfile'))
     context.pidfile = pid_lockfile
 
     # Create our master process.
     checker = healthchecker.HealthChecker(
         log,
         config,
-        config['daemon']['bird_conf'],
-        config['daemon']['bird_variable'],
-        config['daemon']['dummy_ip_prefix'])
+        config.get('daemon', 'bird_conf'),
+        config.get('daemon', 'bird_variable'),
+        config.get('daemon', 'dummy_ip_prefix'))
 
     # Set signal mapping to catch singals and act accordingly.
     context.signal_map = {

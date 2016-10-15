@@ -89,7 +89,7 @@ def get_ip_prefixes(config, services):
     ip_prefixes = set()
 
     for service in services:
-        ip_prefixes.add(config[service]['ip_prefix'])
+        ip_prefixes.add(config.get(service, 'ip_prefix'))
 
     return ip_prefixes
 
@@ -118,22 +118,23 @@ def service_configuration_check(config, services):
                        .format(opt=option, name=service, err=exc))
                 raise ValueError(msg)
 
-        if (config[service]['on_disabled'] != 'withdraw' and
-                config[service]['on_disabled'] != 'advertise'):
+        if (config.get(service, 'on_disabled') != 'withdraw' and
+                config.get(service, 'on_disabled') != 'advertise'):
             msg = ("'on_disable' option has invalid value ({val}) for "
                    "service check {name} should be either 'withdraw' or "
                    "'advertise'"
-                   .format(name=service, val=config[service]['on_disabled']))
+                   .format(name=service,
+                           val=config.get(service, 'on_disabled')))
             raise ValueError(msg)
 
-        if not valid_ip_prefix(config[service]['ip_prefix']):
+        if not valid_ip_prefix(config.get(service, 'ip_prefix')):
             msg = ("invalid value ({val}) for 'ip_prefix' option in service "
                    "check {name}. It should be an IP PREFIX in form of "
                    "ip/prefixlen."
-                   .format(name=service, val=config[service]['ip_prefix']))
+                   .format(name=service, val=config.get(service, 'ip_prefix')))
             raise ValueError(msg)
 
-        cmd = shlex.split(config[service]['check_cmd'])
+        cmd = shlex.split(config.get(service, 'check_cmd'))
         try:
             proc = subprocess.Popen(cmd)
             proc.kill()
@@ -141,7 +142,7 @@ def service_configuration_check(config, services):
             msg = ("failed to run check command '{cmd}' for service check "
                    "{name}: {err}"
                    .format(name=service,
-                           cmd=config[service]['check_cmd'],
+                           cmd=config.get(service, 'check_cmd'),
                            err=exc))
             raise ValueError(msg)
 
@@ -160,7 +161,7 @@ def ip_prefixes_without_config(ip_prefixes_in_bird, config, services):
     """
     configured = get_ip_prefixes(config, services)
     # dummy_ip_prefix doesn't have a config by design
-    configured.add(config['daemon']['dummy_ip_prefix'])
+    configured.add(config.get('daemon', 'dummy_ip_prefix'))
 
     return set(ip_prefixes_in_bird).difference(configured)
 
@@ -261,20 +262,20 @@ def configuration_check(config):
         None if all checks are successfully passed otherwise raises a
         ValueError exception.
     """
-    log_level = config['daemon']['loglevel']
+    log_level = config.get('daemon', 'loglevel')
     num_level = getattr(logging, log_level.upper(), None)
     if not isinstance(num_level, int):
         raise ValueError('Invalid log level: {}'.format(log_level))
 
     for _file in 'log_file', 'stdout_file', 'stderr_file':
         try:
-            touch(config['daemon'].get(_file))
+            touch(config.get('daemon', _file))
         except OSError as exc:
             raise ValueError(exc)
 
-    if not valid_ip_prefix(config['daemon']['dummy_ip_prefix']):
+    if not valid_ip_prefix(config.get('daemon', 'dummy_ip_prefix')):
         raise ValueError("Invalid dummy IP prefix:{}"
-                         .format(config['daemon']['dummy_ip_prefix']))
+                         .format(config.get('daemon', 'dummy_ip_prefix')))
 
     for option, getter in DAEMON_OPTIONS_TYPE.items():
         try:
