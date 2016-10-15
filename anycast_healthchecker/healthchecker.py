@@ -167,20 +167,24 @@ class HealthChecker(object):
         """Lunches checks and triggers updates on BIRD configuration."""
 
         # Lunch a thread for each configuration
-        msg = "going to lunch {n} threads".format(n=len(self.services))
-        self.log.info(msg)
-        for service in self.services:
-            msg = "lunching thread for {n}".format(n=service)
-            self.log.debug(msg, json_blob=False)
-            _config = {}
-            for option, getter in SERVICE_OPTIONS_TYPE.items():
-                _config[option] = getattr(self.config, getter)(service, option)
-            _thread = ServiceCheck(
-                service,
-                _config,
-                self.action,
-                self.log)
-            _thread.start()
+        if not self.services:
+            self.log.warning("no service checks are configured")
+        else:
+            msg = "going to lunch {n} threads".format(n=len(self.services))
+            self.log.info(msg)
+            for service in self.services:
+                msg = "lunching thread for {n}".format(n=service)
+                self.log.debug(msg, json_blob=False)
+                _config = {}
+                for option, getter in SERVICE_OPTIONS_TYPE.items():
+                    _config[option] = getattr(self.config, getter)(service,
+                                                                   option)
+                _thread = ServiceCheck(
+                    service,
+                    _config,
+                    self.action,
+                    self.log)
+                _thread.start()
 
         # Stay running until we are stopped
         while True:

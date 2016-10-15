@@ -288,8 +288,6 @@ def configuration_check(config):
 
     services = config.sections()
     services.remove('daemon')
-    if not services:
-        raise ValueError('No service checks are configured')
 
     service_configuration_check(config, services)
 
