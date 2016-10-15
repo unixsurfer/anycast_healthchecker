@@ -345,7 +345,7 @@ def get_ip_prefixes_from_bird(filename, die=True):
         for line in lines.splitlines():
             line = line.strip(', ')
             if valid_ip_prefix(line):
-                prefixes.append(line.rstrip(','))
+                prefixes.append(line)
 
     return prefixes
 
