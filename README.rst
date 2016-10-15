@@ -281,6 +281,7 @@ This is an example configuration file for the daemon
     stderr_file          = /var/log/anycast-healthchecker/stderr.log
     stdout_file          = /var/log/anycast-healthchecker/stdout.log
     dummy_ip_prefix      = 10.189.200.255/32
+    purge_ip_prefixes    = false
 
 Above settings are used as defaults when daemon is launched without a
 configuration file. The daemon **does not** need to run as root as long as it
@@ -354,10 +355,20 @@ File to redirect standard output to
 
 An IP prefix in the form <IP>/<prefix length> which will be always available in
 the list defined by ``bird_variable`` to avoid having an empty list.
-
 The ``dummy_ip_prefix`` **must not** be used by any service or assigned to the
 interface set with ``interface`` or configured anywhere on the network as
 anycast-healthchecker **does not** perform any checks for it.
+
+* **purge_ip_prefixes** Defaults to **false**
+
+Purge IP-Prefixes from ``bird_conf`` on start-up which don't have a service check associated with them.
+
+NOTE: These IP-Prefixes are always removed from ``bird_conf`` when
+``bird_conf`` is updated during the life time of the daemon.
+``purge_ip_prefixes`` is considered only during start-up and was introduced in
+order to be compatible with previous behavior, which didn't remove those
+IP-Prefixes on start-up.
+
 
 JSON logging
 ************

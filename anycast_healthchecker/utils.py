@@ -48,6 +48,7 @@ DAEMON_OPTIONS_TYPE = {
     'log_file': 'get',
     'stderr_file': 'get',
     'stdout_file': 'get',
+    'purge_ip_prefixes': 'getboolean',
 }
 
 
@@ -163,40 +164,69 @@ def ip_prefixes_without_config(ip_prefixes_in_bird, config, services):
     return set(ip_prefixes_in_bird).difference(configured)
 
 
-def ip_prefixes_check(config, services):
-    """Reports issues with IP prefixes.
+def ip_prefixes_check(log, config):
+    """Sanity check on IP prefixes.
 
-    - Report IP prefixes found in Bird configuration for which we don't have
-    a service check associated with.
-    - Report missing ``dummy_ip_prefix`` in Bird configuration
+    - Depending on the configuration either remove or report IP prefixes found
+    in Bird configuration for which we don't have a service check associated
+    with them.
+    - Add ``dummy_ip_prefix`` in Bird configuration if it is missing
 
     Arguments:
+        log(logger obj): A logger object to use for emitting messages
         config (obg): A configparser object which holds our configuration.
-        services (list): A list of section names which are the name of the
-        service checks.
     """
-    ip_prefixes_in_bird = get_ip_prefixes_from_bird(
-        config['daemon']['bird_conf'])
+    services = config.sections()
+    services.remove('daemon')  # not needed during sanity check for IP-Prefixes
+    dummy_ip_prefix = config.get('daemon', 'dummy_ip_prefix')
+    bird_conf = config.get('daemon', 'bird_conf')
+    ip_prefixes_in_bird = get_ip_prefixes_from_bird(bird_conf)
+    update_bird_conf = False
 
-    if not ip_prefixes_in_bird:
-        print("WARNING: Found zero IP prefixes in {}".format(
-            config['daemon']['bird_conf']))
-        return None
+    if dummy_ip_prefix not in ip_prefixes_in_bird:
+        log.warning("dummy IP prefix {ip} is missing from bird configuration "
+                    "{fh}, adding it".format(ip=dummy_ip_prefix, fh=bird_conf))
+        ip_prefixes_in_bird.insert(0, dummy_ip_prefix)
+        update_bird_conf = True
 
-    notconfigured_ip_prefixes = ip_prefixes_without_config(ip_prefixes_in_bird,
-                                                           config,
-                                                           services)
-    if notconfigured_ip_prefixes:
-        print("WARNING: Found IP prefixes {i} in {fh} without a service check "
-              "configured".
-              format(fh=config['daemon']['bird_conf'],
-                     i=','.join(notconfigured_ip_prefixes)))
+    unconfigured_ip_prefixes = ip_prefixes_without_config(ip_prefixes_in_bird,
+                                                          config,
+                                                          services)
+    if unconfigured_ip_prefixes:
+        if config.getboolean('daemon', 'purge_ip_prefixes'):
+            log.warning("removing IP prefix(es) {i} from {fh} because they "
+                        "don't have a service check configured"
+                        .format(fh=bird_conf,
+                                i=','.join(unconfigured_ip_prefixes)))
+            ip_prefixes_in_bird[:] = (ip for ip in ip_prefixes_in_bird
+                                      if ip not in unconfigured_ip_prefixes)
+            update_bird_conf = True
+        else:
+            log.warning("found IP prefixes {i} in {fh} without a service "
+                        "check configured"
+                        .format(fh=bird_conf,
+                                i=','.join(unconfigured_ip_prefixes)))
 
-    if config['daemon']['dummy_ip_prefix'] not in ip_prefixes_in_bird:
-        print("WARNING: Dummy IP prefix ({ip}) is missing from bird "
-              "configuration {fh}".
-              format(ip=config['daemon']['dummy_ip_prefix'],
-                     fh=config['daemon']['bird_conf']))
+    # Either dummy IP-Prefix was added or unconfigured IP-Prefix(es) were
+    # removed
+    if update_bird_conf:
+        tempname = write_temp_bird_conf(
+            log,
+            dummy_ip_prefix,
+            bird_conf,
+            config.get('daemon', 'bird_variable'),
+            ip_prefixes_in_bird
+        )
+        try:
+            os.rename(tempname, bird_conf)
+        except OSError as error:
+            msg = ("CRITICAL: failed to create Bird configuration {e}, "
+                   "this is FATAL error, thus exiting main program"
+                   .format(e=error))
+            sys.exit("{m}".format(m=msg))
+        else:
+            log.info('Bird configuration is updated')
+            reconfigure_bird(log, config.get('daemon', 'bird_reconfigure_cmd'))
 
 
 def load_configuration(config_file, config_dir):
@@ -261,7 +291,6 @@ def configuration_check(config):
         raise ValueError('No service checks are configured')
 
     service_configuration_check(config, services)
-    ip_prefixes_check(config, services)
 
 
 def running(processid):

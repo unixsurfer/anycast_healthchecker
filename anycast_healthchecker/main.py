@@ -33,7 +33,8 @@ from anycast_healthchecker import DEFAULT_OPTIONS
 from anycast_healthchecker import healthchecker
 from anycast_healthchecker import lib
 from anycast_healthchecker import __version__ as version
-from anycast_healthchecker.utils import load_configuration, running
+from anycast_healthchecker.utils import (load_configuration, running,
+                                         ip_prefixes_check)
 
 
 def main():
@@ -121,6 +122,9 @@ def main():
             timeout=config.getfloat('daemon', 'http_server_timeout'),
             protocol=config['daemon']['http_server_protocol'],
             port=config['daemon']['http_server_port'])
+
+    # Perform a sanity check on IP-Prefixes
+    ip_prefixes_check(log, config)
 
     # Make some noise.
     log.debug('Before we are daemonized')
