@@ -114,23 +114,23 @@ def service_configuration_check(config, services):
                 raise ValueError(error)
             except ValueError as exc:
                 msg = ("invalid data for '{opt}' option in service check "
-                       "{name}: {err}".
-                       format(opt=option, name=service, err=exc))
+                       "{name}: {err}"
+                       .format(opt=option, name=service, err=exc))
                 raise ValueError(msg)
 
         if (config[service]['on_disabled'] != 'withdraw' and
                 config[service]['on_disabled'] != 'advertise'):
             msg = ("'on_disable' option has invalid value ({val}) for "
                    "service check {name} should be either 'withdraw' or "
-                   "'advertise'".
-                   format(name=service, val=config[service]['on_disabled']))
+                   "'advertise'"
+                   .format(name=service, val=config[service]['on_disabled']))
             raise ValueError(msg)
 
         if not valid_ip_prefix(config[service]['ip_prefix']):
             msg = ("invalid value ({val}) for 'ip_prefix' option in service "
                    "check {name}. It should be an IP PREFIX in form of "
-                   "ip/prefixlen.".
-                   format(name=service, val=config[service]['ip_prefix']))
+                   "ip/prefixlen."
+                   .format(name=service, val=config[service]['ip_prefix']))
             raise ValueError(msg)
 
         cmd = shlex.split(config[service]['check_cmd'])
@@ -139,9 +139,10 @@ def service_configuration_check(config, services):
             proc.kill()
         except (OSError, subprocess.SubprocessError) as exc:
             msg = ("failed to run check command '{cmd}' for service check "
-                   "{name}: {err}".
-                   format(name=service, cmd=config[service]['check_cmd'],
-                          err=exc))
+                   "{name}: {err}"
+                   .format(name=service,
+                           cmd=config[service]['check_cmd'],
+                           err=exc))
             raise ValueError(msg)
 
 
@@ -272,8 +273,8 @@ def configuration_check(config):
             raise ValueError(exc)
 
     if not valid_ip_prefix(config['daemon']['dummy_ip_prefix']):
-        raise ValueError("Invalid dummy IP prefix:{}".
-                         format(config['daemon']['dummy_ip_prefix']))
+        raise ValueError("Invalid dummy IP prefix:{}"
+                         .format(config['daemon']['dummy_ip_prefix']))
 
     for option, getter in DAEMON_OPTIONS_TYPE.items():
         try:
@@ -281,8 +282,8 @@ def configuration_check(config):
         except configparser.Error as error:
             raise ValueError(error)
         except ValueError as exc:
-            msg = ("invalid data for '{opt}' option in daemon section: {err}".
-                   format(opt=option, err=exc))
+            msg = ("invalid data for '{opt}' option in daemon section: {err}"
+                   .format(opt=option, err=exc))
             raise ValueError(msg)
 
     services = config.sections()

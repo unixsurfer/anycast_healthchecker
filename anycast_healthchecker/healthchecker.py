@@ -89,22 +89,23 @@ class HealthChecker(object):
             prefixes = get_ip_prefixes_from_bird(self.bird_conf_file,
                                                  die=False)
         except OSError as error:
-            msg = ('failed to open Bird configuration {e}, this is a FATAL'
-                   'error, thus exiting main program').format(e=error)
+            msg = ("failed to open Bird configuration {e}, this is a FATAL "
+                   "error, thus exiting main program"
+                   .format(e=error))
             self.log.error(msg, priority=80)
             sys.exit(1)
 
         if not prefixes:
-            msg = ("found empty bird configuration:{f}, this is a FATAL"
-                   "error, thus exiting main program").format(
-                       f=self.bird_conf_file)
+            msg = ("found empty bird configuration:{f}, this is a FATAL "
+                   "error, thus exiting main program"
+                   .format(f=self.bird_conf_file))
             self.log.error(msg, priority=80)
             sys.exit(1)
 
         if self.dummy_ip_prefix not in prefixes:
             msg = ("dummy IP prefix {i} wasn't found in bird configuration, "
-                   "adding it. This shouldn't have happened!").format(
-                       i=self.dummy_ip_prefix)
+                   "adding it. This shouldn't have happened!"
+                   .format(i=self.dummy_ip_prefix))
             self.log.warning(msg, priority=20)
             prefixes.insert(0, self.dummy_ip_prefix)
             conf_updated = True
@@ -118,8 +119,8 @@ class HealthChecker(object):
                    "configured to run health checks on them. Either someone "
                    "modified the configuration manually or something went "
                    "horrible wrong. Thus, we remove them from Bird "
-                   "configuration").format(
-                       i=','.join(notconfigured_ip_prefixes))
+                   "configuration"
+                   .format(i=','.join(notconfigured_ip_prefixes)))
             self.log.warning(msg, priority=20)
             # This is faster than using lambda and filter.
             # NOTE: We don't use remove method as we want to remove more than
@@ -147,7 +148,8 @@ class HealthChecker(object):
             os.rename(tempname, self.bird_conf_file)
         except OSError as error:
             msg = ('failed to create Bird configuration {e}, this is a FATAL '
-                   'error, thus exiting main program').format(e=error)
+                   'error, thus exiting main program'
+                   .format(e=error))
             self.log.critical(msg, priority=80)
             sys.exit(1)
         else:
@@ -185,10 +187,10 @@ class HealthChecker(object):
             # Fetch items from action queue
             operation = self.action.get(block=True)
             msg = ("returned an item from the queue for {n} with IP prefix {i}"
-                   " and action to {o} Bird configuration").format(
-                       n=operation.name,
-                       i=operation.ip_prefix,
-                       o=operation)
+                   " and action to {o} Bird configuration"
+                   .format(n=operation.name,
+                           i=operation.ip_prefix,
+                           o=operation))
             self.log.info(msg)
             bird_updated = self._update_bird_conf_file(operation)
             self.action.task_done()
