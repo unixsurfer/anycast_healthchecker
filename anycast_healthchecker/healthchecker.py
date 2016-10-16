@@ -86,8 +86,7 @@ class HealthChecker(object):
         prefixes = []
 
         try:
-            prefixes = get_ip_prefixes_from_bird(self.bird_conf_file,
-                                                 die=False)
+            prefixes = get_ip_prefixes_from_bird(self.bird_conf_file)
         except OSError as error:
             msg = ("failed to open Bird configuration {e}, this is a FATAL "
                    "error, thus exiting main program"

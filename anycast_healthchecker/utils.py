@@ -182,8 +182,15 @@ def ip_prefixes_check(log, config):
     services.remove('daemon')  # not needed during sanity check for IP-Prefixes
     dummy_ip_prefix = config.get('daemon', 'dummy_ip_prefix')
     bird_conf = config.get('daemon', 'bird_conf')
-    ip_prefixes_in_bird = get_ip_prefixes_from_bird(bird_conf)
     update_bird_conf = False
+    try:
+        ip_prefixes_in_bird = get_ip_prefixes_from_bird(bird_conf)
+    except OSError as error:
+        msg = ("failed to open Bird configuration {e}, this is a FATAL "
+               "error, thus exiting main program"
+               .format(e=error))
+        log.error(msg, priority=80)
+        sys.exit(1)
 
     if dummy_ip_prefix not in ip_prefixes_in_bird:
         log.warning("dummy IP prefix {ip} is missing from bird configuration "
@@ -314,7 +321,7 @@ def running(processid):
         return True
 
 
-def get_ip_prefixes_from_bird(filename, die=True):
+def get_ip_prefixes_from_bird(filename):
     """Builds a list of IP prefixes found in Bird configuration
 
     Arguments:
@@ -333,19 +340,13 @@ def get_ip_prefixes_from_bird(filename, die=True):
         A list of IP prefixes.
     """
     prefixes = []
-    try:
-        with open(filename, 'r') as bird_conf:
-            lines = bird_conf.read()
-    except OSError as error:
-        if die:
-            sys.exit(str(error))
-        else:
-            raise
-    else:
-        for line in lines.splitlines():
-            line = line.strip(', ')
-            if valid_ip_prefix(line):
-                prefixes.append(line)
+    with open(filename, 'r') as bird_conf:
+        lines = bird_conf.read()
+
+    for line in lines.splitlines():
+        line = line.strip(', ')
+        if valid_ip_prefix(line):
+            prefixes.append(line)
 
     return prefixes
 
