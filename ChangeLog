@@ -1,6 +1,19 @@
 CHANGES
 =======
 
+0.6.2
+-----
+
+* RELEASE 0.6.2 version
+* Remove die parameter from get_ip_prefixes_from_bird
+* Remove unnecessary call to rstrip function
+* Use ConfigParser method to fetch configuration
+* Don't exit when there aren't any service checks
+* Make the use of format consistent in multi-line
+* Add support for removing IP-Prefixes without a check
+* Move functions to utils module
+* Use double quotes silence error with bash 4.4 version
+
 0.6.1
 -----
 
