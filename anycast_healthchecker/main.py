@@ -9,18 +9,20 @@
 """A simple healthchecker for Anycasted services.
 
 Usage:
-    anycast-healthchecker [-f <file> -d <directory> -c ] [-p | -P]
+    anycast-healthchecker [ -f <file> -c -p -P ] [ -d <directory> | -F <file> ]
 
 Options:
-    -f, --file <file>  configuration file with settings for the daemon
-                       [default: /etc/anycast-healthchecker.conf]
-    -d, --dir <dir>    directory with configuration files for service checks
-                       [default: /etc/anycast-healthchecker.d]
-    -c, --check        perform a sanity check on configuration
-    -p, --print        show default settings for daemon and service checks
-    -P, --print-conf   show configuration
-    -v, --version      show version
-    -h, --help         show this screen
+    -f, --file=<file>          a configuration file with settings for the daemon
+                               [default: /etc/anycast-healthchecker.conf]
+    -d, --dir=<dir>            a directory with configuration files for service
+                               checks [default: /etc/anycast-healthchecker.d]
+    -F, --service-file=<file>  a configuration file for a single service check
+    -c, --check                perform a sanity check on configuration
+    -p, --print                show default settings for daemon and service
+                               checks
+    -P, --print-conf           show configuration
+    -v, --version              show version
+    -h, --help                 show this screen
 """
 import os
 import sys
@@ -49,10 +51,10 @@ def main():
             print()
         sys.exit(0)
 
-    config_file = args['--file']
-    config_dir = args['--dir']
     try:
-        config = load_configuration(config_file, config_dir)
+        config = load_configuration(args['--file'],
+                                    args['--dir'],
+                                    args['--service-file'])
     except ValueError as exc:
         sys.exit('Invalid configuration: ' + str(exc))
 
