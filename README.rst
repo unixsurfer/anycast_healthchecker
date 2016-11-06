@@ -282,6 +282,8 @@ This is an example configuration file for the daemon
     stdout_file          = /var/log/anycast-healthchecker/stdout.log
     dummy_ip_prefix      = 10.189.200.255/32
     purge_ip_prefixes    = false
+    keep_bird_changes    = false
+    changes_counter      = 128
 
 Above settings are used as defaults when daemon is launched without a
 configuration file. The daemon **does not** need to run as root as long as it
@@ -369,6 +371,16 @@ NOTE: These IP-Prefixes are always removed from ``bird_conf`` when
 order to be compatible with previous behavior, which didn't remove those
 IP-Prefixes on start-up.
 
+* **keep_bird_changes** Defaults to **false**
+
+Keep a history of changes for ``bird_conf`` file by copying it to a directory.
+During the startup of the daemon a directory with the name ``history`` is
+created under the directory where ``bird_conf`` file resides. The daemon has to
+have sufficient privileges to create that directory.
+
+* **changes_counter** Defaults to **128**
+
+How many ``bird_conf`` files to keep in the ``history`` directory.
 
 JSON logging
 ************

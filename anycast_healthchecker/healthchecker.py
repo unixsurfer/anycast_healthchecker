@@ -13,7 +13,8 @@ from anycast_healthchecker.utils import (SERVICE_OPTIONS_TYPE,
                                          get_ip_prefixes_from_bird,
                                          ip_prefixes_without_config,
                                          reconfigure_bird,
-                                         write_temp_bird_conf)
+                                         write_temp_bird_conf,
+                                         archive_bird_conf)
 
 
 class HealthChecker(object):
@@ -55,12 +56,16 @@ class HealthChecker(object):
                  config,
                  bird_conf_file,
                  bird_constant_name,
-                 dummy_ip_prefix):
+                 dummy_ip_prefix,
+                 keep_bird_changes,
+                 changes_counter):
         self.log = log
         self.config = config
         self.bird_conf_file = bird_conf_file
         self.dummy_ip_prefix = dummy_ip_prefix
         self.bird_constant_name = bird_constant_name
+        self.keep_bird_changes = keep_bird_changes
+        self.changes_counter = changes_counter
         self.action = Queue()
 
         # A list of service of checks
@@ -68,6 +73,21 @@ class HealthChecker(object):
         self.services.remove('daemon')
 
         self.log.info('initialize healthchecker')
+        if self.keep_bird_changes:
+            history_dir = os.path.join(
+                os.path.dirname(os.path.realpath(self.bird_conf_file)),
+                'history'
+            )
+            try:
+                os.mkdir(history_dir)
+            except FileExistsError:
+                log.debug("{d} directory already exists".format(d=history_dir))
+            except OSError as exc:
+                log.warning("failed to make directory {d} for keeping a "
+                            "history of changes for {b}:{e}"
+                            .format(d=history_dir, b=self.bird_conf_file,
+                                    e=exc))
+                self.keep_bird_changes = False
 
     def _update_bird_conf_file(self, operation):
         """Updates BIRD configuration.
@@ -135,6 +155,11 @@ class HealthChecker(object):
         if not conf_updated:
             self.log.info('no updates for bird configuration')
             return conf_updated
+
+        if self.keep_bird_changes:
+            archive_bird_conf(self.log,
+                              self.bird_conf_file,
+                              self.changes_counter)
 
         # some IP prefixes are either removed or added, create
         # configuration with new data.

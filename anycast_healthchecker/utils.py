@@ -24,6 +24,7 @@ import configparser
 import glob
 import copy
 import shlex
+import shutil
 
 from anycast_healthchecker import DEFAULT_OPTIONS
 
@@ -49,6 +50,8 @@ DAEMON_OPTIONS_TYPE = {
     'stderr_file': 'get',
     'stdout_file': 'get',
     'purge_ip_prefixes': 'getboolean',
+    'keep_bird_changes': 'getboolean',
+    'changes_counter': 'getint',
 }
 
 
@@ -182,6 +185,8 @@ def ip_prefixes_check(log, config):
     services.remove('daemon')  # not needed during sanity check for IP-Prefixes
     dummy_ip_prefix = config.get('daemon', 'dummy_ip_prefix')
     bird_conf = config.get('daemon', 'bird_conf')
+    keep_bird_changes = config.get('daemon', 'keep_bird_changes')
+    changes_counter = config.getint('daemon', 'changes_counter')
     update_bird_conf = False
     try:
         ip_prefixes_in_bird = get_ip_prefixes_from_bird(bird_conf)
@@ -219,6 +224,8 @@ def ip_prefixes_check(log, config):
     # Either dummy IP-Prefix was added or unconfigured IP-Prefix(es) were
     # removed
     if update_bird_conf:
+        if keep_bird_changes:
+            archive_bird_conf(log, bird_conf, changes_counter)
         tempname = write_temp_bird_conf(
             log,
             dummy_ip_prefix,
@@ -527,3 +534,43 @@ def write_temp_bird_conf(log,
         sys.exit(1)
     else:
         return tm_file
+
+
+def archive_bird_conf(log,
+                      bird_conf_file,
+                      changes_counter):
+    """Keep a history of Bird configuration files
+
+    Arguments:
+        log(logger obj): A logger object to use for emitting messages
+        bird_conf_file(str): The absolute path of file which contains the
+        definition of constant used by BIRD daemon to store IP prefixes for
+        which routes are allowed to be advertised
+        changes_counter(int): How many configuration files to keep in the
+        history
+    """
+    history_dir = os.path.join(
+        os.path.dirname(os.path.realpath(bird_conf_file)),
+        'history'
+    )
+    dst = os.path.join(history_dir, str(time.time()))
+    log.debug("coping {s} to {d}"
+              .format(s=bird_conf_file, d=dst), json_blob=False)
+    history = [x for x in os.listdir(history_dir)
+               if os.path.isfile(os.path.join(history_dir, x))]
+
+    # keep only changes_counter files in the history.
+    for _file in sorted(history, reverse=True)[changes_counter - 1:]:
+        _path = os.path.join(history_dir, _file)
+        try:
+            os.remove(_path)
+        except OSError as exc:
+            log.warning("failed to remove {f}: {e}".format(f=_file, e=exc))
+        else:
+            log.info("removed {f}".format(f=_path))
+
+    try:
+        shutil.copy2(bird_conf_file, dst)
+    except OSError as exc:
+        log.warning("failed to copy {s} to {d}: {e}"
+                    .format(s=bird_conf_file, d=dst, e=exc))

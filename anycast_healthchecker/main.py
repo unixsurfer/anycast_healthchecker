@@ -155,7 +155,10 @@ def main():
         config,
         config.get('daemon', 'bird_conf'),
         config.get('daemon', 'bird_variable'),
-        config.get('daemon', 'dummy_ip_prefix'))
+        config.get('daemon', 'dummy_ip_prefix'),
+        config.getboolean('daemon', 'keep_bird_changes'),
+        config.getint('daemon', 'changes_counter'),
+    )
 
     # Set signal mapping to catch singals and act accordingly.
     context.signal_map = {
