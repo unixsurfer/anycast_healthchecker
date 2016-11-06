@@ -319,7 +319,9 @@ File to store the process id of the daemon
 
 * **bird_conf** Defaults to **/etc/bird.d/anycast-prefixes.conf**
 
-File with the list of IP prefixes allowed to be exported
+File with the list of IP prefixes allowed to be exported. If this file is
+a symbolic link then the destination and the link itself must be on the same
+mounted filesystem.
 
 * **bird_variable** Defaults to **ACAST_PS_ADVERTISE**
 
