@@ -1,6 +1,14 @@
 CHANGES
 =======
 
+0.6.3
+-----
+
+* RELEASE 0.6.3 version
+* Add a note for bird_conf setting
+* Keep a history of changes for bird configuration
+* Add support for specifying a single service check
+
 0.6.2
 -----
 
