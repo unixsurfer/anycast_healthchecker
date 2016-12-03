@@ -4,7 +4,8 @@
 #
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-statements
-# pylint: disable=superfluous-parens
+# pylint: disable=too-many-branches
+# pylint: disable=too-many-locals
 #
 """A simple healthchecker for Anycasted services.
 
@@ -36,7 +37,7 @@ from anycast_healthchecker import healthchecker
 from anycast_healthchecker import lib
 from anycast_healthchecker import __version__ as version
 from anycast_healthchecker.utils import (load_configuration, running,
-                                         ip_prefixes_check)
+                                         ip_prefixes_sanity_check)
 
 
 def main():
@@ -52,9 +53,9 @@ def main():
         sys.exit(0)
 
     try:
-        config = load_configuration(args['--file'],
-                                    args['--dir'],
-                                    args['--service-file'])
+        config, bird_configuration = load_configuration(args['--file'],
+                                                        args['--dir'],
+                                                        args['--service-file'])
     except ValueError as exc:
         sys.exit('Invalid configuration: ' + str(exc))
 
@@ -69,7 +70,6 @@ def main():
                 print("{k} = {v}".format(k=key, v=value))
             print()
         sys.exit(0)
-
 
     # Catch already running process and clean up stale pid file.
     pidfile = config.get('daemon', 'pidfile')
@@ -86,6 +86,23 @@ def main():
             else:
                 print("Cleaning stale pid file with pid:{}".format(pid))
                 os.unlink(pidfile)
+
+    # Create history directories
+    for ip_version in bird_configuration:
+        config_file = bird_configuration[ip_version]['config_file']
+        if bird_configuration[ip_version]['keep_changes']:
+            history_dir = os.path.join(
+                os.path.dirname(os.path.realpath(config_file)),
+                'history'
+            )
+            try:
+                os.mkdir(history_dir)
+            except FileExistsError:
+                pass
+            except OSError as exc:
+                sys.exit("failed to make directory {d} for keeping a history "
+                         "of changes for {b}:{e}"
+                         .format(d=history_dir, b=config_file, e=exc))
 
     # Map log level to numeric which can be accepted by loggers.
     num_level = getattr(
@@ -132,7 +149,7 @@ def main():
         )
 
     # Perform a sanity check on IP-Prefixes
-    ip_prefixes_check(log, config)
+    ip_prefixes_sanity_check(log, config, bird_configuration)
 
     # Make some noise.
     log.debug('Before we are daemonized')
@@ -150,15 +167,7 @@ def main():
     context.pidfile = pid_lockfile
 
     # Create our master process.
-    checker = healthchecker.HealthChecker(
-        log,
-        config,
-        config.get('daemon', 'bird_conf'),
-        config.get('daemon', 'bird_variable'),
-        config.get('daemon', 'dummy_ip_prefix'),
-        config.getboolean('daemon', 'keep_bird_changes'),
-        config.getint('daemon', 'changes_counter'),
-    )
+    checker = healthchecker.HealthChecker(log, config, bird_configuration)
 
     # Set signal mapping to catch singals and act accordingly.
     context.signal_map = {
@@ -170,6 +179,8 @@ def main():
     with context:
         log.info("starting daemon {}".format(version))
         checker.run()
+
+
 # This is the standard boilerplate that calls the main() function.
 if __name__ == '__main__':
     main()

@@ -100,7 +100,7 @@ get_ips () {
 }
 
 loopback_ips=( $(get_ips) )
-configured=(127.0.0.1/8 10.52.12.1/32 10.52.12.2/32 10.52.12.3/32 10.52.12.4/32)
+configured=(127.0.0.1/8 10.52.12.1/32 10.52.12.2/32 10.52.12.3/32 10.52.12.4/32 fd12:aba6:57db:ffff::1/128 fd12:aba6:57db:ffff::2/128)
 
 for ip_cidr in ${configured[@]}; do
     if ! found "${ip_cidr}" "${loopback_ips[@]}"; then

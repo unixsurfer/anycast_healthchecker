@@ -2,6 +2,7 @@
 # pylint: disable=too-many-branches
 # pylint: disable=too-many-statements
 # pylint: disable=too-many-return-statements
+# pylint: disable=too-many-instance-attributes
 #
 
 """
@@ -11,6 +12,7 @@ A library which provides the ServiceCheck class.
 import subprocess
 import time
 from threading import Thread
+import ipaddress
 import shlex
 
 from anycast_healthchecker.utils import AddOperation, DeleteOperation
@@ -32,12 +34,22 @@ class ServiceCheck(Thread):
     def __init__(self, service, config, action, log):
         """Set the name of thread to be the name of the service."""
         super(ServiceCheck, self).__init__()
-        self.name = service
-        self.daemon = True
+        self.name = service  # Used by Thread()
+        self.daemon = True   # user by Thread()
         self.config = config
         self.action = action
-        self.ip_address = self.config['ip_prefix'].split('/')[0]
-        self.prefix_length = self.config['ip_prefix'].split('/')[1]
+        # sanity check has already been done, so the following *should* not
+        # raise an exception
+        _ip_prefix = ipaddress.ip_network(self.config['ip_prefix'])
+        # NOTE: When subnetmask isn't provided ipaddress module creates an
+        # object with a mask of /32 for IPv4 addresses and mask of /128 for
+        # IPv6 addresses. As a result the prefix length is either 32 or 128
+        # and we can get the IP address by looking at the network_address
+        # attribute.
+        self.ip_address = str(_ip_prefix.network_address)
+        self.prefix_length = _ip_prefix.prefixlen
+        self.ip_with_prefixlen = _ip_prefix.with_prefixlen
+        self.ip_version = _ip_prefix.version
 
         self.log = log
         self.log.info("loading check for {n}".format(n=self.name))
@@ -91,6 +103,7 @@ class ServiceCheck(Thread):
         Returns:
             True if IP prefix found assigned otherwise False.
         """
+        output = []
         cmd = [
             '/sbin/ip',
             'address',
@@ -98,7 +111,7 @@ class ServiceCheck(Thread):
             'dev',
             self.config['interface'],
             'to',
-            self.config['ip_prefix'],
+            self.ip_with_prefixlen,
         ]
 
         if self.ip_check_disabled:
@@ -109,7 +122,7 @@ class ServiceCheck(Thread):
 
         self.log.debug("running {}".format(' '.join(cmd)), json_blob=False)
         try:
-            out = subprocess.check_output(
+            output = subprocess.check_output(
                 cmd,
                 universal_newlines=True,
                 timeout=1)
@@ -141,14 +154,15 @@ class ServiceCheck(Thread):
             self.log.error(msg, priority=50, **self.extra)
             return True
         else:
-            if self.config['ip_prefix'] in out:  # pylint: disable=E1135
+            if self.ip_with_prefixlen in output:  # pylint: disable=E1135
                 msg = "{i} assigned to loopback interface".format(
-                    i=self.config['ip_prefix'])
+                    i=self.ip_with_prefixlen)
                 self.log.debug(msg, json_blob=False)
                 return True
             else:
-                msg = "{i} NOT assigned to loopback interface".format(
-                    i=self.config['ip_prefix'])
+                msg = ("{i} isn't assigned to {d} interface"
+                       .format(i=self.ip_with_prefixlen,
+                               d=self.config['interface']))
                 self.log.warning(msg, priority=20, **self.extra)
                 return False
 
@@ -171,9 +185,11 @@ class ServiceCheck(Thread):
             self.log.info("Check is disabled and ip_prefix will be withdrawn",
                           priority=20, **self.extra)
             del_operation = DeleteOperation(name=self.name,
-                                            ip_prefix=self.config['ip_prefix'],
-                                            log=self.log, **self.extra)
-            msg = "{i} added in queue".format(i=self.config['ip_prefix'])
+                                            ip_prefix=self.ip_with_prefixlen,
+                                            log=self.log,
+                                            ip_version=self.ip_version,
+                                            **self.extra)
+            msg = "adding {i} in the queue".format(i=self.ip_with_prefixlen)
             self.log.info(msg, **self.extra)
             self.action.put(del_operation)
             self.log.info("Check is now permanently disabled",
@@ -184,9 +200,11 @@ class ServiceCheck(Thread):
             self.log.info("check is disabled, ip_prefix wont be withdrawn",
                           priority=80, **self.extra)
             add_operation = AddOperation(name=self.name,
-                                         ip_prefix=self.config['ip_prefix'],
-                                         log=self.log, **self.extra)
-            msg = "{i} add in queue".format(i=self.config['ip_prefix'])
+                                         ip_prefix=self.ip_with_prefixlen,
+                                         log=self.log,
+                                         ip_version=self.ip_version,
+                                         **self.extra)
+            msg = "adding {i} in the queue".format(i=self.ip_with_prefixlen)
             self.log.info(msg, **self.extra)
             self.action.put(add_operation)
             self.log.info('check is now permanently disabled',
@@ -231,15 +249,18 @@ class ServiceCheck(Thread):
                 up_cnt = 0
                 msg = ("status DOWN because {i} isn't assigned to loopback "
                        "interface."
-                       .format(i=self.config['ip_prefix']))
+                       .format(i=self.ip_with_prefixlen))
                 self.log.warning(msg, priority=80, status='down', **self.extra)
                 if check_state != 'DOWN':
                     check_state = 'DOWN'
                     del_operation = DeleteOperation(
                         name=self.name,
-                        ip_prefix=self.config['ip_prefix'],
-                        log=self.log, **self.extra)
-                    msg = "{i} in queue".format(i=self.config['ip_prefix'])
+                        ip_prefix=self.ip_with_prefixlen,
+                        log=self.log,
+                        ip_version=self.ip_version,
+                        **self.extra)
+                    msg = ("adding {i} in the queue"
+                           .format(i=self.ip_with_prefixlen))
                     self.log.info(msg, **self.extra)
                     self.action.put(del_operation)
             elif self._run_check():
@@ -253,9 +274,12 @@ class ServiceCheck(Thread):
                         check_state = 'UP'
                         operation = AddOperation(
                             name=self.name,
-                            ip_prefix=self.config['ip_prefix'],
-                            log=self.log, **self.extra)
-                        msg = "{i} in queue".format(i=self.config['ip_prefix'])
+                            ip_prefix=self.ip_with_prefixlen,
+                            log=self.log,
+                            ip_version=self.ip_version,
+                            **self.extra)
+                        msg = ("adding {i} in the queue"
+                               .format(i=self.ip_with_prefixlen))
                         self.log.info(msg, **self.extra)
                         self.action.put(operation)
                 elif up_cnt < self.config['check_rise']:
@@ -279,9 +303,12 @@ class ServiceCheck(Thread):
                         check_state = 'DOWN'
                         del_operation = DeleteOperation(
                             name=self.name,
-                            ip_prefix=self.config['ip_prefix'],
-                            log=self.log, **self.extra)
-                        msg = "{i} in queue".format(i=self.config['ip_prefix'])
+                            ip_prefix=self.ip_with_prefixlen,
+                            log=self.log,
+                            ip_version=self.ip_version,
+                            **self.extra)
+                        msg = ("adding {i} in the queue"
+                               .format(i=self.ip_with_prefixlen))
                         self.log.info(msg, **self.extra)
                         self.action.put(del_operation)
                 elif down_cnt < self.config['check_fail']:

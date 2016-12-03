@@ -16,7 +16,8 @@ Introduction
 **anycast-healthchecker** monitors a service by doing periodic health checks
 and based on the result instructs `Bird`_ daemon to either advertise or
 withdraw the route to reach the monitored service. As a result Bird will only
-advertise routes for healthy services.
+advertise routes for healthy services. Routes for IPv4 and IPv6 addresses are
+supported.
 
 Bird must be configured in a certain way to interface properly with
 anycast-healthchecker. The configuration is detailed later in this document.
@@ -116,16 +117,16 @@ time. This is commonly advertised as traffic balancing at wire-speed.
 How anycast-healthchecker works
 -------------------------------
 
-The current release of anycast-healthchecker supports only the Bird daemon which
-you have to configure in a specific way. Thus, it is mandatory to explain very
-briefly how Bird handles advertisements for routes.
+The current release of anycast-healthchecker supports only the Bird daemon,
+which you have to configure in a specific way. Thus, it is mandatory to explain
+very briefly how Bird handles advertisements for routes.
 
 Bird maintains a routing information base (`RIB`_) and various protocols
 import/export routes to/from it. The diagram below illustrates how Bird
 advertises routes for IPs assigned to the loopback interface to the rest of the
 network using BGP protocol. Bird can also import routes learned via BGP/OSPF
-protocols, but this part of the routing process is irrelevant to the functionality of
-anycast-healthchecker.
+protocols, but this part of the routing process is irrelevant to the
+functionality of anycast-healthchecker.
 
 
 .. image:: bird_daemon_rib_explained.png
@@ -160,15 +161,15 @@ The following diagram illustrates how this technique works:
    :scale: 60%
 
 This configuration logic allows a separate process to update the list by adding
-or removing IP prefixes and trigger a reconfiguration of Bird in order to advertise
-or withdraw routes.  **anycast-healthchecker** is that separate process. It monitors
-Anycasted services and based on the status of the health checks updates the list
-of IP prefixes.
+or removing IP prefixes and trigger a reconfiguration of Bird in order to
+advertise or withdraw routes.  **anycast-healthchecker** is that separate
+process. It monitors Anycasted services and based on the status of the health
+checks updates the list of IP prefixes.
 
-Bird does not allow the definition of a list with no elements and when that happens
-Bird will emit an error and refuses to start. Because of this anycast-healthchecker
-makes sure that there is always an IP prefix in the list, see ``dummy_ip_prefix``
-configuration option in `Daemon section`_.
+Bird does not allow the definition of a list with no elements and when that
+happens Bird will emit an error and refuses to start. Because of this
+anycast-healthchecker makes sure that there is always an IP prefix in the list,
+see ``dummy_ip_prefix`` configuration option in `Daemon section`_.
 
 Configuring anycast-healthchecker
 ---------------------------------
@@ -178,6 +179,15 @@ configuration of Bird is explained first. Next, the configuration of
 anycast-healthchecker (including the configuration for the health checks) is
 covered and finally the options for invoking the program from the command
 line will be described.
+
+IPv6 support
+############
+
+IPv4 and IPv6 addresses are supported by Bird Internet Routing Daemon project
+by providing a different daemon per IP protocol version, bird for IPv4 and
+bird6 for IPv6. This implies that configuration files are split as well. So,
+you can't define IPv6 addresses in a configuration, which is sourced by the
+IPv4 daemon.
 
 Bird configuration
 ##################
@@ -199,9 +209,9 @@ bird.conf
 
 The most important parts are the lines ``include "/etc/bird.d/*.conf";`` and
 ``export where match_route();``. The former statement causes inclusion of files
-and the latter forces all routes to pass from the ``match_route`` function before
-they are exported. BGP protocol is used in the below bird configuration example
-but OSPF protocol can be used as well::
+and the latter forces all routes to pass from the ``match_route`` function
+before they are exported. BGP protocol is used in the below bird configuration
+example but OSPF protocol can be used as well::
 
     include "/etc/bird.d/*.conf";
     protocol device {
@@ -225,13 +235,20 @@ but OSPF protocol can be used as well::
 match-route.conf
 ****************
 
-``match-route.conf`` file configures the ``match_route`` function which performs
-the white and black listing of IP prefixes by looking up the IP prefix of the
-route in a list and accepts the export if it finds a matching entry::
+``match-route.conf`` file configures the ``match_route`` function, which
+performs the white and black listing of IP prefixes by looking up the IP prefix
+of the route in a list and accepts the export if it finds a matching entry::
 
     function match_route()
     {
         return net ~ ACAST_PS_ADVERTISE;
+    }
+
+This the equivalent function for IPv6::
+
+    function match_route6()
+    {
+        return net ~ ACAST6_PS_ADVERTISE;
     }
 
 anycast-prefixes.conf
@@ -262,8 +279,8 @@ does not need a service check configuration.
 Configuring the daemon
 ######################
 
-anycast-healthchecker uses the popular `INI`_ format for its configuration files.
-This is an example configuration file for the daemon
+anycast-healthchecker uses the popular `INI`_ format for its configuration
+files. This is an example configuration file for the daemon
 (/etc/anycast-healthchecker.conf)::
 
     [DEFAULT]
@@ -271,24 +288,33 @@ This is an example configuration file for the daemon
 
     [daemon]
     pidfile              = /var/run/anycast-healthchecker/anycast-healthchecker.pid
+    ipv4                 = true
+    ipv6                 = false
     bird_conf            = /etc/bird.d/anycast-prefixes.conf
+    bird6_conf           = /etc/bird.d/6/anycast-prefixes.conf
     bird_variable        = ACAST_PS_ADVERTISE
+    bird6_variable       = ACAST6_PS_ADVERTISE
     bird_reconfigure_cmd = sudo /usr/sbin/birdc configure
+    bird6_reconfigure_cmd = sudo /usr/sbin/birdc6 configure
+    dummy_ip_prefix      = 10.189.200.255/32
+    dummy_ip6_prefix     = 2001:db8::1/128
+    bird_keep_changes    = false
+    bird6_keep_changes   = false
+    bird_changes_counter = 128
+    bird6_changes_counter = 128
+    purge_ip_prefixes    = false
     loglevel             = debug
     log_maxbytes         = 104857600
     log_backups          = 8
     log_file             = /var/log/anycast-healthchecker/anycast-healthchecker.log
     stderr_file          = /var/log/anycast-healthchecker/stderr.log
     stdout_file          = /var/log/anycast-healthchecker/stdout.log
-    dummy_ip_prefix      = 10.189.200.255/32
-    purge_ip_prefixes    = false
-    keep_bird_changes    = false
-    changes_counter      = 128
 
 Above settings are used as defaults when daemon is launched without a
 configuration file. The daemon **does not** need to run as root as long as it
-has sufficient privileges to modify the Bird configuration (anycast-prefixes.conf)
-and trigger a reconfiguration of Bird by running ``birdc configure``.
+has sufficient privileges to modify the Bird configuration set in ``bird_conf``
+or ``bird6_conf``, and trigger a reconfiguration of Bird by running the command
+configured in ``bird_reconfigure_cmd`` or ``bird6_reconfigure_cmd``.
 In the above example ``sudo`` is used for that purpose (``sudoers`` file has
 been modified for that purpose).
 
@@ -317,9 +343,23 @@ Settings for anycast-healthchecker daemon
 
 File to store the process id of the daemon
 
+* **ipv4** Defaults to **true**
+
+Enable IPv4 support
+
+* **ipv6** Defaults to **false**
+
+Enable IPv6 support
+
 * **bird_conf** Defaults to **/etc/bird.d/anycast-prefixes.conf**
 
-File with the list of IP prefixes allowed to be exported. If this file is
+File with the list of IPv4 prefixes allowed to be exported. If this file is
+a symbolic link then the destination and the link itself must be on the same
+mounted filesystem.
+
+* **bird6_conf** Defaults to **/etc/bird.d/6/anycast-prefixes.conf**
+
+File with the list of IPv6 prefixes allowed to be exported. If this file is
 a symbolic link then the destination and the link itself must be on the same
 mounted filesystem.
 
@@ -327,9 +367,70 @@ mounted filesystem.
 
 The name of the list defined in ``bird_conf``
 
+* **bird6_variable** Defaults to **ACAST6_PS_ADVERTISE**
+
+The name of the list defined in ``bird6_conf``
+
 * **bird_reconfigure_cmd** Defaults to **sudo /usr/sbin/birdc configure**
 
-Command to trigger a reconfiguration of Bird daemon
+Command to trigger a reconfiguration of IPv4 Bird daemon
+
+* **bird6_reconfigure_cmd** Defaults to **sudo /usr/sbin/birdc6 configure**
+
+Command to trigger a reconfiguration of IPv6 Bird daemon
+
+* **dummy_ip_prefix** Defaults to **10.189.200.255/32**
+
+An IP prefix in the form <IP>/<prefix length> which will be always available in
+the list defined by ``bird_variable`` to avoid having an empty list.
+The ``dummy_ip_prefix`` **must not** be used by any service or assigned to the
+interface set with ``interface`` or configured anywhere on the network as
+anycast-healthchecker **does not** perform any checks for it.
+
+* **dummy_ip6_prefix** Defaults to **2001:db8::1/128**
+
+An IPv6 prefix in the form <IPv6>/<prefix length> which will be always
+available in the list defined by ``bird6_variable`` to avoid having an empty
+list. The ``dummy_ip6_prefix`` **must not** be used by any service or assigned
+to the interface set with ``interface`` or configured anywhere on the network as
+anycast-healthchecker **does not** perform any checks for it.
+
+* **bird_keep_changes** Defaults to **false**
+
+Keep a history of changes for ``bird_conf`` file by copying it to a directory.
+During the startup of the daemon a directory with the name ``history`` is
+created under the directory where ``bird_conf`` file resides. The daemon has to
+have sufficient privileges to create that directory.
+
+* **bird6_keep_changes** Defaults to **false**
+
+Keep a history of changes for ``bird6_conf`` file by copying it to a directory.
+During the startup of the daemon a directory with the name ``history`` is
+created under the directory where ``bird6_conf`` file resides. The daemon has to
+have sufficient privileges to create that directory.
+WARNING: If keep changes is enabled for both IP protocols then the
+``bird_conf`` and ``bird6_conf`` **must** point to files which are stored on
+two different directories.
+
+* **bird_changes_counter** Defaults to **128**
+
+How many ``bird_conf`` files to keep in the ``history`` directory.
+
+* **bird6_changes_counter** Defaults to **128**
+
+How many ``bird6_conf`` files to keep in the ``history`` directory.
+
+* **purge_ip_prefixes** Defaults to **false**
+
+Purge IP-Prefixes from configuration files set in ``bird_conf`` and
+``bird6_conf`` on start-up which don't have a service check associated with
+them.
+
+NOTE: These IP-Prefixes are always removed from ``bird_conf`` when
+``bird_conf`` is updated during the life time of the daemon.
+``purge_ip_prefixes`` is considered only during start-up and was introduced in
+order to be compatible with the behavior of previous releases, which didn't
+remove those IP-Prefixes on start-up.
 
 * **loglevel** Defaults to **debug**
 
@@ -355,34 +456,6 @@ File to redirect standard error to
 
 File to redirect standard output to
 
-* **dummy_ip_prefix** Defaults to **10.189.200.255/32**
-
-An IP prefix in the form <IP>/<prefix length> which will be always available in
-the list defined by ``bird_variable`` to avoid having an empty list.
-The ``dummy_ip_prefix`` **must not** be used by any service or assigned to the
-interface set with ``interface`` or configured anywhere on the network as
-anycast-healthchecker **does not** perform any checks for it.
-
-* **purge_ip_prefixes** Defaults to **false**
-
-Purge IP-Prefixes from ``bird_conf`` on start-up which don't have a service check associated with them.
-
-NOTE: These IP-Prefixes are always removed from ``bird_conf`` when
-``bird_conf`` is updated during the life time of the daemon.
-``purge_ip_prefixes`` is considered only during start-up and was introduced in
-order to be compatible with previous behavior, which didn't remove those
-IP-Prefixes on start-up.
-
-* **keep_bird_changes** Defaults to **false**
-
-Keep a history of changes for ``bird_conf`` file by copying it to a directory.
-During the startup of the daemon a directory with the name ``history`` is
-created under the directory where ``bird_conf`` file resides. The daemon has to
-have sufficient privileges to create that directory.
-
-* **changes_counter** Defaults to **128**
-
-How many ``bird_conf`` files to keep in the ``history`` directory.
 
 JSON logging
 ************
@@ -425,17 +498,27 @@ Configuring checks for services
 ###############################
 
 The configuration for a single service check is defined in one section.
-Here is an example::
+Here are few examples::
 
     [foo.bar.com]
-    check_cmd       = /usr/bin/curl --fail --silent http://10.52.12.1/
-    check_interval  = 10
-    check_timeout   = 2
-    check_fail      = 2
-    check_rise      = 2
-    check_disabled  = false
-    on_disabled     = withdraw
-    ip_prefix       = 10.52.12.1/32
+    check_cmd         = /usr/bin/curl --fail --silent http://10.52.12.1/
+    check_interval    = 10
+    check_timeout     = 2
+    check_fail        = 2
+    check_rise        = 2
+    check_disabled    = false
+    on_disabled       = withdraw
+    ip_prefix         = 10.52.12.1/32
+
+    [foo6.bar.com]
+    check_cmd         = /usr/bin/curl --fail 'http://[fd12:aba6:57db:ffff::1]:8888'
+    check_timeout     = 5
+    check_rise        = 2
+    check_fail        = 2
+    check_disabled    = false
+    on_disabled       = withdraw
+    ip_prefix         = fd12:aba6:57db:ffff::1/128
+    ip_check_disabled = false
 
 The name of the section becomes the name of the service check and appears in
 the log files for easier searching of error/warning messages.
