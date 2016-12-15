@@ -1,6 +1,14 @@
 CHANGES
 =======
 
+0.7.0
+-----
+
+* RELEASE 0.7.0 version
+* Drop 3.4 version of python for the local_run
+* Rephrase usage of CLI
+* MAJOR: Add support for IPv6
+
 0.6.3
 -----
 
