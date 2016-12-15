@@ -13,15 +13,18 @@ Usage:
     anycast-healthchecker [ -f <file> -c -p -P ] [ -d <directory> | -F <file> ]
 
 Options:
-    -f, --file=<file>          a configuration file with settings for the daemon
+    -f, --file=<file>          read settings for the daemon from <file>
                                [default: /etc/anycast-healthchecker.conf]
-    -d, --dir=<dir>            a directory with configuration files for service
-                               checks [default: /etc/anycast-healthchecker.d]
-    -F, --service-file=<file>  a configuration file for a single service check
+    -d, --dir=<dir>            read settings for service checks from files
+                               under <dir> directory
+                               [default: /etc/anycast-healthchecker.d]
+    -F, --service-file=<file>  read <file> for settings of a single service
+                               check
     -c, --check                perform a sanity check on configuration
     -p, --print                show default settings for daemon and service
                                checks
-    -P, --print-conf           show configuration
+    -P, --print-conf           show running configuration with default settings
+                               applied
     -v, --version              show version
     -h, --help                 show this screen
 """
