@@ -131,5 +131,5 @@ fi
 "${DAEMON}" -f "${DAEMONCONF}" -d "${DOTDIR}"
 if [ $? -eq 0 ]; then
     echo "--------daemon started!-------------------"
-    echo 'run: nohup  python3.4 -m http.server --bind 10.52.12.2 8888 & nohup python3.4 -m http.server --bind 10.52.12.1 8888 &'
+    echo 'run: nohup  python3 -m http.server --bind 10.52.12.2 8888 & nohup python3 -m http.server --bind 10.52.12.1 8888 &'
 fi
