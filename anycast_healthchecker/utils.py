@@ -427,7 +427,7 @@ def configuration_check(config):
 
     if config.getboolean('daemon', 'ipv6'):
         try:
-            touch(config.get('daemon', 'bird_conf'))
+            touch(config.get('daemon', 'bird6_conf'))
         except OSError as exc:
             raise ValueError(exc)
 
