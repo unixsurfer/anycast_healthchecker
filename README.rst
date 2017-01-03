@@ -563,7 +563,8 @@ What to do when check is disabled, either ``withdraw`` or ``advertise``
 
 IP prefix associated with the service. It **must be** assigned to the
 interface set in ``interface`` parameter unless ``ip_check_disabled`` is set to
-``true``
+``true``. Prefix length is optional and defaults to 32 for IPv4 addresses and
+to 128 for IPv6 addresses.
 
 * **ip_check_disabled** Defaults to **false**
 
