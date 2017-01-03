@@ -364,7 +364,7 @@ def load_configuration(config_file, config_dir, service_file):
             'variable_name': config.get('daemon', 'bird_variable'),
             'dummy_ip_prefix': config.get('daemon', 'dummy_ip_prefix'),
             'reconfigure_cmd': config.get('daemon', 'bird_reconfigure_cmd'),
-            'keep_changes': config.get('daemon', 'bird_keep_changes'),
+            'keep_changes': config.getboolean('daemon', 'bird_keep_changes'),
             'changes_counter': config.getint('daemon', 'bird_changes_counter')
         }
     if config.getboolean('daemon', 'ipv6'):
@@ -373,7 +373,7 @@ def load_configuration(config_file, config_dir, service_file):
             'variable_name': config.get('daemon', 'bird6_variable'),
             'dummy_ip_prefix': config.get('daemon', 'dummy_ip6_prefix'),
             'reconfigure_cmd': config.get('daemon', 'bird6_reconfigure_cmd'),
-            'keep_changes': config.get('daemon', 'bird6_keep_changes'),
+            'keep_changes': config.getboolean('daemon', 'bird6_keep_changes'),
             'changes_counter': config.getint('daemon', 'bird6_changes_counter')
         }
 
