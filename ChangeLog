@@ -1,6 +1,20 @@
 CHANGES
 =======
 
+0.7.1
+-----
+
+* RELEASE 0.7.1 version
+* Update local_run.sh with latest config
+* Don't handle bird configuration in local_run.sh
+* Allow floating numbers for check_[timeout,interval]
+* Instruct Systemd to restart daemon upon failure
+* Use standard path rather our custom one
+* Mention that prefix length is optional
+* Fetch the correct parameter name
+* Return boolean value instead of a string
+* Update example anycast-healthchecker.conf
+
 0.7.0
 -----
 
