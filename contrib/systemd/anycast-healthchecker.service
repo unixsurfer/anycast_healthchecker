@@ -10,6 +10,7 @@ TimeoutStartSec=0
 User=healthchecker
 Group=healthchecker
 ExecStart=/usr/bin/anycast-healthchecker $OPTIONS
+Restart=on-failure
 
 [Install]
 WantedBy=multi-user.target
