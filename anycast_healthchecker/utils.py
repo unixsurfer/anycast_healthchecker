@@ -31,8 +31,8 @@ from anycast_healthchecker import DEFAULT_OPTIONS
 
 SERVICE_OPTIONS_TYPE = {
     'check_cmd': 'get',
-    'check_interval': 'getint',
-    'check_timeout': 'getint',
+    'check_interval': 'getfloat',
+    'check_timeout': 'getfloat',
     'check_rise': 'getint',
     'check_fail': 'getint',
     'check_disabled': 'getboolean',
