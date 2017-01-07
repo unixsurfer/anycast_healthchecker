@@ -18,13 +18,7 @@ for dir in ${directories[@]}; do
         mkdir -p "${dir}"
     fi
 done
-if [ ! /etc/bird.d ]; then
-    sudo mkdir /etc/bird.d
-fi
 echo "--------create files----------------------"
-if [ ! -h /etc/bird.d/anycast-prefixes.conf ] || [ "$(readlink /etc/bird.d/anycast-prefixes.conf)" != "${TEST_DIR}/var/lib/anycast-healthchecker/anycast-prefixes.conf" ]; then
-    sudo ln -s "${TEST_DIR}/var/lib/anycast-healthchecker/anycast-prefixes.conf" /etc/bird.d/anycast-prefixes.conf
-fi
 if [ ! -e ${DAEMONCONF}  ]; then
     cat <<EOT > "${DAEMONCONF}"
 [DEFAULT]
