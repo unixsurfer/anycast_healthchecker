@@ -169,7 +169,7 @@ checks updates the list of IP prefixes.
 Bird does not allow the definition of a list with no elements and when that
 happens Bird will emit an error and refuses to start. Because of this
 anycast-healthchecker makes sure that there is always an IP prefix in the list,
-see ``dummy_ip_prefix`` configuration option in `Daemon section`_.
+see ``dummy_ip_prefix`` and ``dummy_ip6_prefix`` settings in `Daemon section`_.
 
 Configuring anycast-healthchecker
 ---------------------------------
@@ -276,6 +276,13 @@ anycast-healthchecker daemon removes IP prefixes from the list for which a
 service check is not configured. But, the IP prefix set in ``dummy_ip_prefix``
 does not need a service check configuration.
 
+This the equivalent list for IPv6 prefixes::
+
+    define ACAST6_PS_ADVERTISE =
+        [
+            2001:db8::1/128
+        ];
+
 Configuring the daemon
 ######################
 
@@ -345,11 +352,15 @@ File to store the process id of the daemon
 
 * **ipv4** Defaults to **true**
 
-Enable IPv4 support
+``true`` enables IPv4 support and ``false`` disables it.
+NOTE: Daemon **will not** start if IPv4 support is disabled while there is an
+service check configured for IPv4 prefix.
 
 * **ipv6** Defaults to **false**
 
-Enable IPv6 support
+``true`` enables IPv6 support and ``false`` disables it
+NOTE: Daemon **will not** start if IPv6 support is disabled while there is an
+service check configured for IPv6 prefix.
 
 * **bird_conf** Defaults to **/etc/bird.d/anycast-prefixes.conf**
 
@@ -408,9 +419,9 @@ Keep a history of changes for ``bird6_conf`` file by copying it to a directory.
 During the startup of the daemon a directory with the name ``history`` is
 created under the directory where ``bird6_conf`` file resides. The daemon has to
 have sufficient privileges to create that directory.
-WARNING: If keep changes is enabled for both IP protocols then the
-``bird_conf`` and ``bird6_conf`` **must** point to files which are stored on
-two different directories.
+WARNING: When keeping a history of changes is enabled for both IP versions then
+configuration files set in ``bird_conf`` and ``bird6_conf`` settings **must** be
+stored on two different directories.
 
 * **bird_changes_counter** Defaults to **128**
 
@@ -426,8 +437,8 @@ Purge IP-Prefixes from configuration files set in ``bird_conf`` and
 ``bird6_conf`` on start-up which don't have a service check associated with
 them.
 
-NOTE: These IP-Prefixes are always removed from ``bird_conf`` when
-``bird_conf`` is updated during the life time of the daemon.
+NOTE: Those IP-Prefixes are always removed from the configuration files set in
+``bird_conf`` and in ``bird6_conf`` settings when daemon updates those files.
 ``purge_ip_prefixes`` is considered only during start-up and was introduced in
 order to be compatible with the behavior of previous releases, which didn't
 remove those IP-Prefixes on start-up.
@@ -486,13 +497,12 @@ HTTP protocol to use, either ``http`` or ``https``
 
 * **http_server_timeout** Unset by default
 
-How long to wait for the server to send data before giving up, as a float number.
-JSON messages are send using http POST requests which are executed in blocking
-mode which means that possible long delays will make the health checks to be
-delayed as well.
-``http_server_timeout`` accepts floating point numbers as values which are
-passed to underlying request module as a single timeout which will be applied
-to both the connect and the read timeouts.
+How long to wait for the server to accept data before giving up, as a floating
+point number. Daemon sends JSON data over HTTP in blocking mode, which means
+that possible long delays sending JSON will make the health checks to be
+delayed as well. ``http_server_timeout`` accepts floating point numbers as
+value, which is passed to underlying `requests`_ module as a single timeout,
+which is applied to both the connect and the read timeouts.
 
 Configuring checks for services
 ###############################
@@ -696,7 +706,7 @@ feedback. Please post your comments, bug reports and wishes on my `issues page
 Testing
 #######
 
-At the root of the project there is a `local_run.sh` script which you can use
+At the root of the project there is a ``local_run.sh`` script which you can use
 for testing purposes. It does the following:
 
 #. Creates the necessary directory structure under $PWD/var to store
@@ -706,24 +716,25 @@ for testing purposes. It does the following:
 
 #. Generates bird configuration(anycast-prefixes.conf)
 
-#. Installs anycast-healthchecker with ``python3.4 setup.py install``,
-   *requires* python virtualenvironment, use the excellent tool virtualenvwrapper
+#. Installs anycast-healthchecker with ``python3 setup.py install``
 
-#. Assigns 4 IP addresses (10.52.12.[1-4]) to loopback interface
+#. Assigns 4 IPv4 addresses and 2 IPv6 addresses to loopback interface
 
-#. Checks if bird daemon runs but it does not try to start if it's running
+#. Checks if bird daemon runs but it does not try to start if it is down
 
 #. Starts the daemon as normal user and not as root
 
-Requirements for running local_run.sh and having a workable setup
+Requirements for running ``local_run.sh``
 
-#. python3.4 installation available
+#. python3 installation
+
+# A working python virtual environment, use the excellent tool virtualenvwrapper
 
 #. Bird installed and configured as it is mentioned in `Bird configuration`_
 
-#. sudo access to run sudo birdc configure
+#. sudo access to run ``birdc configure`` and ``birdc6 configure``
 
-#. sudo access to assign IPs on the loopback interface
+#. sudo access to assign IPs on the loopback interface using ``ip`` tool
 
 Contributers
 ############
@@ -762,3 +773,4 @@ Contacts
 .. _RIB: https://en.wikipedia.org/wiki/Routing_table
 .. _INI: https://en.wikipedia.org/wiki/INI_file
 .. _daemon: https://pypi.python.org/pypi/python-daemon/
+.. _requests: https://github.com/kennethreitz/requests
