@@ -46,6 +46,7 @@ http_server_port        = 2813
 http_server_protocol    = http
 http_server_timeout     = 0.1
 
+ipv4                    = true
 bird_conf               = ${TEST_DIR}/var/lib/anycast-healthchecker/anycast-prefixes.conf
 bird_variable           = ACAST_PS_ADVERTISE
 bird_keep_changes       = false
