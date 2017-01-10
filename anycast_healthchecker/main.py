@@ -93,10 +93,7 @@ def main():
     for ip_version in bird_configuration:
         config_file = bird_configuration[ip_version]['config_file']
         if bird_configuration[ip_version]['keep_changes']:
-            history_dir = os.path.join(
-                os.path.dirname(os.path.realpath(config_file)),
-                'history'
-            )
+            history_dir = os.path.join(dir_path, 'history')
             try:
                 os.mkdir(history_dir)
             except FileExistsError:

@@ -350,8 +350,15 @@ def load_configuration(config_file, config_dir, service_file):
 
     bird_configuration = {}
     if config.getboolean('daemon', 'ipv4'):
+        if os.path.islink(config.get('daemon', 'bird_conf')):
+            config_file = os.path.realpath(config.get('daemon', 'bird_conf'))
+            print("'bird_conf' is set to a symbolic link ({s} -> {d}, but we "
+                  "will use the canonical path of that link"
+                  .format(s=config.get('daemon', 'bird_conf'), d=config_file))
+        else:
+            config_file = config.get('daemon', 'bird_conf')
         bird_configuration[4] = {
-            'config_file': config.get('daemon', 'bird_conf'),
+            'config_file': config_file,
             'variable_name': config.get('daemon', 'bird_variable'),
             'dummy_ip_prefix': config.get('daemon', 'dummy_ip_prefix'),
             'reconfigure_cmd': config.get('daemon', 'bird_reconfigure_cmd'),
@@ -359,8 +366,15 @@ def load_configuration(config_file, config_dir, service_file):
             'changes_counter': config.getint('daemon', 'bird_changes_counter')
         }
     if config.getboolean('daemon', 'ipv6'):
+        if os.path.islink(config.get('daemon', 'bird6_conf')):
+            config_file = os.path.realpath(config.get('daemon', 'bird6_conf'))
+            print("'bird6_conf' is set to a symbolic link ({s} -> {d}, but we "
+                  "will use the canonical path of that link"
+                  .format(s=config.get('daemon', 'bird6_conf'), d=config_file))
+        else:
+            config_file = config.get('daemon', 'bird6_conf')
         bird_configuration[6] = {
-            'config_file': config.get('daemon', 'bird6_conf'),
+            'config_file': config_file,
             'variable_name': config.get('daemon', 'bird6_variable'),
             'dummy_ip_prefix': config.get('daemon', 'dummy_ip6_prefix'),
             'reconfigure_cmd': config.get('daemon', 'bird6_reconfigure_cmd'),
@@ -664,10 +678,7 @@ def archive_bird_conf(log,
         changes_counter (int): How many configuration files to keep in the
         history
     """
-    history_dir = os.path.join(
-        os.path.dirname(os.path.realpath(config_file)),
-        'history'
-    )
+    history_dir = os.path.join(os.path.dirname(config_file), 'history')
     dst = os.path.join(history_dir, str(time.time()))
     log.debug("coping {s} to {d}"
               .format(s=config_file, d=dst), json_blob=False)
