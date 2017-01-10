@@ -1,23 +1,21 @@
 #!/bin/bash
-TEST_DIR="${PWD}/var"
-DOTDIR="${TEST_DIR}/etc/anycast-healthchecker.d"
 DAEMON=anycast-healthchecker
-DAEMONCONF="${TEST_DIR}/etc/anycast-healthchecker.conf"
-PIDIFILE="${TEST_DIR}/var/run/anycast-healthchecker/anycast-healthchecker.pid"
-directories=("${TEST_DIR}"/var/log/anycast-healthchecker \
-"${TEST_DIR}"/etc/bird.d \
-"${DOTDIR}" \
-"${TEST_DIR}"/var/run/anycast-healthchecker \
-"${TEST_DIR}"/var/log/anycast-healthchecker \
-"${TEST_DIR}"/var/lib \
-"${TEST_DIR}"/var/run/anycast-healthchecker)
+TEST_DIR="${PWD}/var"
+DOTDIR="${TEST_DIR}/etc/"${DAEMON}".d"
+DAEMONCONF="${TEST_DIR}/etc/"${DAEMON}".conf"
+PIDIFILE="${TEST_DIR}/var/run/"${DAEMON}"/"${DAEMON}".pid"
+directories=("${DOTDIR}" \
+"${TEST_DIR}"/var/log/"${DAEMON}" \
+"${TEST_DIR}"/var/lib/"${DAEMON}" \
+"${TEST_DIR}"/var/lib/"${DAEMON}"/6 \
+"${TEST_DIR}"/var/run/"${DAEMON}")
 
 echo "------------------------------------------"
 echo "--------create directory structure--------"
 echo "------------------------------------------"
 for dir in ${directories[@]}; do
     if [ ! -d "${dir}" ]; then
-        mkdir -p "${dir}"
+        mkdir -v -p "${dir}"
     fi
 done
 
