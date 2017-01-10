@@ -75,19 +75,26 @@ def main():
 
     # Catch already running process and clean up stale pid file.
     pidfile = config.get('daemon', 'pidfile')
-    if os.path.exists(pidfile):
-        pid = open(pidfile).read().rstrip()
+    if not os.path.isdir(os.path.dirname(pidfile)):
+        sys.exit("{d} does not exit".format(d=os.path.dirname(pidfile)))
+    try:
+        with open(pidfile) as _file:
+            pid = _file.read().rstrip()
         try:
             pid = int(pid)
         except ValueError:
-            print("Cleaning stale pid file with invalid data:{}".format(pid))
+            print("cleaning stale pid file with invalid data:{}".format(pid))
             os.unlink(pidfile)
         else:
             if running(pid):
-                sys.exit("Process {} is already running".format(pid))
+                sys.exit("process {} is already running".format(pid))
             else:
-                print("Cleaning stale pid file with pid:{}".format(pid))
+                print("cleaning stale pid file with pid:{}".format(pid))
                 os.unlink(pidfile)
+    except FileNotFoundError:
+        pass  # it is OK if pidfile doesn't exist
+    except OSError as exc:
+        sys.exit("failed to parse pidfile:{e}".format(e=exc))
 
     # Create bird configs, if they doen't exist, and history directories
     for ip_version in bird_configuration:
