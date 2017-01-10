@@ -1,8 +1,6 @@
 # pylint: disable=too-many-arguments
 
-"""
-A library which provides the HealthChecker class.
-"""
+"""A library which provides the HealthChecker class."""
 import os
 import sys
 from queue import Queue
@@ -40,7 +38,9 @@ class HealthChecker(object):
         the result of the check.
         catch_signal(signum, frame): Catches signals
     """
+
     def __init__(self, log, config, bird_configuration):
+        """Initialization."""
         self.log = log
         self.config = config
         self.action = Queue()
@@ -65,7 +65,7 @@ class HealthChecker(object):
         self.log.info('initialize healthchecker')
 
     def _update_bird_conf_file(self, operation):
-        """Updates BIRD configuration.
+        """Update BIRD configuration.
 
         Adds/removes entries from a list and updates generation time stamp.
         Main program will exit if configuration file cant be read/written.
@@ -75,7 +75,6 @@ class HealthChecker(object):
 
         Returns:
             True if BIRD configuration was updated otherwise False.
-
         """
         conf_updated = False
         prefixes = []
@@ -168,8 +167,7 @@ class HealthChecker(object):
         return conf_updated
 
     def run(self):
-        """Lunches checks and triggers updates on BIRD configuration."""
-
+        """Lunch checks and triggers updates on BIRD configuration."""
         # Lunch a thread for each configuration
         if not self.services:
             self.log.warning("no service checks are configured")

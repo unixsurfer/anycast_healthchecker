@@ -3,9 +3,7 @@
 # pylint: disable=too-many-locals
 # pylint: disable=attribute-defined-outside-init
 
-"""
-A library which provides helper functions and classes.
-"""
+"""A library which provides helper functions and classes."""
 
 import logging
 import logging.handlers
@@ -30,8 +28,9 @@ class LoggingDaemonContext(daemon.DaemonContext):
     Methods:
         open(): Overwrites open method of daemon.DaemonContext.
     """
+
     def _add_logger_files(self):
-        """Adds all files related to loggers into files_preserve."""
+        """Add all files related to loggers into files_preserve."""
         for logger in [self.stdout_logger, self.stderr_logger]:
             if logger:
                 self.loggers_preserve.append(logger)
@@ -88,7 +87,7 @@ class LoggingDaemonContext(daemon.DaemonContext):
         self.initgroups = False
 
     def open(self):
-        """Redirects stdout/stderr to loggers and calls DaemonContext.open."""
+        """Redirect stdout/stderr to loggers and calls DaemonContext.open."""
         self._add_logger_files()
         daemon.DaemonContext.open(self)
         if self.stdout_logger:
@@ -98,7 +97,7 @@ class LoggingDaemonContext(daemon.DaemonContext):
 
 
 def open_files_from_loggers(loggers):
-    """Returns open files used by file-based logger handlers.
+    """Return open files used by file-based logger handlers.
 
     Arguments:
         loggers (list): A list of logger objects.
@@ -116,7 +115,7 @@ def open_files_from_loggers(loggers):
 
 
 class LoggerExt(object):
-    """Create a logging.Logger class with extended functionality
+    """Create a logging.Logger class with extended functionality.
 
     It wraps a Logger class into a file like object, which provides a handy
     way to redirect stdout/stdin to a logger. It also accepts a JSON blob as
@@ -145,6 +144,7 @@ class LoggerExt(object):
         See logging module for acceptable values for log_level
         and log_format.
     """
+
     def __init__(self,
                  name,
                  file_path,
@@ -169,7 +169,7 @@ class LoggerExt(object):
             h=socket.gethostname().split('.')[0])
 
     def __getattr__(self, name):
-        """Return a logger function for emitting messages
+        """Return a logger function for emitting messages.
 
         Because it acts as a proxy for all undefined attributes, we only
         allow the ones that we know Logger will accept.
@@ -185,7 +185,7 @@ class LoggerExt(object):
         ]
         if name in _valid_methods:
             def log(msg, priority=10, json_blob=True, **kwargs):
-                """A wrapper around logger method
+                """A wrapper around logger method.
 
                 It extends the capabilities by sending also the messages to
                 a HTTP server.
@@ -213,7 +213,7 @@ class LoggerExt(object):
             raise AttributeError
 
     def write(self, string):
-        """Erases newline from a string and writes to the logger."""
+        """Erase newline from a string and writes to the logger."""
         string = string.rstrip()
         if string:  # Don't log empty lines
             if hasattr(self, 'server'):
@@ -223,14 +223,14 @@ class LoggerExt(object):
                 self.logger.critical(line)
 
     def flush(self):
-        """Flushes logger's data."""
+        """Flush logger's data."""
         # In case multiple handlers are attached to the logger make sure
         # they are flushed.
         for handler in self.logger.handlers:
             handler.flush()
 
     def close(self):
-        """Calls the closer method of the logger."""
+        """Call the closer method of the logger."""
         for handler in self.logger.handlers:
             handler.close()
 
@@ -240,7 +240,7 @@ class LoggerExt(object):
                             protocol='http',
                             port=2813,
                             path='/'):
-        """Extends logger to a HTTP client"""
+        """Extend logger to a HTTP client."""
         self.server = server
         self.timeout = timeout
         self.protocol = protocol
@@ -252,7 +252,7 @@ class LoggerExt(object):
         self._http_sess = requests.Session()
 
     def _send_http(self, msg, priority=10, **kwargs):
-        """Send msg as a JSON blob"""
+        """Send msg as a JSON blob."""
         # These are the mandatory elements of the data structure which we send
         kwargs['softwareversion'] = version
         data = {

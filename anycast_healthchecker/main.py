@@ -45,7 +45,6 @@ from anycast_healthchecker.utils import (load_configuration, running,
 
 def main():
     """Parse CLI and starts daemon."""
-
     args = docopt(__doc__, version=version)
     if args['--print']:
         for section in DEFAULT_OPTIONS:

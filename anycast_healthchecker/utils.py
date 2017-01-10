@@ -5,13 +5,7 @@
 # pylint: disable=too-many-locals
 # pylint: disable=too-many-branches
 # pylint: disable=too-few-public-methods
-"""
-anycast_healthchecker.utils
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-This module provides utility functions and classes that are used within
-anycast_healthchecker.
-"""
+"""Provide functions and classes that are used within anycast_healthchecker."""
 
 import re
 import os
@@ -63,7 +57,7 @@ DAEMON_OPTIONS_TYPE = {
 
 
 def valid_ip_prefix(ip_prefix):
-    """Perform a sanity check on ip_prefix
+    """Perform a sanity check on ip_prefix.
 
     Arguments:
         ip_prefix (str): The IP-Prefix to validate
@@ -109,7 +103,6 @@ def get_ip_prefixes_from_config(config, services, ip_version):
     Returns:
         A set of IP prefixes.
     """
-
     ip_prefixes = set()
 
     for service in services:
@@ -121,7 +114,7 @@ def get_ip_prefixes_from_config(config, services, ip_version):
 
 
 def service_configuration_check(config):
-    """Perform a sanity check against options for each service check
+    """Perform a sanity check against options for each service check.
 
     Arguments:
         config (obj): A configparser object which holds our configuration.
@@ -197,7 +190,6 @@ def ip_prefixes_sanity_check(log, config, bird_configuration):
         bird_configuration (dict): A dictionary, which holds Bird configuration
         per IP protocol version.
     """
-
     for ip_version in bird_configuration:
         modify_ip_prefixes(log,
                            config,
@@ -243,7 +235,6 @@ def modify_ip_prefixes(
     services = config.sections()
     services.remove('daemon')  # not needed during sanity check for IP-Prefixes
     update_bird_conf = False
-
     try:
         ip_prefixes_in_bird = get_ip_prefixes_from_bird(config_file)
     except OSError as error:
@@ -381,7 +372,7 @@ def load_configuration(config_file, config_dir, service_file):
 
 
 def configuration_check(config):
-    """Perform a sanity check on configuration
+    """Perform a sanity check on configuration.
 
     First it performs a sanity check against settings for daemon
     and then agaist settings for each service check.
@@ -461,7 +452,7 @@ def running(processid):
 
 
 def get_ip_prefixes_from_bird(filename):
-    """Build a list of IP prefixes found in Bird configuration
+    """Build a list of IP prefixes found in Bird configuration.
 
     Arguments:
         filename (str): The absolute path of the Bird configuration file.
@@ -500,7 +491,8 @@ class BaseOperation(object):
         log (logger obj): A logger object to use for emitting messages
         extra (dictionary): A possible dictionary structure to pass further
     """
-    def __init__(self, name, ip_prefix, log, ip_version, **extra):
+
+    def __init__(self, name, ip_prefix, log, ip_version, **extra):  # noqa:D102
         self.name = name
         self.ip_prefix = ip_prefix
         self.log = log
@@ -509,12 +501,14 @@ class BaseOperation(object):
 
 
 class AddOperation(BaseOperation):
-    """Add a value to a list"""
+    """Add a value to a list."""
+
     def __str__(self):
+        """Handy string representation."""
         return 'add to'
 
     def update(self, prefixes):
-        """Add a value to the list
+        """Add a value to the list.
 
         Arguments:
             prefixes(list): A list to add the value
@@ -530,12 +524,14 @@ class AddOperation(BaseOperation):
 
 
 class DeleteOperation(BaseOperation):
-    """Remove a value from a list"""
+    """Remove a value from a list."""
+
     def __str__(self):
+        """Handy string representation."""
         return 'delete from'
 
     def update(self, prefixes):
-        """Remove a value to the list
+        """Remove a value to the list.
 
         Arguments:
             prefixes(list): A list to remove the value
@@ -613,7 +609,7 @@ def write_temp_bird_conf(log,
                          config_file,
                          variable_name,
                          prefixes):
-    """Write in a temporary file the list of IP-Prefixes
+    """Write in a temporary file the list of IP-Prefixes.
 
     A failure to create and write the temporary file will exit main program.
 
@@ -660,7 +656,7 @@ def write_temp_bird_conf(log,
 def archive_bird_conf(log,
                       config_file,
                       changes_counter):
-    """Keep a history of Bird configuration files
+    """Keep a history of Bird configuration files.
 
     Arguments:
         log (logger obj): A logger object to use for emitting messages
