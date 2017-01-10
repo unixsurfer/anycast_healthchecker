@@ -86,6 +86,12 @@ def touch(file_path):
 
     Arguments:
         file_path (str): The absolute file path
+
+    Returns:
+        None
+
+    Raises:
+        OSError exception
     """
     with open(file_path, 'a'):
         os.utime(file_path, None)
