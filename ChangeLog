@@ -1,6 +1,17 @@
 CHANGES
 =======
 
+0.7.3
+-----
+
+* RELEASE 0.7.3 version
+* Refuse to start when parent directory of pidfile is missing
+* Turn on bird6_keep_changes in example config
+* Make local.sh to create directories under var/lib
+* Remove the logic, which creates parent directories
+* Add Returns and Returns section in docstring
+* Update example configuration
+
 0.7.2
 -----
 
