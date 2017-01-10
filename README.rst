@@ -304,10 +304,6 @@ links. Here is an example from a production server:
     4 lrwxrwxrwx 1 root root 107 Jan 10 10:33 /etc/bird.d/6/anycast-prefixes.conf
     -> /var/lib/anycast-healthchecker/6/anycast-prefixes.conf
 
-**WARNING**: If those directories don't exist anycast-healthchecker will try
-to create them. This will fail if anycast-healthchecker does not under root
-account.
-
 Configuring the daemon
 ######################
 
