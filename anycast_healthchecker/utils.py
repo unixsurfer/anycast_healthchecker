@@ -643,7 +643,7 @@ def write_temp_bird_conf(log,
     # the temporary file must be on the same filesystem as the bird config
     # as we use os.rename to perform an atomic update on the bird config.
     # Thus, we create it in the same directory that bird config is stored.
-    tm_file = os.path.dirname(config_file) + '/' + str(time.time())
+    tm_file = os.path.join(os.path.dirname(config_file), str(time.time()))
     log.debug("going to write to {f}".format(f=tm_file), json_blob=False)
 
     try:
