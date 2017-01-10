@@ -496,8 +496,7 @@ def get_ip_prefixes_from_bird(filename):
 
 
 class BaseOperation(object):
-    """Run operation on a list
-
+    """Run operation on a list.
 
     Arguments:
         name (string): The name of the service for the given ip_prefix
