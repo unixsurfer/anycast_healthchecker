@@ -40,7 +40,7 @@ from anycast_healthchecker import healthchecker
 from anycast_healthchecker import lib
 from anycast_healthchecker import __version__ as version
 from anycast_healthchecker.utils import (load_configuration, running,
-                                         ip_prefixes_sanity_check)
+                                         ip_prefixes_sanity_check, touch)
 
 
 def main():
@@ -89,9 +89,27 @@ def main():
                 print("Cleaning stale pid file with pid:{}".format(pid))
                 os.unlink(pidfile)
 
-    # Create history directories
+    # Create base and history directories
     for ip_version in bird_configuration:
         config_file = bird_configuration[ip_version]['config_file']
+        dir_path = os.path.dirname(config_file)
+        try:
+            os.mkdir(dir_path)  # create only leaf directory.
+        except FileExistsError:
+            pass
+        except OSError as exc:
+            sys.exit("failed to make leaf directory {d} for {f}:{e}"
+                     .format(d=dir_path, f=config_file, e=exc))
+        else:
+            print("{d} is created".format(d=dir_path))
+            try:
+                touch(config_file)
+            except OSError as exc:
+                sys.exit("failed to create {f}:{e}"
+                         .format(f=config_file, e=exc))
+            else:
+                print("{f} is created".format(f=config_file))
+
         if bird_configuration[ip_version]['keep_changes']:
             history_dir = os.path.join(dir_path, 'history')
             try:

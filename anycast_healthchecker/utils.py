@@ -420,22 +420,12 @@ def configuration_check(config):
             raise ValueError(msg)
 
     if config.getboolean('daemon', 'ipv4'):
-        try:
-            touch(config.get('daemon', 'bird_conf'))
-        except OSError as exc:
-            raise ValueError(exc)
-
         _dummy_ip_prefix = config.get('daemon', 'dummy_ip_prefix')
         if not valid_ip_prefix(_dummy_ip_prefix):
             raise ValueError("invalid dummy IPv4 prefix: {i}"
                              .format(i=_dummy_ip_prefix))
 
     if config.getboolean('daemon', 'ipv6'):
-        try:
-            touch(config.get('daemon', 'bird6_conf'))
-        except OSError as exc:
-            raise ValueError(exc)
-
         _dummy_ip_prefix = config.get('daemon', 'dummy_ip6_prefix')
         if not valid_ip_prefix(_dummy_ip_prefix):
             raise ValueError("invalid dummy IPv6 prefix: {i}"

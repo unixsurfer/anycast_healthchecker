@@ -259,12 +259,6 @@ a variable with the name ``ACAST_PS_ADVERTISE``. The name of the variable can
 be anything meaningful but ``bird_variable`` setting **must** be changed
 accordingly in order for anycast-healthchecker to modify it.
 
-``anycast-prefixes.conf`` file is not part of the anycast-healthchecker
-package, thus administrators need install an initial version with the following
-content and after the launch of anycast-healthchecker it **should not**
-modified by any other process(es) as its content is managed by
-anycast-healthchecker.
-
 ::
 
     define ACAST_PS_ADVERTISE =
@@ -283,6 +277,36 @@ This the equivalent list for IPv6 prefixes::
             2001:db8::1/128
         ];
 
+anycast-healthchecker creates ``anycast-prefixes.conf`` file for both IP
+versions upon startup if those file don't exist. After the launch **no other process(es)
+should** modify those files.
+
+Use daemon settings ``bird_conf`` and ``bird6_conf`` to control the location of
+the files.
+
+With the default settings those files are located under
+``/var/lib/anycast-healthchecker`` and ``/var/lib/anycast-healthchecker/6``
+Administrators must create those 2 directories with permissions ``755`` and
+user/group ownership to the account under which the daemon runs.
+
+In order for Bird daemon to load them using the ``include`` statement in the
+main Bird configuration (`bird.conf`_), a link for each file must be created
+under ``/etc/bird.d`` directory. Administrators must also create those two
+links. Here is an example from a production server:
+
+::
+    % ls -ls /etc/bird.d/anycast-prefixes.conf
+    4 lrwxrwxrwx 1 root root 105 Dec  2 16:08 /etc/bird.d/anycast-prefixes.conf ->
+    /var/lib/anycast-healthchecker/anycast-prefixes.conf
+
+    % ls -ls /etc/bird.d/6/anycast-prefixes.conf
+    4 lrwxrwxrwx 1 root root 107 Jan 10 10:33 /etc/bird.d/6/anycast-prefixes.conf
+    -> /var/lib/anycast-healthchecker/6/anycast-prefixes.conf
+
+**WARNING**: If those directories don't exist anycast-healthchecker will try
+to create them. This will fail if anycast-healthchecker does not under root
+account.
+
 Configuring the daemon
 ######################
 
@@ -297,8 +321,8 @@ files. This is an example configuration file for the daemon
     pidfile              = /var/run/anycast-healthchecker/anycast-healthchecker.pid
     ipv4                 = true
     ipv6                 = false
-    bird_conf            = /etc/bird.d/anycast-prefixes.conf
-    bird6_conf           = /etc/bird.d/6/anycast-prefixes.conf
+    bird_conf            = /var/lib/anycast-healthchecker/anycast-prefixes.conf
+    bird6_conf           = /var/lib/anycast-healthchecker/6/anycast-prefixes.conf
     bird_variable        = ACAST_PS_ADVERTISE
     bird6_variable       = ACAST6_PS_ADVERTISE
     bird_reconfigure_cmd = sudo /usr/sbin/birdc configure
@@ -362,13 +386,13 @@ service check configured for IPv4 prefix.
 NOTE: Daemon **will not** start if IPv6 support is disabled while there is an
 service check configured for IPv6 prefix.
 
-* **bird_conf** Defaults to **/etc/bird.d/anycast-prefixes.conf**
+* **bird_conf** Defaults to **/var/lib/anycast-healthchecker/anycast-prefixes.conf**
 
 File with the list of IPv4 prefixes allowed to be exported. If this file is
 a symbolic link then the destination and the link itself must be on the same
 mounted filesystem.
 
-* **bird6_conf** Defaults to **/etc/bird.d/6/anycast-prefixes.conf**
+* **bird6_conf** Defaults to **/var/lib/anycast-healthchecker/6/anycast-prefixes.conf**
 
 File with the list of IPv6 prefixes allowed to be exported. If this file is
 a symbolic link then the destination and the link itself must be on the same

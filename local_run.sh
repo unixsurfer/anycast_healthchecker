@@ -9,8 +9,7 @@ directories=("${TEST_DIR}"/var/log/anycast-healthchecker \
 "${DOTDIR}" \
 "${TEST_DIR}"/var/run/anycast-healthchecker \
 "${TEST_DIR}"/var/log/anycast-healthchecker \
-"${TEST_DIR}"/var/lib/anycast-healthchecker \
-"${TEST_DIR}"/var/lib/anycast-healthchecker/6 \
+"${TEST_DIR}"/var/lib \
 "${TEST_DIR}"/var/run/anycast-healthchecker)
 
 echo "------------------------------------------"
@@ -61,28 +60,6 @@ dummy_ip6_prefix        = 2001:db8::1/128
 bird6_reconfigure_cmd   = sudo /usr/sbin/birdc6 configure
 bird6_keep_changes      = false
 bird6_changes_counter   = 6
-EOT
-fi
-
-if [ ! -e ${TEST_DIR}/var/lib/anycast-healthchecker/anycast-prefixes.conf ]; then
-    echo "${TEST_DIR}/var/lib/anycast-healthchecker/anycast-prefixes.conf"
-    cat <<EOT > ${TEST_DIR}/var/lib/anycast-healthchecker/anycast-prefixes.conf
-# 10.189.200.255 is a dummy. It should NOT be used and REMOVED from the constant.
-define ACAST_PS_ADVERTISE =
-    [
-        10.189.200.255/32
-    ];
-EOT
-fi
-if [ ! -e ${TEST_DIR}/var/lib/anycast-healthchecker/6/anycast-prefixes.conf ]; then
-    echo "${TEST_DIR}/var/lib/anycast-healthchecker/6/anycast-prefixes.conf"
-    cat <<EOT > ${TEST_DIR}/var/lib/anycast-healthchecker/6/anycast-prefixes.conf
-# Generated 2016-12-15 17:00:23.372696 by anycast-healthchecker (pid=8224)
-# 2001:db8::1/128 is a dummy IP Prefix. It should NOT be used and REMOVED from the constant.
-define ACAST6_PS_ADVERTISE =
-    [
-        2001:db8::1/128
-    ];
 EOT
 fi
 

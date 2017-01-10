@@ -1,13 +1,7 @@
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 #
-"""
-anycast healthchecker daemon
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-A healthchecker for Anycasted services.
-
-"""
+"""A healthchecker for Anycasted services."""
 __title__ = 'anycast_healthchecker'
 __author__ = 'Pavlos Parissis'
 __license__ = 'Apache 2.0'
@@ -35,8 +29,8 @@ DEFAULT_OPTIONS = {
         'stdout_file': '/var/log/anycast-healthchecker/stdout.log',
         'ipv4': 'true',
         'ipv6': 'false',
-        'bird_conf': '/etc/bird.d/anycast-prefixes.conf',
-        'bird6_conf': '/etc/bird.d/6/anycast-prefixes.conf',
+        'bird_conf': '/var/lib/anycast-healthchecker/anycast-prefixes.conf',
+        'bird6_conf': '/var/lib/anycast-healthchecker/6/anycast-prefixes.conf',
         'bird_variable': 'ACAST_PS_ADVERTISE',
         'bird6_variable': 'ACAST6_PS_ADVERTISE',
         'bird_reconfigure_cmd': 'sudo /usr/sbin/birdc configure',
