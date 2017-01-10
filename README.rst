@@ -295,6 +295,7 @@ under ``/etc/bird.d`` directory. Administrators must also create those two
 links. Here is an example from a production server:
 
 ::
+
     % ls -ls /etc/bird.d/anycast-prefixes.conf
     4 lrwxrwxrwx 1 root root 105 Dec  2 16:08 /etc/bird.d/anycast-prefixes.conf ->
     /var/lib/anycast-healthchecker/anycast-prefixes.conf
