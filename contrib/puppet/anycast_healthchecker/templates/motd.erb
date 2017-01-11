@@ -1,0 +1,9 @@
+<%
+width=73
+
+if @motd_text && @motd_text.length > 0 -%>
+*<%= ''.center(width,' ') %>*
+<% @motd_text.each do |line| -%>
+* <%= line.ljust(width-2,' ') %> *
+<% end -%>
+<% end -%>

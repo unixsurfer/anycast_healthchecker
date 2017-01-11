@@ -1,0 +1,6 @@
+###################################################
+# File is managed by puppet                       #
+# Module: anycast_healthchecker                   #
+# Path:   files/anycast-healthchecker.sysconfig   #
+###################################################
+RUNASUSER="healthchecker"

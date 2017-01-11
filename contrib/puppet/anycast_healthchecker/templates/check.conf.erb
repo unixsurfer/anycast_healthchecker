@@ -1,0 +1,12 @@
+[<%= @name%>]
+check_cmd = <%= @check_cmd%>
+check_interval = <%= @check_interval%>
+check_timeout = <%= @check_timeout%>
+check_rise = <%= @check_rise%>
+check_fail = <%= @check_fail%>
+check_disabled = <%= @check_disabled%>
+on_disabled = <%= @on_disabled%>
+ip_prefix = <%= @ip_prefix%>
+<%- if @ip_check_disabled -%>
+ip_check_disabled = <%= @ip_check_disabled%>
+<%- end -%>
