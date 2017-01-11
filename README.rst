@@ -369,7 +369,8 @@ Settings for anycast-healthchecker daemon
 
 * **pidfile** Defaults to **/var/run/anycast-healthchecker/anycast-healthchecker.pid**
 
-File to store the process id of the daemon
+File to store the process id of the daemon. The parent directory must be
+created prior the initial launch.
 
 * **ipv4** Defaults to **true**
 
@@ -470,7 +471,8 @@ Log level to use, possible values are: debug, info, warning, error, critical
 
 * **log_file** Defaults to **/var/log/anycast-healthchecker/anycast-healthchecker.log**
 
-File to log messages to
+File to log messages to. The parent directory must be created prior the initial
+launch.
 
 * **log_maxbytes** Defaults to **104857600** (bytes)
 
@@ -482,12 +484,13 @@ Number of old log files to maintain
 
 * **stderr_file** Defaults to **/var/log/anycast-healthchecker/stderr.log**
 
-File to redirect standard error to
+File to redirect standard error to. The parent directory must be created prior
+the initial launch.
 
 * **stdout_file** Defaults to **/var/log/anycast-healthchecker/stdout.log**
 
-File to redirect standard output to
-
+File to redirect standard output to. The parent directory must be created prior
+the initial launch.
 
 JSON logging
 ************
