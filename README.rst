@@ -359,7 +359,7 @@ can be overwritten in other sections.
 :check_rise: 2
 :check_fail: 2
 :check_disabled: true
-:on_disable: withdraw
+:on_disabled: withdraw
 :ip_check_disabled: false
 
 Daemon section
@@ -589,7 +589,7 @@ checks
 
 ``true`` disables the check, ``false`` enables it
 
-* **on_disable** Defaults to **withdraw**
+* **on_disabled** Defaults to **withdraw**
 
 What to do when check is disabled, either ``withdraw`` or ``advertise``
 

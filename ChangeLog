@@ -1,6 +1,9 @@
 CHANGES
 =======
 
+* Add puppet module
+* Mention that parent directories for log and pifile files must be present
+
 0.7.3
 -----
 

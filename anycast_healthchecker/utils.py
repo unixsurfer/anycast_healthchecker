@@ -148,7 +148,7 @@ def service_configuration_check(config):
 
         if (config.get(service, 'on_disabled') != 'withdraw' and
                 config.get(service, 'on_disabled') != 'advertise'):
-            msg = ("'on_disable' option has invalid value ({val}) for "
+            msg = ("'on_disabled' option has invalid value ({val}) for "
                    "service check {name} should be either 'withdraw' or "
                    "'advertise'"
                    .format(name=service,

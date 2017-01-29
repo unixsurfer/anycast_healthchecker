@@ -16,7 +16,7 @@ DEFAULT_OPTIONS = {
         'check_rise': '2',
         'check_fail': '2',
         'check_disabled': 'true',
-        'on_disable': 'withdraw',
+        'on_disabled': 'withdraw',
         'ip_check_disabled': 'false',
     },
     'daemon': {
