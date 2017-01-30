@@ -164,11 +164,13 @@ def service_configuration_check(config):
 
         _ip_prefix = ipaddress.ip_network(config.get(service, 'ip_prefix'))
         if not ipv6_enabled and _ip_prefix.version == 6:
-            raise ValueError("IPv6 support is disabled while there is an IPv6 "
+            raise ValueError("IPv6 support is disabled in "
+                             "anycast-healthchecker while there is an IPv6 "
                              "prefix configured for {name} service check"
                              .format(name=service))
         if not ipv4_enabled and _ip_prefix.version == 4:
-            raise ValueError("IPv4 support is disabled while there is an IPv4 "
+            raise ValueError("IPv4 support is disabled in "
+                             "anycast-healthchecker while there is an IPv4 "
                              "prefix configured for {name} service check"
                              .format(name=service))
 
