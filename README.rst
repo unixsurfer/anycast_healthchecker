@@ -752,7 +752,7 @@ Requirements for running ``local_run.sh``
 
 #. python3 installation
 
-# A working python virtual environment, use the excellent tool virtualenvwrapper
+#. A working python virtual environment, use the excellent tool virtualenvwrapper
 
 #. Bird installed and configured as it is mentioned in `Bird configuration`_
 
