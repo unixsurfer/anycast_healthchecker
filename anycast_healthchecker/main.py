@@ -40,7 +40,7 @@ from anycast_healthchecker import healthchecker
 from anycast_healthchecker import lib
 from anycast_healthchecker import __version__ as version
 from anycast_healthchecker.utils import (load_configuration, running,
-                                         ip_prefixes_sanity_check, touch)
+                                         ip_prefixes_sanity_check)
 
 
 def main():
@@ -93,27 +93,6 @@ def main():
         pass  # it is OK if pidfile doesn't exist
     except OSError as exc:
         sys.exit("failed to parse pidfile:{e}".format(e=exc))
-
-    # Create bird configs, if they doen't exist, and history directories
-    for ip_version in bird_configuration:
-        config_file = bird_configuration[ip_version]['config_file']
-        try:
-            touch(config_file)
-        except OSError as exc:
-            sys.exit("failed to create {f}:{e}".format(f=config_file, e=exc))
-
-        if bird_configuration[ip_version]['keep_changes']:
-            history_dir = os.path.join(os.path.dirname(config_file), 'history')
-            try:
-                os.mkdir(history_dir)
-            except FileExistsError:
-                pass
-            except OSError as exc:
-                sys.exit("failed to make directory {d} for keeping a history "
-                         "of changes for {b}:{e}"
-                         .format(d=history_dir, b=config_file, e=exc))
-            else:
-                print("{d} is created".format(d=history_dir))
 
     # Map log level to numeric which can be accepted by loggers.
     num_level = getattr(

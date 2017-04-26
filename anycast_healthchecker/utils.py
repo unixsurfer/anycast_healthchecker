@@ -190,8 +190,6 @@ def service_configuration_check(config):
 def ip_prefixes_sanity_check(log, config, bird_configuration):
     """Sanity check on IP prefixes.
 
-    - Exits main program if dummy_ip_prefix is invalid
-
     Arguments:
         log(logger obj): A logger object to use for emitting messages
         config (obg): A configparser object which holds our configuration.
@@ -356,8 +354,29 @@ def load_configuration(config_file, config_dir, service_file):
         raise ValueError(exc)
 
     configuration_check(config)
+    bird_configuration = build_bird_configuration(config)
+    create_bird_config_files(bird_configuration)
 
+    return config, bird_configuration
+
+
+def build_bird_configuration(config):
+    """Build bird configuration structure.
+
+    First it performs a sanity check against bird settings and then builds a
+    dictionary structure with bird configuration per IP version.
+
+    Arguments:
+        config (obj): A configparser object which holds our configuration.
+
+    Returns:
+        A dictionary
+
+    Raises:
+        ValueError if sanity check fails.
+    """
     bird_configuration = {}
+
     if config.getboolean('daemon', 'ipv4'):
         if os.path.islink(config.get('daemon', 'bird_conf')):
             config_file = os.path.realpath(config.get('daemon', 'bird_conf'))
@@ -366,10 +385,16 @@ def load_configuration(config_file, config_dir, service_file):
                   .format(s=config.get('daemon', 'bird_conf'), d=config_file))
         else:
             config_file = config.get('daemon', 'bird_conf')
+
+        dummy_ip_prefix = config.get('daemon', 'dummy_ip_prefix')
+        if not valid_ip_prefix(dummy_ip_prefix):
+            raise ValueError("invalid dummy IPv4 prefix: {i}"
+                             .format(i=dummy_ip_prefix))
+
         bird_configuration[4] = {
             'config_file': config_file,
             'variable_name': config.get('daemon', 'bird_variable'),
-            'dummy_ip_prefix': config.get('daemon', 'dummy_ip_prefix'),
+            'dummy_ip_prefix': dummy_ip_prefix,
             'reconfigure_cmd': config.get('daemon', 'bird_reconfigure_cmd'),
             'keep_changes': config.getboolean('daemon', 'bird_keep_changes'),
             'changes_counter': config.getint('daemon', 'bird_changes_counter')
@@ -382,23 +407,67 @@ def load_configuration(config_file, config_dir, service_file):
                   .format(s=config.get('daemon', 'bird6_conf'), d=config_file))
         else:
             config_file = config.get('daemon', 'bird6_conf')
+
+        dummy_ip_prefix = config.get('daemon', 'dummy_ip6_prefix')
+        if not valid_ip_prefix(dummy_ip_prefix):
+            raise ValueError("invalid dummy IPv6 prefix: {i}"
+                             .format(i=dummy_ip_prefix))
         bird_configuration[6] = {
             'config_file': config_file,
             'variable_name': config.get('daemon', 'bird6_variable'),
-            'dummy_ip_prefix': config.get('daemon', 'dummy_ip6_prefix'),
+            'dummy_ip_prefix': dummy_ip_prefix,
             'reconfigure_cmd': config.get('daemon', 'bird6_reconfigure_cmd'),
             'keep_changes': config.getboolean('daemon', 'bird6_keep_changes'),
             'changes_counter': config.getint('daemon', 'bird6_changes_counter')
         }
 
-    return config, bird_configuration
+    return bird_configuration
+
+
+def create_bird_config_files(bird_configuration):
+    """Create bird configuration files per IP version.
+
+    Creates bird configuration files if they don't exist. It also creates the
+    directories where we store the history of changes, if this functionality is
+    enabled.
+
+    Arguments:
+        bird_configuration (dict): A dictionary with settings for bird.
+
+    Returns:
+       None
+
+    Raises:
+        ValueError if we can't create bird configuration files and the
+        directory to store the history of changes in bird configuration file.
+    """
+    for ip_version in bird_configuration:
+        # This creates the file if it doesn't exist.
+        config_file = bird_configuration[ip_version]['config_file']
+        try:
+            touch(config_file)
+        except OSError as exc:
+            raise ValueError("failed to create {f}:{e}"
+                             .format(f=config_file, e=exc))
+        if bird_configuration[ip_version]['keep_changes']:
+            history_dir = os.path.join(os.path.dirname(config_file), 'history')
+            try:
+                os.mkdir(history_dir)
+            except FileExistsError:
+                pass
+            except OSError as exc:
+                raise ValueError("failed to make directory {d} for keeping a "
+                                 "history of changes for {b}:{e}"
+                                 .format(d=history_dir, b=config_file, e=exc))
+            else:
+                print("{d} is created".format(d=history_dir))
 
 
 def configuration_check(config):
     """Perform a sanity check on configuration.
 
     First it performs a sanity check against settings for daemon
-    and then agaist settings for each service check.
+    and then against settings for each service check.
 
     Arguments:
         config (obj): A configparser object which holds our configuration.
@@ -434,18 +503,6 @@ def configuration_check(config):
             msg = ("invalid data for '{opt}' option in daemon section: {err}"
                    .format(opt=option, err=exc))
             raise ValueError(msg)
-
-    if config.getboolean('daemon', 'ipv4'):
-        _dummy_ip_prefix = config.get('daemon', 'dummy_ip_prefix')
-        if not valid_ip_prefix(_dummy_ip_prefix):
-            raise ValueError("invalid dummy IPv4 prefix: {i}"
-                             .format(i=_dummy_ip_prefix))
-
-    if config.getboolean('daemon', 'ipv6'):
-        _dummy_ip_prefix = config.get('daemon', 'dummy_ip6_prefix')
-        if not valid_ip_prefix(_dummy_ip_prefix):
-            raise ValueError("invalid dummy IPv6 prefix: {i}"
-                             .format(i=_dummy_ip_prefix))
 
     service_configuration_check(config)
 
