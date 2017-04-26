@@ -75,8 +75,6 @@ def main():
 
     # Catch already running process and clean up stale pid file.
     pidfile = config.get('daemon', 'pidfile')
-    if not os.path.isdir(os.path.dirname(pidfile)):
-        sys.exit("{d} does not exit".format(d=os.path.dirname(pidfile)))
     try:
         with open(pidfile) as _file:
             pid = _file.read().rstrip()

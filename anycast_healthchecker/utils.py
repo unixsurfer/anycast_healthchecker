@@ -409,6 +409,13 @@ def configuration_check(config):
     """
     log_level = config.get('daemon', 'loglevel')
     num_level = getattr(logging, log_level.upper(), None)
+    pidfile = config.get('daemon', 'pidfile')
+
+    # Catch the case where the directory, under which we store the pid file, is
+    # missing.
+    if not os.path.isdir(os.path.dirname(pidfile)):
+        raise ValueError("{d} doesn't exit".format(d=os.path.dirname(pidfile)))
+
     if not isinstance(num_level, int):
         raise ValueError('Invalid log level: {}'.format(log_level))
 
