@@ -338,14 +338,15 @@ def load_configuration(config_file, config_dir, service_file):
     config.read_dict(daemon_defaults)
     if service_file is not None:
         if not os.path.isfile(service_file):
-            print("{f} configuration file for a service check doesn't exist"
-                  .format(f=service_file))
+            raise ValueError("{f} configuration file for a service check "
+                             "doesn't exist".format(f=service_file))
         else:
             config_files.append(service_file)
     elif config_dir is not None:
         if not os.path.isdir(config_dir):
-            print("{d} directory with configuratin files for service checks "
-                  "doesn't exist".format(d=config_dir))
+            raise ValueError("{d} directory with configuration files for "
+                             "service checks doesn't exist"
+                             .format(d=config_dir))
         else:
             config_files.extend(glob.glob(os.path.join(config_dir, '*.conf')))
 
