@@ -119,74 +119,6 @@ def get_ip_prefixes_from_config(config, services, ip_version):
     return ip_prefixes
 
 
-def service_configuration_check(config):
-    """Perform a sanity check against options for each service check.
-
-    Arguments:
-        config (obj): A configparser object which holds our configuration.
-
-    Returns:
-        None if all sanity checks are successfully passed otherwise raises a
-        ValueError exception.
-    """
-    ipv4_enabled = config.getboolean('daemon', 'ipv4')
-    ipv6_enabled = config.getboolean('daemon', 'ipv6')
-    services = config.sections()
-    services.remove('daemon')  # we don't need it during sanity check.
-
-    for service in services:
-        for option, getter in SERVICE_OPTIONS_TYPE.items():
-            try:
-                getattr(config, getter)(service, option)
-            except configparser.Error as error:
-                raise ValueError(error)
-            except ValueError as exc:
-                msg = ("invalid data for '{opt}' option in service check "
-                       "{name}: {err}"
-                       .format(opt=option, name=service, err=exc))
-                raise ValueError(msg)
-
-        if (config.get(service, 'on_disabled') != 'withdraw' and
-                config.get(service, 'on_disabled') != 'advertise'):
-            msg = ("'on_disabled' option has invalid value ({val}) for "
-                   "service check {name} should be either 'withdraw' or "
-                   "'advertise'"
-                   .format(name=service,
-                           val=config.get(service, 'on_disabled')))
-            raise ValueError(msg)
-
-        if not valid_ip_prefix(config.get(service, 'ip_prefix')):
-            msg = ("invalid value ({val}) for 'ip_prefix' option in service "
-                   "check {name}. It should be an IP PREFIX in form of "
-                   "ip/prefixlen."
-                   .format(name=service, val=config.get(service, 'ip_prefix')))
-            raise ValueError(msg)
-
-        _ip_prefix = ipaddress.ip_network(config.get(service, 'ip_prefix'))
-        if not ipv6_enabled and _ip_prefix.version == 6:
-            raise ValueError("IPv6 support is disabled in "
-                             "anycast-healthchecker while there is an IPv6 "
-                             "prefix configured for {name} service check"
-                             .format(name=service))
-        if not ipv4_enabled and _ip_prefix.version == 4:
-            raise ValueError("IPv4 support is disabled in "
-                             "anycast-healthchecker while there is an IPv4 "
-                             "prefix configured for {name} service check"
-                             .format(name=service))
-
-        cmd = shlex.split(config.get(service, 'check_cmd'))
-        try:
-            proc = subprocess.Popen(cmd)
-            proc.kill()
-        except (OSError, subprocess.SubprocessError) as exc:
-            msg = ("failed to run check command '{cmd}' for service check "
-                   "{name}: {err}"
-                   .format(name=service,
-                           cmd=config.get(service, 'check_cmd'),
-                           err=exc))
-            raise ValueError(msg)
-
-
 def ip_prefixes_sanity_check(log, config, bird_configuration):
     """Sanity check on IP prefixes.
 
@@ -360,6 +292,118 @@ def load_configuration(config_file, config_dir, service_file):
     return config, bird_configuration
 
 
+def configuration_check(config):
+    """Perform a sanity check on configuration.
+
+    First it performs a sanity check against settings for daemon
+    and then against settings for each service check.
+
+    Arguments:
+        config (obj): A configparser object which holds our configuration.
+
+    Returns:
+        None if all checks are successfully passed otherwise raises a
+        ValueError exception.
+    """
+    log_level = config.get('daemon', 'loglevel')
+    num_level = getattr(logging, log_level.upper(), None)
+    pidfile = config.get('daemon', 'pidfile')
+
+    # Catch the case where the directory, under which we store the pid file, is
+    # missing.
+    if not os.path.isdir(os.path.dirname(pidfile)):
+        raise ValueError("{d} doesn't exit".format(d=os.path.dirname(pidfile)))
+
+    if not isinstance(num_level, int):
+        raise ValueError('Invalid log level: {}'.format(log_level))
+
+    for _file in 'log_file', 'stdout_file', 'stderr_file':
+        try:
+            touch(config.get('daemon', _file))
+        except OSError as exc:
+            raise ValueError(exc)
+
+    for option, getter in DAEMON_OPTIONS_TYPE.items():
+        try:
+            getattr(config, getter)('daemon', option)
+        except configparser.Error as error:
+            raise ValueError(error)
+        except ValueError as exc:
+            msg = ("invalid data for '{opt}' option in daemon section: {err}"
+                   .format(opt=option, err=exc))
+            raise ValueError(msg)
+
+    service_configuration_check(config)
+
+
+def service_configuration_check(config):
+    """Perform a sanity check against options for each service check.
+
+    Arguments:
+        config (obj): A configparser object which holds our configuration.
+
+    Returns:
+        None if all sanity checks are successfully passed otherwise raises a
+        ValueError exception.
+    """
+    ipv4_enabled = config.getboolean('daemon', 'ipv4')
+    ipv6_enabled = config.getboolean('daemon', 'ipv6')
+    services = config.sections()
+    services.remove('daemon')  # we don't need it during sanity check.
+
+    for service in services:
+        for option, getter in SERVICE_OPTIONS_TYPE.items():
+            try:
+                getattr(config, getter)(service, option)
+            except configparser.Error as error:
+                raise ValueError(error)
+            except ValueError as exc:
+                msg = ("invalid data for '{opt}' option in service check "
+                       "{name}: {err}"
+                       .format(opt=option, name=service, err=exc))
+                raise ValueError(msg)
+
+        if (config.get(service, 'on_disabled') != 'withdraw' and
+                config.get(service, 'on_disabled') != 'advertise'):
+            msg = ("'on_disabled' option has invalid value ({val}) for "
+                   "service check {name} should be either 'withdraw' or "
+                   "'advertise'"
+                   .format(name=service,
+                           val=config.get(service, 'on_disabled')))
+            raise ValueError(msg)
+
+        if not valid_ip_prefix(config.get(service, 'ip_prefix')):
+            msg = ("invalid value ({val}) for 'ip_prefix' option in service "
+                   "check {name}. It should be an IP PREFIX in form of "
+                   "ip/prefixlen."
+                   .format(name=service, val=config.get(service, 'ip_prefix')))
+            raise ValueError(msg)
+
+        _ip_prefix = ipaddress.ip_network(config.get(service, 'ip_prefix'))
+        if not ipv6_enabled and _ip_prefix.version == 6:
+            raise ValueError("IPv6 support is disabled in "
+                             "anycast-healthchecker while there is an IPv6 "
+                             "prefix configured for {name} service check"
+                             .format(name=service))
+        if not ipv4_enabled and _ip_prefix.version == 4:
+            raise ValueError("IPv4 support is disabled in "
+                             "anycast-healthchecker while there is an IPv4 "
+                             "prefix configured for {name} service check"
+                             .format(name=service))
+
+        cmd = shlex.split(config.get(service, 'check_cmd'))
+        try:
+            proc = subprocess.Popen(cmd)
+            proc.kill()
+        except (OSError, subprocess.SubprocessError) as exc:
+            msg = ("failed to run check command '{cmd}' for service check "
+                   "{name}: {err}"
+                   .format(name=service,
+                           cmd=config.get(service, 'check_cmd'),
+                           err=exc))
+            raise ValueError(msg)
+
+
 def build_bird_configuration(config):
     """Build bird configuration structure.
 
@@ -461,50 +505,6 @@ def create_bird_config_files(bird_configuration):
                                  .format(d=history_dir, b=config_file, e=exc))
             else:
                 print("{d} is created".format(d=history_dir))
-
-
-def configuration_check(config):
-    """Perform a sanity check on configuration.
-
-    First it performs a sanity check against settings for daemon
-    and then against settings for each service check.
-
-    Arguments:
-        config (obj): A configparser object which holds our configuration.
-
-    Returns:
-        None if all checks are successfully passed otherwise raises a
-        ValueError exception.
-    """
-    log_level = config.get('daemon', 'loglevel')
-    num_level = getattr(logging, log_level.upper(), None)
-    pidfile = config.get('daemon', 'pidfile')
-
-    # Catch the case where the directory, under which we store the pid file, is
-    # missing.
-    if not os.path.isdir(os.path.dirname(pidfile)):
-        raise ValueError("{d} doesn't exit".format(d=os.path.dirname(pidfile)))
-
-    if not isinstance(num_level, int):
-        raise ValueError('Invalid log level: {}'.format(log_level))
-
-    for _file in 'log_file', 'stdout_file', 'stderr_file':
-        try:
-            touch(config.get('daemon', _file))
-        except OSError as exc:
-            raise ValueError(exc)
-
-    for option, getter in DAEMON_OPTIONS_TYPE.items():
-        try:
-            getattr(config, getter)('daemon', option)
-        except configparser.Error as error:
-            raise ValueError(error)
-        except ValueError as exc:
-            msg = ("invalid data for '{opt}' option in daemon section: {err}"
-                   .format(opt=option, err=exc))
-            raise ValueError(msg)
-
-    service_configuration_check(config)
 
 
 def running(processid):
