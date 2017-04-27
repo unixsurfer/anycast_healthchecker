@@ -92,6 +92,20 @@ ip_prefix = 10.52.12.2/32
 EOT
 fi
 
+if [ ! -e ${DOTDIR}/fooIPv6.bar.com.conf ]; then
+    cat <<EOT > ${DOTDIR}/fooIPv6.bar.com.conf
+[foo1IPv6.bar.com]
+check_cmd         = /usr/bin/curl --fail -o /dev/null 'http://[fd12:aba6:57db:ffff::1]:8888'
+check_timeout     = 5
+check_rise        = 2
+check_fail        = 2
+check_disabled    = false
+on_disabled       = withdraw
+ip_prefix         = fd12:aba6:57db:ffff::1/128
+ip_check_disabled = false
+EOT
+fi
+
 if [ ! -e ${DOTDIR}/foo1IPv6.bar.com.conf ]; then
     cat <<EOT > ${DOTDIR}/foo1IPv6.bar.com.conf
 [foo1IPv6.bar.com]
@@ -101,8 +115,7 @@ check_rise        = 2
 check_fail        = 2
 check_disabled    = false
 on_disabled       = withdraw
-ip_prefix         = fd12:aba6:57db:ffff::2
-#ip_prefix        = 10.52.12.2
+ip_prefix         = fd12:aba6:57db:ffff::2/128
 ip_check_disabled = false
 EOT
 fi
