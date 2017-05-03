@@ -1,6 +1,21 @@
 CHANGES
 =======
 
+0.7.4
+-----
+
+* RELEASE 0.7.4 version
+* Update copyright
+* Make sure we return the prefix length
+* Add a 2nd IPv6 service check
+* Reorder functions in utils module
+* Refactor the way we check our bird settings
+* Move the check for a directory to sanity check function
+* Fail sanity check when config file and dir don't exist
+* Fix incorrect format for enumerated list in README
+* fix typo reqeusts->requests (issue #9)
+* Mention that IPv6 or v4 is disabled for our software
+* Fix type in on_disabled setting
 * Add puppet module
 * Mention that parent directories for log and pifile files must be present
 
