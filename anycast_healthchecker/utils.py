@@ -114,7 +114,7 @@ def get_ip_prefixes_from_config(config, services, ip_version):
     for service in services:
         ip_prefix = ipaddress.ip_network(config.get(service, 'ip_prefix'))
         if ip_prefix.version == ip_version:
-            ip_prefixes.add(config.get(service, 'ip_prefix'))
+            ip_prefixes.add(ip_prefix.with_prefixlen)
 
     return ip_prefixes
 
