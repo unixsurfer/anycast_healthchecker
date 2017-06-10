@@ -5,9 +5,7 @@
 # pylint: disable=too-many-instance-attributes
 #
 
-"""
-A library which provides the ServiceCheck class.
-"""
+"""A library which provides the ServiceCheck class."""
 
 import subprocess
 import time
@@ -30,7 +28,9 @@ class ServiceCheck(Thread):
 
     Methods:
         run(): Run method of the thread.
+
     """
+
     def __init__(self, service, config, action, log):
         """Set the name of thread to be the name of the service."""
         super(ServiceCheck, self).__init__()
@@ -61,10 +61,11 @@ class ServiceCheck(Thread):
         self.ip_check_disabled = self.config['ip_check_disabled']
 
     def _run_check(self):
-        """Executes a check command.
+        """Execute a check command.
 
         Returns:
             True if the exit code of the command was 0 otherwise False.
+
         """
         cmd = shlex.split(self.config['check_cmd'])
         self.log.info("running {}".format(' '.join(cmd)), **self.extra)
@@ -98,10 +99,11 @@ class ServiceCheck(Thread):
                 return False
 
     def _ip_assigned(self):
-        """Checks if IP prefix is assigned to loopback interface.
+        """Check if IP prefix is assigned to loopback interface.
 
         Returns:
             True if IP prefix found assigned otherwise False.
+
         """
         output = []
         cmd = [
@@ -172,13 +174,14 @@ class ServiceCheck(Thread):
         return False
 
     def _check_disabled(self):
-        """Checks if health check is disabled.
+        """Check if health check is disabled.
 
         It logs a message if health check is disabled and it also adds an item
         to the action queue based on 'on_disabled' setting.
 
         Returns:
             True if check is disabled otherwise False.
+
         """
         if (self.config['check_disabled'] and
                 self.config['on_disabled'] == 'withdraw'):

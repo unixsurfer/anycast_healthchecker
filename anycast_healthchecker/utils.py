@@ -65,6 +65,7 @@ def valid_ip_prefix(ip_prefix):
     Returns:
         True if ip_prefix is a valid IPv4 address with prefix length 32 or a
         valid IPv6 address with prefix length 128, otherwise False
+
     """
     try:
         ip_prefix = ipaddress.ip_network(ip_prefix)
@@ -92,6 +93,7 @@ def touch(file_path):
 
     Raises:
         OSError exception
+
     """
     with open(file_path, 'a'):
         os.utime(file_path, None)
@@ -108,6 +110,7 @@ def get_ip_prefixes_from_config(config, services, ip_version):
 
     Returns:
         A set of IP prefixes.
+
     """
     ip_prefixes = set()
 
@@ -127,6 +130,7 @@ def ip_prefixes_sanity_check(log, config, bird_configuration):
         config (obg): A configparser object which holds our configuration.
         bird_configuration (dict): A dictionary, which holds Bird configuration
         per IP protocol version.
+
     """
     for ip_version in bird_configuration:
         modify_ip_prefixes(log,
@@ -169,6 +173,7 @@ def modify_ip_prefixes(
         to bird configuration
         changes_counter (int): The number of configuration changes to keep
         ip_version (int): IP protocol version of Bird configuration
+
     """
     services = config.sections()
     services.remove('daemon')  # not needed during sanity check for IP-Prefixes
@@ -258,6 +263,7 @@ def load_configuration(config_file, config_dir, service_file):
     Returns:
         A tuple with 1st element a ConfigParser object and 2nd element
         a dictionary.
+
     """
     config_files = [config_file]
     defaults = copy.copy(DEFAULT_OPTIONS['DEFAULT'])
@@ -304,6 +310,7 @@ def configuration_check(config):
     Returns:
         None if all checks are successfully passed otherwise raises a
         ValueError exception.
+
     """
     log_level = config.get('daemon', 'loglevel')
     num_level = getattr(logging, log_level.upper(), None)
@@ -345,6 +352,7 @@ def service_configuration_check(config):
     Returns:
         None if all sanity checks are successfully passed otherwise raises a
         ValueError exception.
+
     """
     ipv4_enabled = config.getboolean('daemon', 'ipv4')
     ipv6_enabled = config.getboolean('daemon', 'ipv6')
@@ -418,6 +426,7 @@ def build_bird_configuration(config):
 
     Raises:
         ValueError if sanity check fails.
+
     """
     bird_configuration = {}
 
@@ -484,6 +493,7 @@ def create_bird_config_files(bird_configuration):
     Raises:
         ValueError if we can't create bird configuration files and the
         directory to store the history of changes in bird configuration file.
+
     """
     for ip_version in bird_configuration:
         # This creates the file if it doesn't exist.
@@ -515,6 +525,7 @@ def running(processid):
 
     Returns:
         True if process ID is found otherwise False.
+
     """
     try:
         # From kill(2)
@@ -545,6 +556,7 @@ def get_ip_prefixes_from_bird(filename):
 
     Returns:
         A list of IP prefixes.
+
     """
     prefixes = []
     with open(filename, 'r') as bird_conf:
@@ -641,6 +653,7 @@ def reconfigure_bird(log, cmd):
                and not at the exit code.
             -- Returns zero exit code when reload was successful.
             -- Should never timeout, if it does then it is a bug.
+
     """
     cmd = shlex.split(cmd)
     log.info("reloading BIRD by running {c}".format(c=' '.join(cmd)))
@@ -698,6 +711,7 @@ def write_temp_bird_conf(log,
 
     Returns:
         The filename of the temporary file
+
     """
     comment = ("# {i} is a dummy IP Prefix. It should NOT be used and "
                "REMOVED from the constant.".format(i=dummy_ip_prefix))
