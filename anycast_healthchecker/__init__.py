@@ -8,6 +8,8 @@ __license__ = 'Apache 2.0'
 __version__ = '0.7.4'
 __copyright__ = 'Copyright 2015-2017 Pavlos Parissis'
 
+PROGRAM_NAME = __title__.replace('_', '-')
+
 DEFAULT_OPTIONS = {
     'DEFAULT': {
         'interface': 'lo',
@@ -20,13 +22,6 @@ DEFAULT_OPTIONS = {
         'ip_check_disabled': 'false',
     },
     'daemon': {
-        'pidfile': '/var/run/anycast-healthchecker/anycast-healthchecker.pid',
-        'loglevel': 'debug',
-        'log_maxbytes': '104857600',
-        'log_backups': '8',
-        'log_file': '/var/log/anycast-healthchecker/anycast-healthchecker.log',
-        'stderr_file': '/var/log/anycast-healthchecker/stderr.log',
-        'stdout_file': '/var/log/anycast-healthchecker/stdout.log',
         'ipv4': 'true',
         'ipv6': 'false',
         'bird_conf': '/var/lib/anycast-healthchecker/anycast-prefixes.conf',
@@ -42,5 +37,13 @@ DEFAULT_OPTIONS = {
         'bird_changes_counter': '128',
         'bird6_changes_counter': '128',
         'purge_ip_prefixes': 'false',
+        'pidfile': '/var/run/anycast-healthchecker/anycast-healthchecker.pid',
+        'loglevel': 'debug',
+        'log_server_port': '514',
+        'json_stdout': 'false',
+        'json_log_file': 'false',
+        'json_log_server': 'false',
+        'log_maxbytes': '104857600',
+        'log_backups': '8',
     }
 }

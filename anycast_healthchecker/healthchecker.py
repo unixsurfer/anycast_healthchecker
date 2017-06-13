@@ -1,10 +1,13 @@
 # pylint: disable=too-many-arguments
+# pylint: disable=too-few-public-methods
 
 """A library which provides the HealthChecker class."""
 import os
 import sys
+import logging
 from queue import Queue
 
+from anycast_healthchecker import PROGRAM_NAME
 from anycast_healthchecker.servicecheck import ServiceCheck
 from anycast_healthchecker.utils import (SERVICE_OPTIONS_TYPE,
                                          get_ip_prefixes_from_bird,
@@ -15,19 +18,16 @@ from anycast_healthchecker.utils import (SERVICE_OPTIONS_TYPE,
 
 
 class HealthChecker(object):
-    """Lunches service checks and triggers a reconfiguration on BIRD daemon.
+    """Lunch service checks and triggers a reconfiguration on BIRD daemon.
 
-    This class should be instantiated once and daemonized.
+    This class should be instantiated once.
 
     It uses a queue as a store for IP prefixes to be removed from and added to
     BIRD configuration file.
 
     Arguments:
-        log(logger obj): A logger to log messages.
-
-        config(configparger obj): A configparser object with the configuration
-
-        action(Queue obj): A queue of IP prefixes and their action to be taken
+        config (configparger obj): A configparser object with the configuration
+        action (Queue obj): A queue of IP prefixes and their action to be taken
         based on the state of health check. An item is a tuple of 3 elements:
             1st: name of the thread.
             2nd: IP prefix.
@@ -36,12 +36,12 @@ class HealthChecker(object):
     Methods:
         run(): Lunches checks and updates BIRD configuration based on
         the result of the check.
-        catch_signal(signum, frame): Catches signals
+
     """
 
-    def __init__(self, log, config, bird_configuration):
+    def __init__(self, config, bird_configuration):
         """Initialization."""
-        self.log = log
+        self.log = logging.getLogger(PROGRAM_NAME)
         self.config = config
         self.action = Queue()
         self.bird_configuration = bird_configuration
@@ -75,6 +75,7 @@ class HealthChecker(object):
 
         Returns:
             True if BIRD configuration was updated otherwise False.
+
         """
         conf_updated = False
         prefixes = []
@@ -89,36 +90,31 @@ class HealthChecker(object):
         try:
             prefixes = get_ip_prefixes_from_bird(config_file)
         except OSError as error:
-            msg = ("failed to open Bird configuration {e}, this is a FATAL "
-                   "error, thus exiting main program"
-                   .format(e=error))
-            self.log.error(msg, priority=80)
+            self.log.error("failed to open Bird configuration %s, this is a "
+                           "FATAL error, thus exiting main program", error)
             sys.exit(1)
 
         if not prefixes:
-            msg = ("found empty bird configuration:{f}, this is a FATAL "
-                   "error, thus exiting main program"
-                   .format(f=config_file))
-            self.log.error(msg, priority=80)
+            self.log.error("found empty bird configuration %s, this is a FATAL"
+                           " error, thus exiting main program", config_file)
             sys.exit(1)
 
         if dummy_ip_prefix not in prefixes:
-            msg = ("dummy IP prefix {i} wasn't found in bird configuration, "
-                   "adding it. This shouldn't have happened!"
-                   .format(i=dummy_ip_prefix))
-            self.log.warning(msg, priority=20)
+            self.log.warning("dummy IP prefix %s wasn't found in bird "
+                             "configuration, adding it. This shouldn't have "
+                             "happened!", dummy_ip_prefix)
             prefixes.insert(0, dummy_ip_prefix)
             conf_updated = True
 
         ip_prefixes_without_check = set(prefixes).difference(
             self.ip_prefixes[ip_version])
         if ip_prefixes_without_check:
-            msg = ("found {i} IP prefixes in Bird configuration but we aren't "
-                   "configured to run health checks on them. Either someone "
-                   "modified the configuration manually or something went "
-                   "horrible wrong. We remove them from Bird configuration"
-                   .format(i=','.join(ip_prefixes_without_check)))
-            self.log.warning(msg, priority=20)
+            self.log.warning("found %s IP prefixes in Bird configuration but "
+                             "we aren't configured to run health checks on "
+                             "them. Either someone modified the configuration "
+                             "manually or something went horrible wrong. We "
+                             "remove them from Bird configuration",
+                             ','.join(ip_prefixes_without_check))
             # This is faster than using lambda and filter.
             # NOTE: We don't use remove method as we want to remove more than
             # occurrences of the IP prefixes without check.
@@ -135,12 +131,11 @@ class HealthChecker(object):
             return conf_updated
 
         if self.bird_configuration[ip_version]['keep_changes']:
-            archive_bird_conf(self.log, config_file, changes_counter)
+            archive_bird_conf(config_file, changes_counter)
 
         # some IP prefixes are either removed or added, create
         # configuration with new data.
         tempname = write_temp_bird_conf(
-            self.log,
             dummy_ip_prefix,
             config_file,
             variable_name,
@@ -149,20 +144,19 @@ class HealthChecker(object):
         try:
             os.rename(tempname, config_file)
         except OSError as error:
-            msg = ('failed to create Bird configuration {e}, this is a FATAL '
-                   'error, thus exiting main program'
-                   .format(e=error))
-            self.log.critical(msg, priority=80)
+            self.log.critical("failed to create Bird configuration %s, this "
+                              "is a FATAL error, thus exiting main program",
+                              error)
             sys.exit(1)
         else:
-            self.log.info("Bird configuration for IPv{v} is updated"
-                          .format(v=ip_version))
+            self.log.info("Bird configuration for IPv%s is updated",
+                          ip_version)
 
         # dummy_ip_prefix is always there
         if len(prefixes) == 1:
             self.log.warning("Bird configuration doesn't have IP prefixes for "
                              "any of the services we monitor! It means local "
-                             "node doesn't receive any traffic", priority=80)
+                             "node doesn't receive any traffic")
 
         return conf_updated
 
@@ -172,47 +166,28 @@ class HealthChecker(object):
         if not self.services:
             self.log.warning("no service checks are configured")
         else:
-            msg = "going to lunch {n} threads".format(n=len(self.services))
-            self.log.info(msg)
+            self.log.info("going to lunch %s threads", len(self.services))
             for service in self.services:
-                msg = "lunching thread for {n}".format(n=service)
-                self.log.debug(msg, json_blob=False)
+                self.log.debug("lunching thread for %s", service)
                 _config = {}
                 for option, getter in SERVICE_OPTIONS_TYPE.items():
                     _config[option] = getattr(self.config, getter)(service,
                                                                    option)
-                _thread = ServiceCheck(
-                    service,
-                    _config,
-                    self.action,
-                    self.log)
+                _thread = ServiceCheck(service, _config, self.action)
                 _thread.start()
 
         # Stay running until we are stopped
         while True:
             # Fetch items from action queue
             operation = self.action.get(block=True)
-            msg = ("returned an item from the queue for {n} with IP prefix {i}"
-                   " and action to {o} Bird configuration"
-                   .format(n=operation.name,
-                           i=operation.ip_prefix,
-                           o=operation))
-            self.log.info(msg)
+            self.log.info("returned an item from the queue for %s with IP "
+                          "prefix %s and action to %s Bird configuration",
+                          operation.name,
+                          operation.ip_prefix,
+                          operation)
             bird_updated = self._update_bird_conf_file(operation)
             self.action.task_done()
             if bird_updated:
                 ip_version = operation.ip_version
                 cmd = self.bird_configuration[ip_version]['reconfigure_cmd']
-                reconfigure_bird(self.log, cmd)
-
-    def catch_signal(self, signum, frame):
-        """A signal catcher.
-
-        Arguments:
-            signum (int): The signal number.
-            frame (str): The stack frame at the time the signal was received.
-        """
-        self.log.info("received {n} signal {f}".format(n=signum,
-                                                       f=frame), priority=80)
-        self.log.info('going down', priority=50)
-        sys.exit(0)
+                reconfigure_bird(cmd)
