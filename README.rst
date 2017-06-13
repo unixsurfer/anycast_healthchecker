@@ -559,9 +559,10 @@ the log files for easier searching of error/warning messages.
 
 * **check_cmd** Unset by default
 
-The command to run to determine the status of the service based
-**on the return code**. Complex health checking should be wrapped in a script.
-When check command fails, the stdout and stderr appears in the log file.
+A comma separated list of commands to run to determine the status of the service
+based **on the return code**. Service is considered healthy if all commands
+succeed. Complex health checking should be wrapped in a script.
+When any check command fails, the stdout and stderr appears in the log file.
 
 * **check_interval** Defaults to **2** (seconds)
 

@@ -391,17 +391,18 @@ def service_configuration_check(config):
                              "prefix configured for {name} service check"
                              .format(name=service))
 
-        cmd = shlex.split(config.get(service, 'check_cmd'))
-        try:
-            proc = subprocess.Popen(cmd)
-            proc.kill()
-        except (OSError, subprocess.SubprocessError) as exc:
-            msg = ("failed to run check command '{cmd}' for service check "
-                   "{name}: {err}"
-                   .format(name=service,
-                           cmd=config.get(service, 'check_cmd'),
-                           err=exc))
-            raise ValueError(msg)
+        for command in config.get(service, 'check_cmd').split(','):
+            cmd = shlex.split(command.strip())
+            try:
+                proc = subprocess.Popen(cmd)
+                proc.kill()
+            except (OSError, subprocess.SubprocessError) as exc:
+                msg = ("failed to run check command '{cmd}' for service check "
+                       "{name}: {err}"
+                       .format(name=service,
+                               cmd=command.strip(),
+                               err=exc))
+                raise ValueError(msg)
 
 
 def build_bird_configuration(config):

@@ -64,38 +64,38 @@ class ServiceCheck(Thread):
         """Executes a check command.
 
         Returns:
-            True if the exit code of the command was 0 otherwise False.
+            True if the exit code of all commands was 0 otherwise False.
         """
-        cmd = shlex.split(self.config['check_cmd'])
-        self.log.info("running {}".format(' '.join(cmd)), **self.extra)
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE)
+        for command in self.config['check_cmd'].split(','):
+            cmd = shlex.split(command.strip())
+            self.log.info("running {}".format(' '.join(cmd)), **self.extra)
+            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE)
 
-        start_time = time.time()
-        try:
-            outs, errs = proc.communicate(timeout=self.config['check_timeout'])
-        except subprocess.TimeoutExpired:
-            self.log.error("check timed out", priority=80, **self.extra)
-            if proc.poll() is None:
-                try:
-                    proc.kill()
-                except PermissionError:
-                    self.log.warning("failed to kill check due to adequate "
-                                     "access rights, check could be running "
-                                     "under another user(root) via sudo",
-                                     priority=80, **self.extra)
+            start_time = time.time()
+            try:
+                outs, errs = proc.communicate(timeout=self.config['check_timeout'])
+            except subprocess.TimeoutExpired:
+                self.log.error("check timed out", priority=80, **self.extra)
+                if proc.poll() is None:
+                    try:
+                        proc.kill()
+                    except PermissionError:
+                        self.log.warning("failed to kill check due to adequate "
+                                         "access rights, check could be running "
+                                         "under another user(root) via sudo",
+                                         priority=80, **self.extra)
 
-            return False
-        else:
-            msg = "check duration {t:.3f}ms".format(
-                t=(time.time() - start_time) * 1000)
-            self.log.info(msg, **self.extra)
-            if proc.returncode == 0:
-                return True
-            else:
-                self.log.info("stderr from the check {}".format(errs))
-                self.log.info("stdout from the check {}".format(outs))
                 return False
+            else:
+                msg = "check duration {t:.3f}ms".format(
+                    t=(time.time() - start_time) * 1000)
+                self.log.info(msg, **self.extra)
+                if proc.returncode != 0:
+                    self.log.info("stderr from the check {}".format(errs))
+                    self.log.info("stdout from the check {}".format(outs))
+                    return False
+        return True
 
     def _ip_assigned(self):
         """Checks if IP prefix is assigned to loopback interface.
