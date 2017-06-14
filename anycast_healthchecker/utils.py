@@ -639,28 +639,28 @@ class DeleteOperation(BaseOperation):
 
 
 def reconfigure_bird(cmd):
-    """Reload BIRD daemon.
+    """Reconfigure BIRD daemon.
 
     Arguments:
         cmd (string): A command to trigger a reconfiguration of Bird daemon
 
     Notes:
-        Runs 'birdc configure' to reload BIRD. Some useful information on how
-        birdc tool works:
+        Runs 'birdc configure' to reconfigure BIRD. Some useful information on
+        how birdc tool works:
             -- Returns a non-zero exit code only when it can't access BIRD
                daemon via the control socket (/var/run/bird.ctl). This happens
                when BIRD daemon is either down or when the caller of birdc
                doesn't have access to the control socket.
-            -- Returns zero exit code when reload fails due to invalid
+            -- Returns zero exit code when reconfigure fails due to invalid
                configuration. Thus, we catch this case by looking at the output
                and not at the exit code.
-            -- Returns zero exit code when reload was successful.
+            -- Returns zero exit code when reconfigure was successful.
             -- Should never timeout, if it does then it is a bug.
 
     """
     log = logging.getLogger(PROGRAM_NAME)
     cmd = shlex.split(cmd)
-    log.info("reloading BIRD by running %s", ' '.join(cmd))
+    log.info("reconfiguring BIRD by running %s", ' '.join(cmd))
     try:
         output = subprocess.check_output(
             cmd,
@@ -669,7 +669,7 @@ def reconfigure_bird(cmd):
             universal_newlines=True,
             )
     except subprocess.TimeoutExpired:
-        log.error("reloading bird timed out")
+        log.error("reconfiguring bird timed out")
         return
     except subprocess.CalledProcessError as error:
         # birdc returns 0 even when it fails due to invalid config,
@@ -679,7 +679,7 @@ def reconfigure_bird(cmd):
                   ":%s", error.output.strip())
         return
     except FileNotFoundError as error:
-        log.error("reloading BIRD failed with: %s", error)
+        log.error("reconfiguring BIRD failed with: %s", error)
         return
 
     # 'Reconfigured' string will be in the output if and only if conf is valid.
