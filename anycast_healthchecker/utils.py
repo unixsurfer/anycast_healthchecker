@@ -779,11 +779,14 @@ def update_pidfile(pidfile):
 
     It exits main program if it fails to parse and/or write pidfile.
 
+    Notice:
+        We should call this fuction only after we have successfully arcquired
+        a lock and never before.
+
     Arguments:
         pidfile (str): pidfile to update
 
     """
-    # Clean old pidfile, if it exists, and write PID to it.
     try:
         with open(pidfile) as _file:
             pid = _file.read().rstrip()
@@ -813,11 +816,19 @@ def update_pidfile(pidfile):
         except OSError as exc:
             sys.exit("failed to write pidfile:{e}".format(e=exc))
     except OSError as exc:
-        sys.exit("failed to parse pidfile:{e}".format(e=exc))
+        sys.exit("failed to update pidfile:{e}".format(e=exc))
 
 
 def shutdown(pidfile, signalnb=None, frame=None):
-    """Signal processes to exit.
+    """Clean up pidfile upon shutdown.
+
+    Notice:
+        We should register this function as signal handler for the following
+        termination singals:
+            SIGHUP
+            SIGTERM
+            SIGABRT
+            SIGINT
 
     Arguments:
         pidfile (str): pidfile to remove
@@ -836,6 +847,13 @@ def shutdown(pidfile, signalnb=None, frame=None):
 
 def setup_logger(config):
     """Configure the logging environment.
+
+    Notice:
+        By default logging will go to stdout and all exceptions/crashes will
+        go to stderr, unless either log_file or/and log_server is configured.
+        We can log to stdout and to a log server at the same time, but
+        exceptions/crashes can only go to either stderr or to stderr_file or
+        to stderr_log_server.
 
     Arguments:
         config (obj): A configparser object which holds our configuration.
@@ -889,7 +907,10 @@ def setup_logger(config):
         logger.addHandler(file_handler)
     else:
         stream_handler = logging.StreamHandler()
-        stream_handler.setFormatter(formatter)
+        if config.getboolean('daemon', 'json_stdout'):
+            stream_handler.setFormatter(json_formatter)
+        else:
+            stream_handler.setFormatter(formatter)
         logger.addHandler(stream_handler)
     if config.has_option('daemon', 'stderr_file'):
         sys.stderr = StderrLogger(
@@ -903,8 +924,8 @@ def setup_logger(config):
             server=config.get('daemon', 'log_server'),
             port=config.getint('daemon', 'log_server_port')
         )
-    # else:
-    #     print('stderr to stderr')
+    else:
+        print('exceptions and crashes will go to stderr')
 
     if config.has_option('daemon', 'log_server'):
         udp_handler = logging.handlers.SysLogHandler(

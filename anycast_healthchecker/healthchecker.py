@@ -1,4 +1,3 @@
-# pylint: disable=too-many-arguments
 # pylint: disable=too-few-public-methods
 
 """A library which provides the HealthChecker class."""

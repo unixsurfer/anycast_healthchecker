@@ -1,4 +1,3 @@
-# pylint: disable=superfluous-parens
 # pylint: disable=too-many-branches
 # pylint: disable=too-many-statements
 # pylint: disable=too-many-return-statements

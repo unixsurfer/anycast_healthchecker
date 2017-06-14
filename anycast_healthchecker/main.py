@@ -2,11 +2,6 @@
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 #
-# pylint: disable=too-many-arguments
-# pylint: disable=too-many-statements
-# pylint: disable=too-many-branches
-# pylint: disable=too-many-locals
-#
 """A simple healthchecker for Anycasted services.
 
 Usage:
@@ -44,7 +39,7 @@ LOCK_SOCKET = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
 
 
 def main():
-    """Parse CLI and starts daemon."""
+    """Parse CLI and starts main program."""
     args = docopt(__doc__, version=__version__)
     if args['--print']:
         for section in DEFAULT_OPTIONS:
