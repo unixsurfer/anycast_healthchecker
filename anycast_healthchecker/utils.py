@@ -787,17 +787,15 @@ def update_pidfile(pidfile):
         pidfile (str): pidfile to update
 
     """
-    current_pid = str(os.getpid())
     try:
         with open(pidfile, mode='r') as _file:
-            print('xxxxxxx')
             pid = _file.read().rstrip()
-            print('xxxxxxx')
+
         try:
             pid = int(pid)
         except ValueError:
-            print("cleaning stale pid file with invalid data:'{}'".format(pid))
-            os.unlink(pidfile)
+            print("cleaning stale pidfile with invalid data:'{}'".format(pid))
+            write_pid(pidfile)
         else:
             if running(pid):
                 # This is to catch migration issues from 0.7.x to 0.8.x
@@ -810,22 +808,32 @@ def update_pidfile(pidfile):
             else:
                 # pidfile exists with a PID for a process that is not running.
                 # Let's update PID.
-                with open(pidfile, mode='w') as _file:
-                    print("updating {p} PID to pidfile {f}"
-                          .format(p=current_pid, f=pidfile))
-                    _file.write(current_pid)
+                print("updating processID in pidfile, current processID is {}"
+                      .format(pid))
+                write_pid(pidfile)
     except FileNotFoundError:
         # Either it's 1st time we run or previous run was terminated
         # successfully.
-        try:
-            print("creating pidfile {f}".format(f=pidfile))
-            with open(pidfile, mode='w') as pidf:
-                print("writing {p} PID to pidfile".format(p=current_pid))
-                pidf.write(current_pid)
-        except OSError as exc:
-            sys.exit("failed to write pidfile:{e}".format(e=exc))
+        print("creating pidfile {f}".format(f=pidfile))
+        write_pid(pidfile)
     except OSError as exc:
         sys.exit("failed to update pidfile:{e}".format(e=exc))
+
+
+def write_pid(pidfile):
+    """Write processID to the pidfile.
+
+    Arguments:
+        pidfile (str): pidfile to update
+
+    """
+    pid = str(os.getpid())
+    try:
+        with open(pidfile, mode='w') as _file:
+            print("writing processID {p} to pidfile".format(p=pid))
+            _file.write(pid)
+    except OSError as exc:
+        sys.exit("failed to write pidfile:{e}".format(e=exc))
 
 
 def shutdown(pidfile, signalnb=None, frame=None):
