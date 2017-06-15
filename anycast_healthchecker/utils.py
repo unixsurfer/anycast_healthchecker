@@ -777,11 +777,10 @@ def archive_bird_conf(config_file, changes_counter):
 def update_pidfile(pidfile):
     """Update pidfile.
 
-    It exits main program if it fails to parse and/or write pidfile.
-
     Notice:
         We should call this fuction only after we have successfully arcquired
         a lock and never before.
+        It exits main program if it fails to parse and/or write pidfile.
 
     Arguments:
         pidfile (str): pidfile to update
@@ -800,10 +799,9 @@ def update_pidfile(pidfile):
             if running(pid):
                 # This is to catch migration issues from 0.7.x to 0.8.x
                 # version, where old process is still around as it failed to
-                # be stopped. In this case and we must refuse to startup since
-                # newer version has a different locking mechanism on startup
-                # and we could potentially have old and new version running
-                # at the same time.
+                # be stopped. Since newer version has a different locking
+                # mechanism, we can end up with both versions running.
+                # In order to avoid this situation we refuse to startup.
                 sys.exit("process {} is already running".format(pid))
             else:
                 # pidfile exists with a PID for a process that is not running.
@@ -822,6 +820,9 @@ def update_pidfile(pidfile):
 
 def write_pid(pidfile):
     """Write processID to the pidfile.
+
+    Notice:
+        It exits main program if it fails to write pidfile.
 
     Arguments:
         pidfile (str): pidfile to update
