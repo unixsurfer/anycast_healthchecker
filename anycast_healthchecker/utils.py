@@ -229,8 +229,8 @@ def modify_ip_prefixes(
                         ','.join(ip_prefixes_without_check),
                         config_file)
 
-    # Either dummy IP-Prefix was added or unconfigured IP-Prefix(es) were
-    # removed
+    # Either dummy IP-Prefix was added or an IP-Prefix(es) without a service
+    # check was removed.
     if update_bird_conf:
         if keep_changes:
             archive_bird_conf(config_file, changes_counter)
@@ -368,7 +368,8 @@ def service_configuration_check(config):
     ipv4_enabled = config.getboolean('daemon', 'ipv4')
     ipv6_enabled = config.getboolean('daemon', 'ipv6')
     services = config.sections()
-    services.remove('daemon')  # we don't need it during sanity check.
+    # we don't need it during sanity check for services check
+    services.remove('daemon')
 
     for service in services:
         for option, getter in SERVICE_OPTIONS_TYPE.items():
@@ -385,8 +386,8 @@ def service_configuration_check(config):
         if (config.get(service, 'on_disabled') != 'withdraw' and
                 config.get(service, 'on_disabled') != 'advertise'):
             msg = ("'on_disabled' option has invalid value ({val}) for "
-                   "service check {name} should be either 'withdraw' or "
-                   "'advertise'"
+                   "service check {name}, 'on_disabled option should be set "
+                   "either to 'withdraw' or to 'advertise'"
                    .format(name=service,
                            val=config.get(service, 'on_disabled')))
             raise ValueError(msg)
@@ -724,8 +725,10 @@ def write_temp_bird_conf(dummy_ip_prefix,
 
     try:
         with open(tm_file, 'w') as tmpf:
-            tmpf.write("# Generated {t} by anycast-healthchecker (pid={p})\n"
-                       .format(t=datetime.datetime.now(), p=os.getpid()))
+            tmpf.write("# Generated {t} by {n} (pid={p})\n"
+                       .format(t=datetime.datetime.now(),
+                               n=PROGRAM_NAME,
+                               p=os.getpid()))
             tmpf.write("{c}\n".format(c=comment))
             tmpf.write("define {n} =\n".format(n=variable_name))
             tmpf.write("{s}[\n".format(s=4 * ' '))
@@ -745,14 +748,15 @@ def archive_bird_conf(config_file, changes_counter):
     """Keep a history of Bird configuration files.
 
     Arguments:
-        config_file (str): The file name of bird configuration
-        changes_counter (int): How many configuration files to keep in the
+        config_file (str): file name of bird configuration
+        changes_counter (int): number of configuration files to keep in the
         history
     """
     log = logging.getLogger(PROGRAM_NAME)
     history_dir = os.path.join(os.path.dirname(config_file), 'history')
     dst = os.path.join(history_dir, str(time.time()))
     log.debug("coping %s to %s", config_file, dst)
+
     history = [x for x in os.listdir(history_dir)
                if os.path.isfile(os.path.join(history_dir, x))]
 
@@ -778,9 +782,9 @@ def update_pidfile(pidfile):
     """Update pidfile.
 
     Notice:
-        We should call this fuction only after we have successfully arcquired
-        a lock and never before.
-        It exits main program if it fails to parse and/or write pidfile.
+        We should call this function only after we have successfully acquired
+        a lock and never before. It exits main program if it fails to parse
+        and/or write pidfile.
 
     Arguments:
         pidfile (str): pidfile to update
@@ -788,7 +792,7 @@ def update_pidfile(pidfile):
     """
     try:
         with open(pidfile, mode='r') as _file:
-            pid = _file.read().rstrip()
+            pid = _file.read(1024).rstrip()
 
         try:
             pid = int(pid)
@@ -842,7 +846,7 @@ def shutdown(pidfile, signalnb=None, frame=None):
 
     Notice:
         We should register this function as signal handler for the following
-        termination singals:
+        termination signals:
             SIGHUP
             SIGTERM
             SIGABRT
@@ -867,11 +871,11 @@ def setup_logger(config):
     """Configure the logging environment.
 
     Notice:
-        By default logging will go to stdout and all exceptions/crashes will
-        go to stderr, unless either log_file or/and log_server is configured.
-        We can log to stdout and to a log server at the same time, but
-        exceptions/crashes can only go to either stderr or to stderr_file or
-        to stderr_log_server.
+        By default logging will go to STDOUT and messages for unhandled
+        exceptions or crashes will go to STDERR. If log_file and/or log_server
+        is set then we don't log to STDOUT. Messages for unhandled exceptions
+        or crashes can only go to either STDERR or to stderr_file or to
+        stderr_log_server.
 
     Arguments:
         config (obj): A configparser object which holds our configuration.
@@ -931,19 +935,19 @@ def setup_logger(config):
             stream_handler.setFormatter(formatter)
         logger.addHandler(stream_handler)
     if config.has_option('daemon', 'stderr_file'):
-        sys.stderr = StderrLogger(
+        sys.stderr = CustomRotatingFileLogger(
             filepath=config.get('daemon', 'stderr_file'),
             maxbytes=config.getint('daemon', 'log_maxbytes'),
             backupcount=config.getint('daemon', 'log_backups')
         )
     elif (config.has_option('daemon', 'stderr_log_server')
           and not config.has_option('daemon', 'stderr_file')):
-        sys.stderr = StderrUdpLogger(  # pylint:disable=redefined-variable-type
+        sys.stderr = CustomUdpLogger(  # pylint:disable=redefined-variable-type
             server=config.get('daemon', 'log_server'),
             port=config.getint('daemon', 'log_server_port')
         )
     else:
-        print('exceptions and crashes will go to stderr')
+        print('messages for unhandled exceptions will go to STDERR')
 
     if config.has_option('daemon', 'log_server'):
         udp_handler = logging.handlers.SysLogHandler(
@@ -953,7 +957,7 @@ def setup_logger(config):
             )
         )
 
-        if config.getboolean('logging', 'json_log_server'):
+        if config.getboolean('daemon', 'json_log_server'):
             udp_handler.setFormatter(json_formatter)
         else:
             udp_handler.setFormatter(formatter)
@@ -963,10 +967,14 @@ def setup_logger(config):
 
 
 class CustomLogger(object):
-    """Helper Logger to redirect stdout/stdin/stderr to a logging hander.
+    """Helper Logger to redirect STDOUT or STDERR to a logging hander.
 
     It wraps a Logger class into a file like object, which provides a handy
-    way to redirect stdout/stdin/stderr to a logger.
+    way to redirect STDOUT or STDERR to a logger. This class provides the
+    necessary methods (write, flush and close) to build a file-like object
+    and it can not be used directly as it does not provide a logging handler.
+    Instead, you must instantiate one of subclass (CustomRotatingFileLogger and
+    CustomUdpLogger).
 
     Arguments
         handler (int): A logging handler to use.
@@ -1014,17 +1022,25 @@ class CustomLogger(object):
             handler.close()
 
 
-class StderrLogger(CustomLogger):
-    """Logger to redirect stderr to a log file.
+class CustomRotatingFileLogger(CustomLogger):
+    """Subclass CustomLogger to provide a rotating file logger.
 
-    It wraps a Logger class into a file like object, which provides a handy
-    way to redirect stdout/stdin to a rotating logger handler. The rotation of
-    log file is enabled by default.
+    The rotation of log file is enabled by default.
 
-    Arguments
-        file_path (str): The absolute path of the log file.
-        maxbytes (int): Max size of the log before it is rotated.
-        backupcount (int): Number of backup file to keep.
+    Usage:
+        >>> import sys
+        >>> sys.stderr = CustomRotatingFileLogger(filepath='/foo.log')
+
+    Arguments:
+        filepath (str) : file path of the log file
+        maxbytes (int) : log file is rotated when it grows bigger than maxbytes
+        backupcount (int): maximum rotated log file to keep.
+
+    Notice:
+        If maxbytes is zero, rollover never occurs and we may fill up the disk.
+        An external program (logrotate) must not rotate the file in this case,
+        as the file descriptor for the log file will be changed without us
+        knowing this.
 
     Returns:
         A logger object.
@@ -1039,11 +1055,12 @@ class StderrLogger(CustomLogger):
         super().__init__(handler=handler)
 
 
-class StderrUdpLogger(CustomLogger):
-    """Logger to redirect stderr to a UDP log server.
+class CustomUdpLogger(CustomLogger):
+    """Subclass CustomLogger to provide a UDP logger.
 
-    It wraps a Logger class into a file like object, which provides a handy
-    way to redirect stderr to a UDP log server.
+    Usage:
+        >>> import sys
+        >>> sys.stderr = CustomUdpLogger(server='127.0.0.1')
 
     Arguments
         server (str): UDP server name or IP address.

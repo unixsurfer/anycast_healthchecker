@@ -46,7 +46,7 @@ class HealthChecker(object):
         self.bird_configuration = bird_configuration
         self.log.debug(self.bird_configuration)
 
-        # A list of service of checks
+        # A list of service checks
         self.services = config.sections()
         self.services.remove('daemon')
 
@@ -57,6 +57,7 @@ class HealthChecker(object):
                 self.config,
                 self.services,
                 ip_version)
+
             _ip_prefixes.add(
                 self.bird_configuration[ip_version]['dummy_ip_prefix'])
             self.ip_prefixes[ip_version] = _ip_prefixes

@@ -50,16 +50,15 @@ class ServiceCheck(Thread):
         self.prefix_length = _ip_prefix.prefixlen
         self.ip_with_prefixlen = _ip_prefix.with_prefixlen
         self.ip_version = _ip_prefix.version
-
+        self.ip_check_disabled = self.config['ip_check_disabled']
         self.log = logging.getLogger(PROGRAM_NAME)
-        self.log.info("loading check for %s", self.name)
         self.extra = {
             'ip_address': self.ip_address,
             'prefix_length': self.prefix_length,
-            'ip_check_disabled': self.config['ip_check_disabled'],
+            'ip_check_disabled': self.ip_check_disabled,
             'status': 'unknown',
         }
-        self.ip_check_disabled = self.config['ip_check_disabled']
+        self.log.info("loading check for %s", self.name, extra=self.extra)
 
     def _update_status(self, status):
         """Log and update status of the service.
@@ -261,7 +260,9 @@ class ServiceCheck(Thread):
                 up_cnt = 0
                 self.extra['status'] = 'down'
                 self.log.warning("status DOWN because %s isn't assigned to "
-                                 "loopback interface.", self.ip_with_prefixlen)
+                                 "loopback interface.",
+                                 self.ip_with_prefixlen,
+                                 extra=self.extra)
                 if check_state != 'DOWN':
                     check_state = 'DOWN'
                     del_operation = DeleteOperation(
@@ -269,12 +270,13 @@ class ServiceCheck(Thread):
                         ip_prefix=self.ip_with_prefixlen,
                         ip_version=self.ip_version)
                     self.log.info("adding %s in the queue",
-                                  self.ip_with_prefixlen)
+                                  self.ip_with_prefixlen,
+                                  extra=self.extra)
                     self.action.put(del_operation)
             elif self._run_check():
                 if up_cnt == (self.config['check_rise'] - 1):
                     self.extra['status'] = 'up'
-                    self.log.info("status UP")
+                    self.log.info("status UP", extra=self.extra)
                     # Service exceeded all consecutive checks. Set its state
                     # accordingly and put an item in queue. But do it only if
                     # previous state was different, to prevent unnecessary bird
@@ -286,20 +288,21 @@ class ServiceCheck(Thread):
                             ip_prefix=self.ip_with_prefixlen,
                             ip_version=self.ip_version)
                         self.log.info("adding %s in the queue",
-                                      self.ip_with_prefixlen)
+                                      self.ip_with_prefixlen,
+                                      extra=self.extra)
                         self.action.put(operation)
                 elif up_cnt < self.config['check_rise']:
                     up_cnt += 1
-                    msg = "going up {n}".format(n=up_cnt)
-                    self.log.info(msg)
+                    self.log.info("going up %s", up_cnt, extra=self.extra)
                 else:
-                    msg = "up_cnt higher, it's a BUG! {n}".format(n=up_cnt)
-                    self.log.error(msg)
+                    self.log.error("up_cnt is higher %s, it's a BUG!",
+                                   up_cnt,
+                                   extra=self.extra)
                 down_cnt = 0
             else:
                 if down_cnt == (self.config['check_fail'] - 1):
                     self.extra['status'] = 'down'
-                    self.log.info("status DOWN")
+                    self.log.info("status DOWN", extra=self.extra)
                     # Service exceeded all consecutive checks.
                     # Set its state accordingly and put an item in queue.
                     # But do it only if previous state was different, to
@@ -312,22 +315,25 @@ class ServiceCheck(Thread):
                             ip_prefix=self.ip_with_prefixlen,
                             ip_version=self.ip_version)
                         self.log.info("adding %s in the queue",
-                                      self.ip_with_prefixlen)
+                                      self.ip_with_prefixlen,
+                                      extra=self.extra)
                         self.action.put(del_operation)
                 elif down_cnt < self.config['check_fail']:
                     down_cnt += 1
-                    self.log.info("going down %s", down_cnt)
+                    self.log.info("going down %s", down_cnt, extra=self.extra)
                 else:
-                    self.log.error("down_cnt higher, it's a BUG! %s",
-                                   down_cnt)
+                    self.log.error("up_cnt is higher %s, it's a BUG!",
+                                   up_cnt,
+                                   extra=self.extra)
                 up_cnt = 0
 
             self.log.info("wall clock time %.3fms",
-                          (time.time() - timestamp) * 1000)
+                          (time.time() - timestamp) * 1000,
+                          extra=self.extra)
 
             # calculate sleep time
             sleep = start_offset - time.time() % interval
             if sleep < 0:
                 sleep += interval
-            self.log.debug("sleeping for %.3fsecs", sleep)
+            self.log.debug("sleeping for %.3fsecs", sleep, extra=self.extra)
             time.sleep(sleep)

@@ -22,9 +22,11 @@ supported.
 Bird must be configured in a certain way to interface properly with
 anycast-healthchecker. The configuration is detailed later in this document.
 
-anycast-healthchecker is a Python program, which uses the `daemon`_ library
-to implement a well-behaved Unix daemon process and threading to run
-multiple service checks in parallel.
+anycast-healthchecker is a Python program, which runs in the foreground and
+uses threading to run multiple service checks in parallel.
+In older versions ( < 0.8.0 ), anycast-healthchecker used the `daemon`_ library
+to implement a well-behaved Unix daemon process. This changed when 0.8.0 was
+released. The daemonization of the process is a task of systemd.
 
 What is Anycast
 ---------------
@@ -334,17 +336,18 @@ files. This is an example configuration file for the daemon
     loglevel             = debug
     log_maxbytes         = 104857600
     log_backups          = 8
-    log_file             = /var/log/anycast-healthchecker/anycast-healthchecker.log
-    stderr_file          = /var/log/anycast-healthchecker/stderr.log
-    stdout_file          = /var/log/anycast-healthchecker/stdout.log
+    log_server_port      = 514
+    json_stdout          = false
+    json_log_file        = false
+    json_log_server      = false
 
 Above settings are used as defaults when daemon is launched without a
-configuration file. The daemon **does not** need to run as root as long as it
-has sufficient privileges to modify the Bird configuration set in ``bird_conf``
-or ``bird6_conf``, and trigger a reconfiguration of Bird by running the command
-configured in ``bird_reconfigure_cmd`` or ``bird6_reconfigure_cmd``.
-In the above example ``sudo`` is used for that purpose (``sudoers`` file has
-been modified for that purpose).
+configuration file. anycast-healthchecker **does not** need to run as root as
+long as it has sufficient privileges to modify the Bird configuration set in
+``bird_conf`` or ``bird6_conf``, and trigger a reconfiguration of Bird by
+running the command configured in ``bird_reconfigure_cmd`` or
+``bird6_reconfigure_cmd``.  In the above example ``sudo`` is used for that
+purpose (``sudoers`` file has been modified for that purpose).
 
 DEFAULT section
 ***************
@@ -469,7 +472,7 @@ remove those IP-Prefixes on start-up.
 
 Log level to use, possible values are: debug, info, warning, error, critical
 
-* **log_file** Defaults to **/var/log/anycast-healthchecker/anycast-healthchecker.log**
+* **log_file** Defaults to **STDOUT**
 
 File to log messages to. The parent directory must be created prior the initial
 launch.
@@ -482,15 +485,40 @@ Maximum size in bytes for log files
 
 Number of old log files to maintain
 
-* **stderr_file** Defaults to **/var/log/anycast-healthchecker/stderr.log**
+* **stderr_file** Defaults to **STDERR**
 
 File to redirect standard error to. The parent directory must be created prior
 the initial launch.
 
-* **stdout_file** Defaults to **/var/log/anycast-healthchecker/stdout.log**
+* **log_server** Disabled by defaults
 
-File to redirect standard output to. The parent directory must be created prior
-the initial launch.
+Either the IP address or the hostname of an UDP syslog server to forward
+logging messages.
+
+* **log_server_port** Defaults to **514**
+
+The port on the remote syslog server to forward logging messages
+over UDP.
+
+How to configure logging
+************************
+
+By default anycast-healtchecker logs messages to STDOUT and messages related to
+unhandled exceptions or crash go to STDERR. But, you can configure it to log
+messages to a log a file and/or to a remote UDP syslog server.
+
+anycast-healthchecker doesn't log to STDOUT/STDERR when either log file
+or syslog server is configured. But, you can configure it to use a log file
+and a remote UDP syslog server at the same time, so logging messages can
+be stored locally and remotely.
+
+The best logging configuration in terms of resiliency is to enable logging only
+to a remote UDP syslog server. This prevents locking issues as sending data
+over UDP protocol is done in no-blockig mode and it also avoids crashes when
+local disk is full.
+
+anycast-healthchecker handles the rotation of old log files, so you don't need
+to configure any other tools( logrotate) for that.
 
 JSON logging
 ************
