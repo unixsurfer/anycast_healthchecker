@@ -26,7 +26,7 @@ anycast-healthchecker is a Python program, which runs in the foreground and
 uses threading to run multiple service checks in parallel.
 In older versions( < 0.8.0 ), anycast-healthchecker used the `daemon`_ library
 to implement a well-behaved Unix daemon process. This changed when 0.8.0 was
-released. The daemonization of the process is a task of systemd.
+released and the daemonization of the process is now a task of systemd.
 
 What is Anycast
 ---------------
@@ -287,7 +287,7 @@ Use daemon settings ``bird_conf`` and ``bird6_conf`` to control the location of
 the files.
 
 With the default settings those files are located under
-``/var/lib/anycast-healthchecker`` and ``/var/lib/anycast-healthchecker/6``
+``/var/lib/anycast-healthchecker`` and ``/var/lib/anycast-healthchecker/6``.
 Administrators must create those two directories with permissions ``755`` and
 user/group ownership to the account under which anycast-healthchecker runs.
 
@@ -524,8 +524,8 @@ By default anycast-healtchecker logs messages to STDOUT and messages related to
 unhandled exceptions or crashes go to STDERR. But, you can configure it to log
 messages to a file and/or to a remote UDP syslog server.
 
-anycast-healthchecker doesn't log to STDOUT/STDERR when either log file or
-syslog server is configured.
+anycast-healthchecker doesn't log to STDOUT/STDERR when either log file or a
+remote UDP syslog server is configured.
 
 You can configure it to use a log file and a remote UDP syslog server at the
 same time, so logging messages can be stored locally and remotely. This is
@@ -580,10 +580,10 @@ logging data. The following is the keys, which are present in the structure:
 
 * version: The running version of anycast-healthchecker, example value 0.7.4.
 
-* program: "anycast-healthchecker".
+* program: The process name, defaults to anycast-healthchecker.
 
 * service_name: The name of the service defined in configuration for which the
-  message was logged, example value "foo1IPv6.bar.com". Logging messages from
+  message was logged, example value foo1IPv6.bar.com. Logging messages from
   the parent thread will have value "MainThread".
 
 Configuring checks for services
