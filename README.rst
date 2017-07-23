@@ -540,38 +540,40 @@ server. Currently, it is possible to add/remove keys from the structured
 logging data. The following is the default keys:
 
 
-* asctime: Human-readable time when the log message was created. Example value
-2017-07-23 09:43:28,995.
+* asctime: Human-readable time when the log message was created, example value
+  2017-07-23 09:43:28,995.
 
-* levelname: Text logging level for the message. Example value WARNING.
+* levelname: Text logging level for the message, example value WARNING.
 
-* process: Process ID. Example value 23579
+* process: Process ID, example value 23579
 
 * message: The logged message.
 
 * prefix_length: The prefix length of the Anycast Address associated with the
-logged message. Example value 128.
+  logged message, example value 128.
+  This key isn't present for messages, which were logged by the parent thread.
 
-* status: The status of the service when message was logged. Example value
-down.
+* status: The status of the service when message was logged, possible values
+  are down, up and unknown.
+  This key isn't present for messages, which were logged by the parent thread.
 
-* ip_address: fd12:aba6:57db:ffff::2
+* ip_address: The Anycast IP address of the monitored service for which the
+  message was logged, example value fd12:aba6:57db:ffff::2
+  This key isn't present for messages, which were logged by the parent thread.
 
-* ip_check_disabled: false.
+* ip_check_disabled: Either ``true`` when the assignment check of ``ip_prefix``
+  to the interface is disabled, otherwise ``false``.
+  This key isn't present for messages, which were logged by the parent thread.
 
-* version: "0.7.4",
+* version: The running version of anycast-healthchecker, example value 0.7.4.
 
 * program: "anycast-healthchecker".
 
-* service_name: "foo1IPv6.bar.com"
+* service_name: The name of the service defined in configuration for which the
+  message was logged, example value "foo1IPv6.bar.com". Logging messages from
+  the parent thread will have value "MainThread".
 
 
-HTTP to a central place in addition to write them to log files.
-It builds a JSON blob with a specific data structure, which **is not**
-configurable at the moment.
-
-The following settings can be added to the [daemon] section for enabling
-JSON logging.
 
 * **json_logging** Defaults to **false**
 
