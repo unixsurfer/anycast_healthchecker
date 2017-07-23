@@ -927,27 +927,6 @@ def setup_logger(config):
         else:
             file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
-    else:
-        stream_handler = logging.StreamHandler()
-        if config.getboolean('daemon', 'json_stdout'):
-            stream_handler.setFormatter(json_formatter)
-        else:
-            stream_handler.setFormatter(formatter)
-        logger.addHandler(stream_handler)
-    if config.has_option('daemon', 'stderr_file'):
-        sys.stderr = CustomRotatingFileLogger(
-            filepath=config.get('daemon', 'stderr_file'),
-            maxbytes=config.getint('daemon', 'log_maxbytes'),
-            backupcount=config.getint('daemon', 'log_backups')
-        )
-    elif (config.has_option('daemon', 'stderr_log_server')
-          and not config.has_option('daemon', 'stderr_file')):
-        sys.stderr = CustomUdpLogger(  # pylint:disable=redefined-variable-type
-            server=config.get('daemon', 'log_server'),
-            port=config.getint('daemon', 'log_server_port')
-        )
-    else:
-        print('messages for unhandled exceptions will go to STDERR')
 
     if config.has_option('daemon', 'log_server'):
         udp_handler = logging.handlers.SysLogHandler(
@@ -962,6 +941,32 @@ def setup_logger(config):
         else:
             udp_handler.setFormatter(formatter)
         logger.addHandler(udp_handler)
+
+    # Log to STDOUT if and only if log_file and log_server aren't enabled
+    if (not config.has_option('daemon', 'log_file')
+            and not config.has_option('daemon', 'log_server')):
+        stream_handler = logging.StreamHandler()
+        if config.getboolean('daemon', 'json_stdout'):
+            stream_handler.setFormatter(json_formatter)
+        else:
+            stream_handler.setFormatter(formatter)
+        logger.addHandler(stream_handler)
+
+    # We can redirect STDERR only to one destination.
+    if config.has_option('daemon', 'stderr_file'):
+        sys.stderr = CustomRotatingFileLogger(
+            filepath=config.get('daemon', 'stderr_file'),
+            maxbytes=config.getint('daemon', 'log_maxbytes'),
+            backupcount=config.getint('daemon', 'log_backups')
+        )
+    elif (config.has_option('daemon', 'stderr_log_server')
+          and not config.has_option('daemon', 'stderr_file')):
+        sys.stderr = CustomUdpLogger(  # pylint:disable=redefined-variable-type
+            server=config.get('daemon', 'log_server'),
+            port=config.getint('daemon', 'log_server_port')
+        )
+    else:
+        print('messages for unhandled exceptions will go to STDERR')
 
     return logger
 
