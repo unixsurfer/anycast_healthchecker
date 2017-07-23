@@ -5,6 +5,7 @@ Requires=network.service
 Documentation=https://github.com/unixsurfer/anycast_healthchecker/blob/master/README.rst
 
 [Service]
+Type=simple
 EnvironmentFile=/etc/sysconfig/anycast-healthchecker
 TimeoutStartSec=0
 User=healthchecker

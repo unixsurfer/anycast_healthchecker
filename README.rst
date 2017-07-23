@@ -22,9 +22,11 @@ supported.
 Bird must be configured in a certain way to interface properly with
 anycast-healthchecker. The configuration is detailed later in this document.
 
-anycast-healthchecker is a Python program, which uses the `daemon`_ library
-to implement a well-behaved Unix daemon process and threading to run
-multiple service checks in parallel.
+anycast-healthchecker is a Python program, which runs in the foreground and
+uses threading to run multiple service checks in parallel.
+In older versions( < 0.8.0 ), anycast-healthchecker used the `daemon`_ library
+to implement a well-behaved Unix daemon process. This changed when 0.8.0 was
+released and the daemonization of the process is now a task of systemd.
 
 What is Anycast
 ---------------
@@ -266,9 +268,9 @@ accordingly in order for anycast-healthchecker to modify it.
             10.189.200.255/32
         ];
 
-anycast-healthchecker daemon removes IP prefixes from the list for which a
-service check is not configured. But, the IP prefix set in ``dummy_ip_prefix``
-does not need a service check configuration.
+anycast-healthchecker removes IP prefixes from the list for which a service
+check is not configured. But, the IP prefix set in ``dummy_ip_prefix`` does not
+need a service check configuration.
 
 This the equivalent list for IPv6 prefixes::
 
@@ -285,14 +287,17 @@ Use daemon settings ``bird_conf`` and ``bird6_conf`` to control the location of
 the files.
 
 With the default settings those files are located under
-``/var/lib/anycast-healthchecker`` and ``/var/lib/anycast-healthchecker/6``
-Administrators must create those 2 directories with permissions ``755`` and
-user/group ownership to the account under which the daemon runs.
+``/var/lib/anycast-healthchecker`` and ``/var/lib/anycast-healthchecker/6``.
+Administrators must create those two directories with permissions ``755`` and
+user/group ownership to the account under which anycast-healthchecker runs.
 
-In order for Bird daemon to load them using the ``include`` statement in the
-main Bird configuration (`bird.conf`_), a link for each file must be created
-under ``/etc/bird.d`` directory. Administrators must also create those two
-links. Here is an example from a production server:
+Bird daemon loads configuration files by using the ``include`` statement in the
+main Bird configuration (`bird.conf`_). By default that ``include`` statement
+points to a directory under /etc/bird.d while ``anycast-prefixes.conf`` files
+are located under ``/var/lib/anycast-healthchecker`` directories. Therefore,
+a link for each file must be created under ``/etc/bird.d`` directory.
+Administrators must also create those two links. Here is an example from a
+production server:
 
 ::
 
@@ -304,12 +309,12 @@ links. Here is an example from a production server:
     4 lrwxrwxrwx 1 root root 107 Jan 10 10:33 /etc/bird.d/6/anycast-prefixes.conf
     -> /var/lib/anycast-healthchecker/6/anycast-prefixes.conf
 
-Configuring the daemon
-######################
+Configuring anycast-healthchecker
+#################################
 
 anycast-healthchecker uses the popular `INI`_ format for its configuration
-files. This is an example configuration file for the daemon
-(/etc/anycast-healthchecker.conf)::
+files. This is an example configuration file(/etc/anycast-healthchecker.conf)
+for configuring anycast-healthchecker::
 
     [DEFAULT]
     interface            = lo
@@ -334,17 +339,18 @@ files. This is an example configuration file for the daemon
     loglevel             = debug
     log_maxbytes         = 104857600
     log_backups          = 8
-    log_file             = /var/log/anycast-healthchecker/anycast-healthchecker.log
-    stderr_file          = /var/log/anycast-healthchecker/stderr.log
-    stdout_file          = /var/log/anycast-healthchecker/stdout.log
+    log_server_port      = 514
+    json_stdout          = false
+    json_log_file        = false
+    json_log_server      = false
 
-Above settings are used as defaults when daemon is launched without a
-configuration file. The daemon **does not** need to run as root as long as it
-has sufficient privileges to modify the Bird configuration set in ``bird_conf``
-or ``bird6_conf``, and trigger a reconfiguration of Bird by running the command
-configured in ``bird_reconfigure_cmd`` or ``bird6_reconfigure_cmd``.
-In the above example ``sudo`` is used for that purpose (``sudoers`` file has
-been modified for that purpose).
+Above settings are used as defaults when it is launched without a configuration
+file. anycast-healthchecker **does not** need to run as root as long as it has
+sufficient privileges to modify the Bird configuration set in ``bird_conf`` or
+``bird6_conf``, and trigger a reconfiguration of Bird by running the command
+configured in ``bird_reconfigure_cmd`` or ``bird6_reconfigure_cmd``. In the
+above example ``sudo`` is used for that purpose (``sudoers`` file has been
+modified for that purpose).
 
 DEFAULT section
 ***************
@@ -365,24 +371,24 @@ can be overwritten in other sections.
 Daemon section
 **************
 
-Settings for anycast-healthchecker daemon
+Settings for anycast-healthchecker itself
 
 * **pidfile** Defaults to **/var/run/anycast-healthchecker/anycast-healthchecker.pid**
 
-File to store the process id of the daemon. The parent directory must be
-created prior the initial launch.
+File to store the process id. The parent directory must be created prior the
+initial launch.
 
 * **ipv4** Defaults to **true**
 
 ``true`` enables IPv4 support and ``false`` disables it.
-NOTE: Daemon **will not** start if IPv4 support is disabled while there is an
-service check configured for IPv4 prefix.
+NOTE: anycast-healthchecker **will not** start if IPv4 support is disabled
+while there is an service check configured for IPv4 prefix.
 
 * **ipv6** Defaults to **false**
 
 ``true`` enables IPv6 support and ``false`` disables it
-NOTE: Daemon **will not** start if IPv6 support is disabled while there is an
-service check configured for IPv6 prefix.
+NOTE: anycast-healthchecker **will not** start if IPv6 support is disabled
+while there is an service check configured for IPv6 prefix.
 
 * **bird_conf** Defaults to **/var/lib/anycast-healthchecker/anycast-prefixes.conf**
 
@@ -431,16 +437,16 @@ anycast-healthchecker **does not** perform any checks for it.
 * **bird_keep_changes** Defaults to **false**
 
 Keep a history of changes for ``bird_conf`` file by copying it to a directory.
-During the startup of the daemon a directory with the name ``history`` is
-created under the directory where ``bird_conf`` file resides. The daemon has to
-have sufficient privileges to create that directory.
+During the startup of anycast-healthchecker a directory with the name ``history``
+is created under the directory where ``bird_conf`` file resides. The daemon has
+to have sufficient privileges to create that directory.
 
 * **bird6_keep_changes** Defaults to **false**
 
 Keep a history of changes for ``bird6_conf`` file by copying it to a directory.
-During the startup of the daemon a directory with the name ``history`` is
-created under the directory where ``bird6_conf`` file resides. The daemon has to
-have sufficient privileges to create that directory.
+During the startup of anycast-healthchecker a directory with the name ``history``
+is created under the directory where ``bird6_conf`` file resides. The daemon has
+to have sufficient privileges to create that directory.
 WARNING: When keeping a history of changes is enabled for both IP versions then
 configuration files set in ``bird_conf`` and ``bird6_conf`` settings **must** be
 stored on two different directories.
@@ -455,78 +461,130 @@ How many ``bird6_conf`` files to keep in the ``history`` directory.
 
 * **purge_ip_prefixes** Defaults to **false**
 
-Purge IP-Prefixes from configuration files set in ``bird_conf`` and
-``bird6_conf`` on start-up which don't have a service check associated with
-them.
+During start-up purge IP-Prefixes from configuration files set in ``bird_conf``
+and ``bird6_conf``, which don't have a service check associated with them.
 
 NOTE: Those IP-Prefixes are always removed from the configuration files set in
-``bird_conf`` and in ``bird6_conf`` settings when daemon updates those files.
-``purge_ip_prefixes`` is considered only during start-up and was introduced in
-order to be compatible with the behavior of previous releases, which didn't
-remove those IP-Prefixes on start-up.
+``bird_conf`` and in ``bird6_conf`` settings when anycast-healthchecker updates
+those files. ``purge_ip_prefixes`` is considered only during start-up and was
+introduced in order to be compatible with the behavior of previous releases,
+which didn't remove those IP-Prefixes on start-up.
 
 * **loglevel** Defaults to **debug**
 
 Log level to use, possible values are: debug, info, warning, error, critical
 
-* **log_file** Defaults to **/var/log/anycast-healthchecker/anycast-healthchecker.log**
+* **log_file** Defaults to **STDOUT**
 
 File to log messages to. The parent directory must be created prior the initial
 launch.
 
 * **log_maxbytes** Defaults to **104857600** (bytes)
 
-Maximum size in bytes for log files
+Maximum size in bytes for log files. It is only used if **log_file** is set to
+a file.
 
 * **log_backups** Defaults to **8**
 
-Number of old log files to maintain
+Number of old log files to maintain. It is only used if **log_file** is set to
+a file.
 
-* **stderr_file** Defaults to **/var/log/anycast-healthchecker/stderr.log**
+* **stderr_file** Defaults to **STDERR**
 
 File to redirect standard error to. The parent directory must be created prior
 the initial launch.
 
-* **stdout_file** Defaults to **/var/log/anycast-healthchecker/stdout.log**
+* **log_server** Unset by default
 
-File to redirect standard output to. The parent directory must be created prior
-the initial launch.
+Either the IP address or the hostname of an UDP syslog server to forward
+logging messages.
+
+* **log_server_port** Defaults to **514**
+
+The port on the remote syslog server to forward logging messages
+over UDP.
+
+* **json_stdout** Defaults to **false**
+
+``true`` enables structured logging for STDOUT.
+
+* **json_log_file** Defaults to **false**
+
+``true`` enables structured logging when **log_file** is set to a file.
+
+* **json_log_server** Defaults to **false**
+
+``true`` enables structured logging when **log_server** is set to a remote UDP
+syslog server.
+
+How to configure logging
+************************
+
+By default anycast-healtchecker logs messages to STDOUT and messages related to
+unhandled exceptions or crashes go to STDERR. But, you can configure it to log
+messages to a file and/or to a remote UDP syslog server.
+
+anycast-healthchecker doesn't log to STDOUT/STDERR when either log file or a
+remote UDP syslog server is configured.
+
+You can configure it to use a log file and a remote UDP syslog server at the
+same time, so logging messages can be stored locally and remotely. This is
+convenient when remote log server is in trouble and loses log messages.
+
+The best logging configuration in terms of resiliency is to enable logging only
+to a remote UDP syslog server. Sending data over UDP protocol is done in
+no-blocking mode and therefore anycast-healthchecker isn't blocked in any way
+when it logs messages. Furthermore, when it logs to a log file and there isn't
+any more space available on the filesystem then it will crash. You can easily
+avoid this failure by using UDP syslog server.
+
+Last but not least, anycast-healthchecker handles the rotation of old log files,
+so you don't need to configure any other tools(logrotate) for that.
 
 JSON logging
 ************
 
-anycast-healthchecker daemon can be configured to send logging messages over
-HTTP to a central place in addition to write them to log files.
-It builds a JSON blob with a specific data structure, which **is not**
-configurable at the moment.
+You can configure anycast-healthchecker to send structured logging messages.
+This is quite important in environments with a lot of servers and Anycasted
+services.
 
-The following settings can be added to the [daemon] section for enabling
-JSON logging.
+You can enable structured logging for STDOUT, log file and remote UDP syslog
+server. Currently, it isn't possible to add/remove keys from the structured
+logging data. The following is the keys, which are present in the structure:
 
-* **json_logging** Defaults to **false**
 
-``true`` enables JSON logging ``false`` disables it
+* asctime: Human-readable time when the log message was created, example value
+  2017-07-23 09:43:28,995.
 
-* **http_server** Unset by default
+* levelname: Text logging level for the message, example value WARNING.
 
-Server name to send JSON logging over HTTP protocol
+* process: Process ID, example value 23579
 
-* **http_server_port**  Unset by default
+* message: The logged message.
 
-Port to connect
+* prefix_length: The prefix length of the Anycast Address associated with the
+  logged message, example value 128.
+  This key isn't present for messages, which were logged by the parent thread.
 
-* **http_server_protocol** Unset by default
+* status: The status of the service when message was logged, possible values
+  are down, up and unknown.
+  This key isn't present for messages, which were logged by the parent thread.
 
-HTTP protocol to use, either ``http`` or ``https``
+* ip_address: The Anycast IP address of the monitored service for which the
+  message was logged, example value fd12:aba6:57db:ffff::2
+  This key isn't present for messages, which were logged by the parent thread.
 
-* **http_server_timeout** Unset by default
+* ip_check_disabled: Either ``true`` when the assignment check of ``ip_prefix``
+  to the interface is disabled, otherwise ``false``.
+  This key isn't present for messages, which were logged by the parent thread.
 
-How long to wait for the server to accept data before giving up, as a floating
-point number. Daemon sends JSON data over HTTP in blocking mode, which means
-that possible long delays sending JSON will make the health checks to be
-delayed as well. ``http_server_timeout`` accepts floating point numbers as
-value, which is passed to underlying `requests`_ module as a single timeout,
-which is applied to both the connect and the read timeouts.
+* version: The running version of anycast-healthchecker, example value 0.7.4.
+
+* program: The process name, defaults to anycast-healthchecker.
+
+* service_name: The name of the service defined in configuration for which the
+  message was logged, example value foo1IPv6.bar.com. Logging messages from
+  the parent thread will have value "MainThread".
 
 Configuring checks for services
 ###############################
@@ -623,10 +681,10 @@ Multiple sections may be combined in one file or provide one file per section.
 File must be stored under one directory and their name should use ``.conf``
 as suffix (foo.bar.com.conf).
 
-Starting the daemon
-###################
+Starting anycast-healthchecker
+##############################
 
-Daemon CLI usage::
+CLI usage::
 
     anycast-healthchecker --help
     A simple healthchecker for Anycasted services.
@@ -635,7 +693,7 @@ Daemon CLI usage::
         anycast-healthchecker [ -f <file> -c -p -P ] [ -d <directory> | -F <file> ]
 
     Options:
-        -f, --file=<file>          read settings for the daemon from <file>
+        -f, --file=<file>          read settings from <file>
                                    [default: /etc/anycast-healthchecker.conf]
         -d, --dir=<dir>            read settings for service checks from files
                                    under <dir> directory
@@ -643,18 +701,17 @@ Daemon CLI usage::
         -F, --service-file=<file>  read <file> for settings of a single service
                                    check
         -c, --check                perform a sanity check on configuration
-        -p, --print                show default settings for daemon and service
-                                   checks
+        -p, --print                show default settings for anycast-healthchecker
+                                   and service checks
         -P, --print-conf           show running configuration with default settings
                                    applied
         -v, --version              show version
         -h, --help                 show this screen
 
-The daemon can be launched by supplying a configuration file and a directory
-with configuration files for service checks::
+You can launch it by supplying a configuration file and a directory with
+configuration files for service checks::
 
   anycast-healthchecker -f ./anycast-healthchecker.conf -d ./anycast-healthchecker.d
-
 
 At the root of the project there is System V init and a Systemd unit file for
 proper integration with OS startup tools.
@@ -663,13 +720,18 @@ Systemd and SysVinit integration
 ################################
 
 Under contrib/systemd and contrib/SysVinit directories there are the necessary
-Unit service and startup files which can be used to start the daemon on boot.
+startup files which can be used to start anycast-healthchecker on boot.
+
+**IMPORTANT:** Version 0.8.0 dropped support for daemonization and therefore
+you can't use the System V init script stored under contrib/SysVinit directory
+with newer versions. If you want to use version 0.8.0 and higher on Operating
+Systems that don't support Systemd then you have to use a tool like supervisord.
 
 Nagios check
 ############
 
-Under contrib/nagios directory there is a nagios plugin to check if daemon is
-up and if all threads are running.
+Under contrib/nagios directory there is a nagios plugin to check if the program
+is up and if all threads are running.
 
 Installation
 ------------

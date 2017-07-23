@@ -2,18 +2,13 @@
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 #
-# pylint: disable=too-many-arguments
-# pylint: disable=too-many-statements
-# pylint: disable=too-many-branches
-# pylint: disable=too-many-locals
-#
 """A simple healthchecker for Anycasted services.
 
 Usage:
     anycast-healthchecker [ -f <file> -c -p -P ] [ -d <directory> | -F <file> ]
 
 Options:
-    -f, --file=<file>          read settings for the daemon from <file>
+    -f, --file=<file>          read settings from <file>
                                [default: /etc/anycast-healthchecker.conf]
     -d, --dir=<dir>            read settings for service checks from files
                                under <dir> directory
@@ -21,31 +16,31 @@ Options:
     -F, --service-file=<file>  read <file> for settings of a single service
                                check
     -c, --check                perform a sanity check on configuration
-    -p, --print                show default settings for daemon and service
-                               checks
+    -p, --print                show default settings for anycast-healthchecker
+                               and service checks
     -P, --print-conf           show running configuration with default settings
                                applied
     -v, --version              show version
     -h, --help                 show this screen
 """
-import os
-import sys
+from functools import partial
+import socket
 import signal
-import logging
-from lockfile.pidlockfile import PIDLockFile
+import sys
 from docopt import docopt
 
-from anycast_healthchecker import DEFAULT_OPTIONS
-from anycast_healthchecker import healthchecker
-from anycast_healthchecker import lib
-from anycast_healthchecker import __version__ as version
-from anycast_healthchecker.utils import (load_configuration, running,
-                                         ip_prefixes_sanity_check)
+from anycast_healthchecker import (DEFAULT_OPTIONS, PROGRAM_NAME, __version__,
+                                   healthchecker)
+from anycast_healthchecker.utils import (load_configuration, shutdown,
+                                         ip_prefixes_sanity_check,
+                                         update_pidfile, setup_logger)
+
+LOCK_SOCKET = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
 
 
 def main():
-    """Parse CLI and starts daemon."""
-    args = docopt(__doc__, version=version)
+    """Parse CLI and starts main program."""
+    args = docopt(__doc__, version=__version__)
     if args['--print']:
         for section in DEFAULT_OPTIONS:
             print("[{}]".format(section))
@@ -73,102 +68,35 @@ def main():
             print()
         sys.exit(0)
 
-    # Catch already running process and clean up stale pid file.
-    pidfile = config.get('daemon', 'pidfile')
     try:
-        with open(pidfile) as _file:
-            pid = _file.read().rstrip()
-        try:
-            pid = int(pid)
-        except ValueError:
-            print("cleaning stale pid file with invalid data:{}".format(pid))
-            os.unlink(pidfile)
-        else:
-            if running(pid):
-                sys.exit("process {} is already running".format(pid))
-            else:
-                print("cleaning stale pid file with pid:{}".format(pid))
-                os.unlink(pidfile)
-    except FileNotFoundError:
-        pass  # it is OK if pidfile doesn't exist
-    except OSError as exc:
-        sys.exit("failed to parse pidfile:{e}".format(e=exc))
+        LOCK_SOCKET.bind('\0' + "{}".format(PROGRAM_NAME))
+    except socket.error as exc:
+        sys.exit("failed to acquire a lock by creating an abstract namespace"
+                 " socket: {}".format(exc))
+    else:
+        print("acquired a lock by creating an abstract namespace socket")
 
-    # Map log level to numeric which can be accepted by loggers.
-    num_level = getattr(
-        logging,
-        config.get('daemon', 'loglevel').upper(),  # pylint: disable=no-member
-        None
-    )
+    # Clean old pidfile, if it exists, and write PID to it.
+    pidfile = config.get('daemon', 'pidfile')
+    update_pidfile(pidfile)
 
-    # Set up loggers for stdout, stderr and daemon stream
-    log = lib.LoggerExt(
-        'daemon',
-        config.get('daemon', 'log_file'),
-        log_level=num_level,
-        maxbytes=config.getint('daemon', 'log_maxbytes'),
-        backupcount=config.getint('daemon', 'log_backups')
-    )
-    if config.getboolean('daemon', 'json_logging', fallback=False):
-        log.add_central_logging(
-            server=config.get('daemon', 'http_server'),
-            timeout=config.getfloat('daemon', 'http_server_timeout'),
-            protocol=config.get('daemon', 'http_server_protocol'),
-            port=config.get('daemon', 'http_server_port')
-        )
-    stdout_log = lib.LoggerExt(
-        'stdout',
-        config.get('daemon', 'stdout_file'),
-        log_level=num_level)
+    # Register our shutdown handler to various termination signals.
+    shutdown_handler = partial(shutdown, pidfile)
+    signal.signal(signal.SIGHUP, shutdown_handler)
+    signal.signal(signal.SIGTERM, shutdown_handler)
+    signal.signal(signal.SIGABRT, shutdown_handler)
+    signal.signal(signal.SIGINT, shutdown_handler)
 
-    stderrformat = ('%(asctime)s [%(process)d] line:%(lineno)d '
-                    'func:%(funcName)s %(levelname)-8s %(threadName)-32s '
-                    '%(message)s')
-    stderr_log = lib.LoggerExt(
-        'stderr',
-        config.get('daemon', 'stderr_file'),
-        log_level=num_level,
-        log_format=stderrformat)
-
-    if config.getboolean('daemon', 'json_logging', fallback=False):
-        stderr_log.add_central_logging(
-            server=config.get('daemon', 'http_server'),
-            timeout=config.getfloat('daemon', 'http_server_timeout'),
-            protocol=config.get('daemon', 'http_server_protocol'),
-            port=config.get('daemon', 'http_server_port')
-        )
+    # Set up loggers.
+    logger = setup_logger(config)
 
     # Perform a sanity check on IP-Prefixes
-    ip_prefixes_sanity_check(log, config, bird_configuration)
-
-    # Make some noise.
-    log.debug('Before we are daemonized')
-    stdout_log.debug('before we are daemonized')
-    stderr_log.debug('before we are daemonized')
-
-    # Get and set the DaemonContext.
-    context = lib.LoggingDaemonContext()
-    context.loggers_preserve = [log]
-    context.stdout_logger = stdout_log
-    context.stderr_logger = stderr_log
-
-    # Set pidfile for DaemonContext
-    pid_lockfile = PIDLockFile(config.get('daemon', 'pidfile'))
-    context.pidfile = pid_lockfile
+    ip_prefixes_sanity_check(config, bird_configuration)
 
     # Create our master process.
-    checker = healthchecker.HealthChecker(log, config, bird_configuration)
-
-    # Set signal mapping to catch singals and act accordingly.
-    context.signal_map = {
-        signal.SIGHUP: checker.catch_signal,
-        signal.SIGTERM: checker.catch_signal,
-    }
-
-    # OK boy go and daemonize yourself.
-    with context:
-        log.info("starting daemon {}".format(version))
-        checker.run()
+    checker = healthchecker.HealthChecker(config, bird_configuration)
+    logger.info("starting %s %s version", PROGRAM_NAME, __version__)
+    checker.run()
 
 
 # This is the standard boilerplate that calls the main() function.

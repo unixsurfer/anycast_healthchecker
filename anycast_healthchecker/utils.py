@@ -5,6 +5,7 @@
 # pylint: disable=too-many-locals
 # pylint: disable=too-many-branches
 # pylint: disable=too-few-public-methods
+# pylint: disable=too-many-lines
 """Provide functions and classes that are used within anycast_healthchecker."""
 
 import re
@@ -12,6 +13,7 @@ import os
 import sys
 import subprocess
 import logging
+import logging.handlers
 import time
 import datetime
 import configparser
@@ -21,7 +23,9 @@ import shlex
 import shutil
 import ipaddress
 
-from anycast_healthchecker import DEFAULT_OPTIONS
+from pythonjsonlogger import jsonlogger
+
+from anycast_healthchecker import DEFAULT_OPTIONS, PROGRAM_NAME, __version__
 
 SERVICE_OPTIONS_TYPE = {
     'check_cmd': 'get',
@@ -45,7 +49,12 @@ DAEMON_OPTIONS_TYPE = {
     'log_backups': 'getint',
     'log_file': 'get',
     'stderr_file': 'get',
-    'stdout_file': 'get',
+    'stderr_log_server': 'getboolean',
+    'log_server': 'get',
+    'log_server_port': 'getint',
+    'json_stdout': 'getboolean',
+    'json_log_server': 'getboolean',
+    'json_log_file': 'getboolean',
     'purge_ip_prefixes': 'getboolean',
     'bird_keep_changes': 'getboolean',
     'bird6_keep_changes': 'getboolean',
@@ -54,6 +63,12 @@ DAEMON_OPTIONS_TYPE = {
     'bird_reconfigure_cmd': 'get',
     'bird6_reconfigure_cmd': 'get',
 }
+DAEMON_OPTIONAL_OPTIONS = [
+    'stderr_log_server',
+    'stderr_file',
+    'log_server',
+    'log_file',
+]
 
 
 def valid_ip_prefix(ip_prefix):
@@ -122,19 +137,17 @@ def get_ip_prefixes_from_config(config, services, ip_version):
     return ip_prefixes
 
 
-def ip_prefixes_sanity_check(log, config, bird_configuration):
+def ip_prefixes_sanity_check(config, bird_configuration):
     """Sanity check on IP prefixes.
 
     Arguments:
-        log(logger obj): A logger object to use for emitting messages
         config (obg): A configparser object which holds our configuration.
         bird_configuration (dict): A dictionary, which holds Bird configuration
         per IP protocol version.
 
     """
     for ip_version in bird_configuration:
-        modify_ip_prefixes(log,
-                           config,
+        modify_ip_prefixes(config,
                            bird_configuration[ip_version]['config_file'],
                            bird_configuration[ip_version]['variable_name'],
                            bird_configuration[ip_version]['dummy_ip_prefix'],
@@ -145,7 +158,6 @@ def ip_prefixes_sanity_check(log, config, bird_configuration):
 
 
 def modify_ip_prefixes(
-        log,
         config,
         config_file,
         variable_name,
@@ -162,7 +174,6 @@ def modify_ip_prefixes(
     - Add ``dummy_ip_prefix`` in Bird configuration if it is missing
 
     Arguments:
-        log(logger obj): A logger object to use for emitting messages
         config (obg): A configparser object which holds our configuration.
         config_file (str): The file name of bird configuration
         variable_name (str): The name of the variable set in bird configuration
@@ -175,22 +186,20 @@ def modify_ip_prefixes(
         ip_version (int): IP protocol version of Bird configuration
 
     """
+    log = logging.getLogger(PROGRAM_NAME)
     services = config.sections()
     services.remove('daemon')  # not needed during sanity check for IP-Prefixes
     update_bird_conf = False
     try:
         ip_prefixes_in_bird = get_ip_prefixes_from_bird(config_file)
     except OSError as error:
-        msg = ("failed to open Bird configuration {e}, this is a FATAL "
-               "error, thus exiting main program"
-               .format(e=error))
-        log.error(msg, priority=80)
+        log.error("failed to open Bird configuration %s, this is a FATAL "
+                  "error, thus exiting main program", error)
         sys.exit(1)
 
     if dummy_ip_prefix not in ip_prefixes_in_bird:
-        log.warning("dummy IP prefix {ip} is missing from bird configuration "
-                    "{fh}, adding it"
-                    .format(ip=dummy_ip_prefix, fh=config_file))
+        log.warning("dummy IP prefix %s is missing from bird configuration "
+                    "%s, adding it", dummy_ip_prefix, config_file)
         ip_prefixes_in_bird.insert(0, dummy_ip_prefix)
         update_bird_conf = True
 
@@ -207,26 +216,25 @@ def modify_ip_prefixes(
 
     if ip_prefixes_without_check:
         if config.getboolean('daemon', 'purge_ip_prefixes'):
-            log.warning("removing IP prefix(es) {i} from {fh} because they "
-                        "don't have a service check configured"
-                        .format(fh=config_file,
-                                i=','.join(ip_prefixes_without_check)))
+            log.warning("removing IP prefix(es) %s from %s because they don't "
+                        "have a service check configured",
+                        ','.join(ip_prefixes_without_check),
+                        config_file)
             ip_prefixes_in_bird[:] = (ip for ip in ip_prefixes_in_bird
                                       if ip not in ip_prefixes_without_check)
             update_bird_conf = True
         else:
-            log.warning("found IP prefixes {i} in {fh} without a service "
-                        "check configured"
-                        .format(fh=config_file,
-                                i=','.join(ip_prefixes_without_check)))
+            log.warning("found IP prefixes %s in %s without a service "
+                        "check configured",
+                        ','.join(ip_prefixes_without_check),
+                        config_file)
 
-    # Either dummy IP-Prefix was added or unconfigured IP-Prefix(es) were
-    # removed
+    # Either dummy IP-Prefix was added or an IP-Prefix(es) without a service
+    # check was removed.
     if update_bird_conf:
         if keep_changes:
-            archive_bird_conf(log, config_file, changes_counter)
+            archive_bird_conf(config_file, changes_counter)
         tempname = write_temp_bird_conf(
-            log,
             dummy_ip_prefix,
             config_file,
             variable_name,
@@ -240,9 +248,8 @@ def modify_ip_prefixes(
                    .format(e=error))
             sys.exit("{m}".format(m=msg))
         else:
-            log.info("Bird configuration for IPv{v} is updated"
-                     .format(v=ip_version))
-            reconfigure_bird(log, reconfigure_cmd)
+            log.info("Bird configuration for IPv%s is updated", ip_version)
+            reconfigure_bird(reconfigure_cmd)
 
 
 def load_configuration(config_file, config_dir, service_file):
@@ -324,15 +331,19 @@ def configuration_check(config):
     if not isinstance(num_level, int):
         raise ValueError('Invalid log level: {}'.format(log_level))
 
-    for _file in 'log_file', 'stdout_file', 'stderr_file':
-        try:
-            touch(config.get('daemon', _file))
-        except OSError as exc:
-            raise ValueError(exc)
+    for _file in 'log_file', 'stderr_file':
+        if config.has_option('daemon', _file):
+            try:
+                touch(config.get('daemon', _file))
+            except OSError as exc:
+                raise ValueError(exc)
 
     for option, getter in DAEMON_OPTIONS_TYPE.items():
         try:
             getattr(config, getter)('daemon', option)
+        except configparser.NoOptionError as error:
+            if option not in DAEMON_OPTIONAL_OPTIONS:
+                raise ValueError(error)
         except configparser.Error as error:
             raise ValueError(error)
         except ValueError as exc:
@@ -357,7 +368,8 @@ def service_configuration_check(config):
     ipv4_enabled = config.getboolean('daemon', 'ipv4')
     ipv6_enabled = config.getboolean('daemon', 'ipv6')
     services = config.sections()
-    services.remove('daemon')  # we don't need it during sanity check.
+    # we don't need it during sanity check for services check
+    services.remove('daemon')
 
     for service in services:
         for option, getter in SERVICE_OPTIONS_TYPE.items():
@@ -374,8 +386,8 @@ def service_configuration_check(config):
         if (config.get(service, 'on_disabled') != 'withdraw' and
                 config.get(service, 'on_disabled') != 'advertise'):
             msg = ("'on_disabled' option has invalid value ({val}) for "
-                   "service check {name} should be either 'withdraw' or "
-                   "'advertise'"
+                   "service check {name}, 'on_disabled option should be set "
+                   "either to 'withdraw' or to 'advertise'"
                    .format(name=service,
                            val=config.get(service, 'on_disabled')))
             raise ValueError(msg)
@@ -576,16 +588,13 @@ class BaseOperation(object):
     Arguments:
         name (string): The name of the service for the given ip_prefix
         ip_prefix (string): The value to run the operation
-        log (logger obj): A logger object to use for emitting messages
-        extra (dictionary): A possible dictionary structure to pass further
     """
 
-    def __init__(self, name, ip_prefix, log, ip_version, **extra):  # noqa:D102
+    def __init__(self, name, ip_prefix, ip_version):  # noqa:D102
         self.name = name
         self.ip_prefix = ip_prefix
-        self.log = log
+        self.log = logging.getLogger(PROGRAM_NAME)
         self.ip_version = ip_version
-        self.extra = extra
 
 
 class AddOperation(BaseOperation):
@@ -603,9 +612,7 @@ class AddOperation(BaseOperation):
         """
         if self.ip_prefix not in prefixes:
             prefixes.append(self.ip_prefix)
-            msg = ("announcing {i} for {n}".format(i=self.ip_prefix,
-                                                   n=self.name))
-            self.log.info(msg, **self.extra)
+            self.log.info("announcing %s for %s", self.ip_prefix, self.name)
             return True
 
         return False
@@ -626,37 +633,35 @@ class DeleteOperation(BaseOperation):
         """
         if self.ip_prefix in prefixes:
             prefixes.remove(self.ip_prefix)
-            msg = "withdrawing {i} for {n}".format(i=self.ip_prefix,
-                                                   n=self.name)
-            self.log.info(msg, **self.extra)
+            self.log.info("withdrawing %s for %s", self.ip_prefix, self.name)
             return True
 
         return False
 
 
-def reconfigure_bird(log, cmd):
-    """Reload BIRD daemon.
+def reconfigure_bird(cmd):
+    """Reconfigure BIRD daemon.
 
     Arguments:
-        log (logger obj): A logger object to use for emitting messages
         cmd (string): A command to trigger a reconfiguration of Bird daemon
 
     Notes:
-        Runs 'birdc configure' to reload BIRD. Some useful information on how
-        birdc tool works:
+        Runs 'birdc configure' to reconfigure BIRD. Some useful information on
+        how birdc tool works:
             -- Returns a non-zero exit code only when it can't access BIRD
                daemon via the control socket (/var/run/bird.ctl). This happens
                when BIRD daemon is either down or when the caller of birdc
                doesn't have access to the control socket.
-            -- Returns zero exit code when reload fails due to invalid
+            -- Returns zero exit code when reconfigure fails due to invalid
                configuration. Thus, we catch this case by looking at the output
                and not at the exit code.
-            -- Returns zero exit code when reload was successful.
+            -- Returns zero exit code when reconfigure was successful.
             -- Should never timeout, if it does then it is a bug.
 
     """
+    log = logging.getLogger(PROGRAM_NAME)
     cmd = shlex.split(cmd)
-    log.info("reloading BIRD by running {c}".format(c=' '.join(cmd)))
+    log.info("reconfiguring BIRD by running %s", ' '.join(cmd))
     try:
         output = subprocess.check_output(
             cmd,
@@ -665,36 +670,32 @@ def reconfigure_bird(log, cmd):
             universal_newlines=True,
             )
     except subprocess.TimeoutExpired:
-        log.error("reloading bird timed out", priority=80)
+        log.error("reconfiguring bird timed out")
         return
     except subprocess.CalledProcessError as error:
         # birdc returns 0 even when it fails due to invalid config,
         # but it returns 1 when BIRD is down.
-        msg = ("reloading BIRD failed, either BIRD daemon is down or we don't "
-               "have privileges to reconfigure it (sudo problems?):{e}"
-               .format(e=error.output.strip()))
-        log.error(msg, priority=80)
+        log.error("reconfiguring BIRD failed, either BIRD daemon is down or "
+                  "we don't have privileges to reconfigure it (sudo problems?)"
+                  ":%s", error.output.strip())
         return
     except FileNotFoundError as error:
-        msg = "reloading BIRD failed with: {e}".format(e=error)
-        log.error(msg, priority=80)
+        log.error("reconfiguring BIRD failed with: %s", error)
         return
 
     # 'Reconfigured' string will be in the output if and only if conf is valid.
     pattern = re.compile('^Reconfigured$', re.MULTILINE)
     if pattern.search(str(output)):
-        log.info('reloaded BIRD daemon')
+        log.info('reconfigured BIRD daemon')
     else:
         # We will end up here only if we generated an invalid conf
         # or someone broke bird.conf.
-        msg = ("reloading BIRD returned error, most likely we generated "
-               "an invalid configuration file or Bird configuration in "
-               "general is broken:{e}".format(e=output))
-        log.error(msg, priority=80)
+        log.error("reconfiguring BIRD returned error, most likely we generated"
+                  " an invalid configuration file or Bird configuration in is "
+                  "broken:%s", output)
 
 
-def write_temp_bird_conf(log,
-                         dummy_ip_prefix,
+def write_temp_bird_conf(dummy_ip_prefix,
                          config_file,
                          variable_name,
                          prefixes):
@@ -703,7 +704,6 @@ def write_temp_bird_conf(log,
     A failure to create and write the temporary file will exit main program.
 
     Arguments:
-        log(logger obj): A logger object to use for emitting messages
         dummy_ip_prefix (str): The dummy IP prefix, which must be always
         config_file (str): The file name of bird configuration
         variable_name (str): The name of the variable set in bird configuration
@@ -713,6 +713,7 @@ def write_temp_bird_conf(log,
         The filename of the temporary file
 
     """
+    log = logging.getLogger(PROGRAM_NAME)
     comment = ("# {i} is a dummy IP Prefix. It should NOT be used and "
                "REMOVED from the constant.".format(i=dummy_ip_prefix))
 
@@ -720,12 +721,14 @@ def write_temp_bird_conf(log,
     # as we use os.rename to perform an atomic update on the bird config.
     # Thus, we create it in the same directory that bird config is stored.
     tm_file = os.path.join(os.path.dirname(config_file), str(time.time()))
-    log.debug("going to write to {f}".format(f=tm_file), json_blob=False)
+    log.debug("going to write to %s", tm_file)
 
     try:
         with open(tm_file, 'w') as tmpf:
-            tmpf.write("# Generated {t} by anycast-healthchecker (pid={p})\n"
-                       .format(t=datetime.datetime.now(), p=os.getpid()))
+            tmpf.write("# Generated {t} by {n} (pid={p})\n"
+                       .format(t=datetime.datetime.now(),
+                               n=PROGRAM_NAME,
+                               p=os.getpid()))
             tmpf.write("{c}\n".format(c=comment))
             tmpf.write("define {n} =\n".format(n=variable_name))
             tmpf.write("{s}[\n".format(s=4 * ' '))
@@ -734,47 +737,359 @@ def write_temp_bird_conf(log,
             tmpf.write(',\n'.join([' '*8 + n for n in prefixes]))
             tmpf.write("\n{s}];\n".format(s=4 * ' '))
     except OSError as error:
-        msg = ("failed to write temporary file {f}: {e}. This is a FATAL "
-               "error, this exiting main program"
-               .format(f=tm_file, e=error))
-        log.critical(msg, priority=80)
+        log.critical("failed to write temporary file %s: %s. This is a FATAL "
+                     "error, this exiting main program", tm_file, error)
         sys.exit(1)
     else:
         return tm_file
 
 
-def archive_bird_conf(log,
-                      config_file,
-                      changes_counter):
+def archive_bird_conf(config_file, changes_counter):
     """Keep a history of Bird configuration files.
 
     Arguments:
-        log (logger obj): A logger object to use for emitting messages
-        config_file (str): The file name of bird configuration
-        changes_counter (int): How many configuration files to keep in the
+        config_file (str): file name of bird configuration
+        changes_counter (int): number of configuration files to keep in the
         history
     """
+    log = logging.getLogger(PROGRAM_NAME)
     history_dir = os.path.join(os.path.dirname(config_file), 'history')
     dst = os.path.join(history_dir, str(time.time()))
-    log.debug("coping {s} to {d}"
-              .format(s=config_file, d=dst), json_blob=False)
+    log.debug("coping %s to %s", config_file, dst)
+
     history = [x for x in os.listdir(history_dir)
                if os.path.isfile(os.path.join(history_dir, x))]
 
     if len(history) > changes_counter:
-        log.info("threshold ({n}) is reached, removing old files"
-                 .format(n=changes_counter))
+        log.info("threshold of %s is reached, removing old files",
+                 changes_counter)
         for _file in sorted(history, reverse=True)[changes_counter - 1:]:
             _path = os.path.join(history_dir, _file)
             try:
                 os.remove(_path)
             except OSError as exc:
-                log.warning("failed to remove {f}: {e}".format(f=_file, e=exc))
+                log.warning("failed to remove %s: %s", _file, exc)
             else:
-                log.info("removed {f}".format(f=_path))
+                log.info("removed %s", _path)
 
     try:
         shutil.copy2(config_file, dst)
     except OSError as exc:
-        log.warning("failed to copy {s} to {d}: {e}"
-                    .format(s=config_file, d=dst, e=exc))
+        log.warning("failed to copy %s to %s: %s", config_file, dst, exc)
+
+
+def update_pidfile(pidfile):
+    """Update pidfile.
+
+    Notice:
+        We should call this function only after we have successfully acquired
+        a lock and never before. It exits main program if it fails to parse
+        and/or write pidfile.
+
+    Arguments:
+        pidfile (str): pidfile to update
+
+    """
+    try:
+        with open(pidfile, mode='r') as _file:
+            pid = _file.read(1024).rstrip()
+
+        try:
+            pid = int(pid)
+        except ValueError:
+            print("cleaning stale pidfile with invalid data:'{}'".format(pid))
+            write_pid(pidfile)
+        else:
+            if running(pid):
+                # This is to catch migration issues from 0.7.x to 0.8.x
+                # version, where old process is still around as it failed to
+                # be stopped. Since newer version has a different locking
+                # mechanism, we can end up with both versions running.
+                # In order to avoid this situation we refuse to startup.
+                sys.exit("process {} is already running".format(pid))
+            else:
+                # pidfile exists with a PID for a process that is not running.
+                # Let's update PID.
+                print("updating processID in pidfile, current processID is {}"
+                      .format(pid))
+                write_pid(pidfile)
+    except FileNotFoundError:
+        # Either it's 1st time we run or previous run was terminated
+        # successfully.
+        print("creating pidfile {f}".format(f=pidfile))
+        write_pid(pidfile)
+    except OSError as exc:
+        sys.exit("failed to update pidfile:{e}".format(e=exc))
+
+
+def write_pid(pidfile):
+    """Write processID to the pidfile.
+
+    Notice:
+        It exits main program if it fails to write pidfile.
+
+    Arguments:
+        pidfile (str): pidfile to update
+
+    """
+    pid = str(os.getpid())
+    try:
+        with open(pidfile, mode='w') as _file:
+            print("writing processID {p} to pidfile".format(p=pid))
+            _file.write(pid)
+    except OSError as exc:
+        sys.exit("failed to write pidfile:{e}".format(e=exc))
+
+
+def shutdown(pidfile, signalnb=None, frame=None):
+    """Clean up pidfile upon shutdown.
+
+    Notice:
+        We should register this function as signal handler for the following
+        termination signals:
+            SIGHUP
+            SIGTERM
+            SIGABRT
+            SIGINT
+
+    Arguments:
+        pidfile (str): pidfile to remove
+        signalnb (int): The ID of signal
+        frame (obj): Frame object at the time of receiving the signal
+
+    """
+    log = logging.getLogger(PROGRAM_NAME)
+    log.info("received %s at %s", signalnb, frame)
+    log.info("going to remove pidfile %s", pidfile)
+    # no point to catch possible errors when we delete the pid file
+    os.unlink(pidfile)
+    log.info('shutdown is complete')
+    sys.exit(0)
+
+
+def setup_logger(config):
+    """Configure the logging environment.
+
+    Notice:
+        By default logging will go to STDOUT and messages for unhandled
+        exceptions or crashes will go to STDERR. If log_file and/or log_server
+        is set then we don't log to STDOUT. Messages for unhandled exceptions
+        or crashes can only go to either STDERR or to stderr_file or to
+        stderr_log_server.
+
+    Arguments:
+        config (obj): A configparser object which holds our configuration.
+
+    Returns:
+        A logger with all possible handlers configured.
+
+    """
+    logger = logging.getLogger(PROGRAM_NAME)
+    num_level = getattr(
+        logging,
+        config.get('daemon', 'loglevel').upper(),  # pylint: disable=no-member
+        None
+    )
+    logger.setLevel(num_level)
+
+    def log_format():
+        """Produce a log format line."""
+        supported_keys = [
+            'asctime',
+            'levelname',
+            'process',
+            # 'funcName',
+            # 'lineno',
+            'threadName',
+            'message',
+        ]
+
+        return ' '.join(['%({0:s})'.format(i) for i in supported_keys])
+
+    custom_format = log_format()
+    json_formatter = CustomJsonFormatter(custom_format,
+                                         prefix=PROGRAM_NAME)
+    formatter = logging.Formatter(
+        '%(asctime)s {program}[%(process)d] %(levelname)-8s '
+        '%(threadName)-32s %(message)s'.format(program=PROGRAM_NAME)
+    )
+
+    # Register logging handlers based on configuration.
+    if config.has_option('daemon', 'log_file'):
+        file_handler = logging.handlers.RotatingFileHandler(
+            config.get('daemon', 'log_file'),
+            maxBytes=config.getint('daemon', 'log_maxbytes'),
+            backupCount=config.getint('daemon', 'log_backups')
+        )
+
+        if config.getboolean('daemon', 'json_log_file'):
+            file_handler.setFormatter(json_formatter)
+        else:
+            file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+
+    if config.has_option('daemon', 'log_server'):
+        udp_handler = logging.handlers.SysLogHandler(
+            (
+                config.get('daemon', 'log_server'),
+                config.getint('daemon', 'log_server_port')
+            )
+        )
+
+        if config.getboolean('daemon', 'json_log_server'):
+            udp_handler.setFormatter(json_formatter)
+        else:
+            udp_handler.setFormatter(formatter)
+        logger.addHandler(udp_handler)
+
+    # Log to STDOUT if and only if log_file and log_server aren't enabled
+    if (not config.has_option('daemon', 'log_file')
+            and not config.has_option('daemon', 'log_server')):
+        stream_handler = logging.StreamHandler()
+        if config.getboolean('daemon', 'json_stdout'):
+            stream_handler.setFormatter(json_formatter)
+        else:
+            stream_handler.setFormatter(formatter)
+        logger.addHandler(stream_handler)
+
+    # We can redirect STDERR only to one destination.
+    if config.has_option('daemon', 'stderr_file'):
+        sys.stderr = CustomRotatingFileLogger(
+            filepath=config.get('daemon', 'stderr_file'),
+            maxbytes=config.getint('daemon', 'log_maxbytes'),
+            backupcount=config.getint('daemon', 'log_backups')
+        )
+    elif (config.has_option('daemon', 'stderr_log_server')
+          and not config.has_option('daemon', 'stderr_file')):
+        sys.stderr = CustomUdpLogger(  # pylint:disable=redefined-variable-type
+            server=config.get('daemon', 'log_server'),
+            port=config.getint('daemon', 'log_server_port')
+        )
+    else:
+        print('messages for unhandled exceptions will go to STDERR')
+
+    return logger
+
+
+class CustomLogger(object):
+    """Helper Logger to redirect STDOUT or STDERR to a logging hander.
+
+    It wraps a Logger class into a file like object, which provides a handy
+    way to redirect STDOUT or STDERR to a logger. This class provides the
+    necessary methods (write, flush and close) to build a file-like object
+    and it can not be used directly as it does not provide a logging handler.
+    Instead, you must instantiate one of subclass (CustomRotatingFileLogger and
+    CustomUdpLogger).
+
+    Arguments
+        handler (int): A logging handler to use.
+
+    Methods:
+        write(string): Write string to logger with newlines removed.
+        flush(): Flushe logger messages.
+        close(): Close logger.
+
+    Returns:
+        A logger object.
+
+    """
+
+    def __init__(self, handler):
+        """Create a logging.Logger class with extended functionality."""
+        log_format = ('%(asctime)s {program}[%(process)d] '
+                      '%(threadName)s %(message)s'
+                      .format(program=PROGRAM_NAME))
+        self.logger = logging.getLogger('stderr')
+        self.logger.setLevel(logging.DEBUG)
+        self.handler = handler
+        formatter = logging.Formatter(log_format)
+        self.handler.setFormatter(formatter)
+        self.logger.addHandler(self.handler)
+
+    def write(self, string):
+        """Erase newline from a string and write to the logger."""
+        string = string.rstrip()
+        if string:  # Don't log empty lines
+            self.logger.critical(string)
+
+    def flush(self):
+        """Flush logger's data."""
+        # In case multiple handlers are attached to the logger make sure they
+        # are flushed.
+        for handler in self.logger.handlers:
+            handler.flush()
+
+    def close(self):
+        """Call the closer method of the logger."""
+        # In case multiple handlers are attached to the logger make sure they
+        # are all closed.
+        for handler in self.logger.handlers:
+            handler.close()
+
+
+class CustomRotatingFileLogger(CustomLogger):
+    """Subclass CustomLogger to provide a rotating file logger.
+
+    The rotation of log file is enabled by default.
+
+    Usage:
+        >>> import sys
+        >>> sys.stderr = CustomRotatingFileLogger(filepath='/foo.log')
+
+    Arguments:
+        filepath (str) : file path of the log file
+        maxbytes (int) : log file is rotated when it grows bigger than maxbytes
+        backupcount (int): maximum rotated log file to keep.
+
+    Notice:
+        If maxbytes is zero, rollover never occurs and we may fill up the disk.
+        An external program (logrotate) must not rotate the file in this case,
+        as the file descriptor for the log file will be changed without us
+        knowing this.
+
+    Returns:
+        A logger object.
+
+    """
+
+    def __init__(self, filepath, *, maxbytes=10485, backupcount=8):
+        """Create a logging.Logger class with extended functionality."""
+        handler = logging.handlers.RotatingFileHandler(filepath,
+                                                       maxBytes=maxbytes,
+                                                       backupCount=backupcount)
+        super().__init__(handler=handler)
+
+
+class CustomUdpLogger(CustomLogger):
+    """Subclass CustomLogger to provide a UDP logger.
+
+    Usage:
+        >>> import sys
+        >>> sys.stderr = CustomUdpLogger(server='127.0.0.1')
+
+    Arguments
+        server (str): UDP server name or IP address.
+        port (int): Port number.
+
+    Returns:
+        A logger object.
+
+    """
+
+    def __init__(self, server='127.0.0.1', port=514):
+        """Create a logging.Logger class with extended functionality."""
+        handler = logging.handlers.SysLogHandler((server, port))
+        super().__init__(handler=handler)
+
+
+class CustomJsonFormatter(jsonlogger.JsonFormatter):
+    """Customize the Json Formatter."""
+
+    def process_log_record(self, log_record):
+        """Add customer record keys and rename threadName key."""
+        log_record["version"] = __version__
+        log_record["program"] = PROGRAM_NAME
+        log_record["service_name"] = log_record.pop('threadName', None)
+        # return jsonlogger.JsonFormatter.process_log_record(self, log_record)
+
+        return log_record

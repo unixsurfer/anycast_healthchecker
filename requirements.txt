@@ -1,3 +1,1 @@
-lockfile
-python-daemon
-requests
+python-json-logger
