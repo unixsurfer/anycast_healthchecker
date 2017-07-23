@@ -534,6 +534,38 @@ JSON logging
 You can configure anycast-healthchecker to send structured logging messages.
 This is quite important in environments with a lot of servers and Anycasted
 services.
+
+You can enable structured logging for STDOUT, log file and remote UDP syslog
+server. Currently, it is possible to add/remove keys from the structured
+logging data. The following is the default keys:
+
+
+* asctime: Human-readable time when the log message was created. Example value
+2017-07-23 09:43:28,995.
+
+* levelname: Text logging level for the message. Example value WARNING.
+
+* process: Process ID. Example value 23579
+
+* message: The logged message.
+
+* prefix_length: The prefix length of the Anycast Address associated with the
+logged message. Example value 128.
+
+* status: The status of the service when message was logged. Example value
+down.
+
+* ip_address: fd12:aba6:57db:ffff::2
+
+* ip_check_disabled: false.
+
+* version: "0.7.4",
+
+* program: "anycast-healthchecker".
+
+* service_name: "foo1IPv6.bar.com"
+
+
 HTTP to a central place in addition to write them to log files.
 It builds a JSON blob with a specific data structure, which **is not**
 configurable at the moment.
