@@ -505,14 +505,17 @@ The port on the remote syslog server to forward logging messages
 over UDP.
 
 * **json_stdout** Defaults to **false**
-  ``true`` enables structured logging for STDOUT.
+
+``true`` enables structured logging for STDOUT.
 
 * **json_log_file** Defaults to **false**
-  ``true`` enables structured logging when **log_file** is set to a file.
+
+``true`` enables structured logging when **log_file** is set to a file.
 
 * **json_log_server** Defaults to **false**
-  ``true`` enables structured logging when **log_server** is set to a remote
-  UDP syslog server.
+
+``true`` enables structured logging when **log_server** is set to a remote UDP
+syslog server.
 
 How to configure logging
 ************************
