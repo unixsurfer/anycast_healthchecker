@@ -504,6 +504,16 @@ logging messages.
 The port on the remote syslog server to forward logging messages
 over UDP.
 
+* **json_stdout** Defaults to **false**
+  ``true`` enables structured logging for STDOUT.
+
+* **json_log_file** Defaults to **false**
+  ``true`` enables structured logging when **log_file** is set to a file.
+
+* **json_log_server** Defaults to **false**
+  ``true`` enables structured logging when **log_server** is set to a remote
+  UDP syslog server.
+
 How to configure logging
 ************************
 
@@ -536,8 +546,8 @@ This is quite important in environments with a lot of servers and Anycasted
 services.
 
 You can enable structured logging for STDOUT, log file and remote UDP syslog
-server. Currently, it is possible to add/remove keys from the structured
-logging data. The following is the default keys:
+server. Currently, it isn't possible to add/remove keys from the structured
+logging data. The following is the keys, which are present in the structure:
 
 
 * asctime: Human-readable time when the log message was created, example value
@@ -572,33 +582,6 @@ logging data. The following is the default keys:
 * service_name: The name of the service defined in configuration for which the
   message was logged, example value "foo1IPv6.bar.com". Logging messages from
   the parent thread will have value "MainThread".
-
-
-
-* **json_logging** Defaults to **false**
-
-``true`` enables JSON logging ``false`` disables it
-
-* **http_server** Unset by default
-
-Server name to send JSON logging over HTTP protocol
-
-* **http_server_port**  Unset by default
-
-Port to connect
-
-* **http_server_protocol** Unset by default
-
-HTTP protocol to use, either ``http`` or ``https``
-
-* **http_server_timeout** Unset by default
-
-How long to wait for the server to accept data before giving up, as a floating
-point number. Daemon sends JSON data over HTTP in blocking mode, which means
-that possible long delays sending JSON will make the health checks to be
-delayed as well. ``http_server_timeout`` accepts floating point numbers as
-value, which is passed to underlying `requests`_ module as a single timeout,
-which is applied to both the connect and the read timeouts.
 
 Configuring checks for services
 ###############################
