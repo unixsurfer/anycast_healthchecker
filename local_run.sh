@@ -1,14 +1,14 @@
 #!/bin/bash
-DAEMON=anycast-healthchecker
+PROGRAM=anycast-healthchecker
 TEST_DIR="${PWD}/var"
-DOTDIR="${TEST_DIR}/etc/"${DAEMON}".d"
-DAEMONCONF="${TEST_DIR}/etc/"${DAEMON}".conf"
-PIDIFILE="${TEST_DIR}/var/run/"${DAEMON}"/"${DAEMON}".pid"
+DOTDIR="${TEST_DIR}/etc/"${PROGRAM}".d"
+PROGRAMCONF="${TEST_DIR}/etc/"${PROGRAM}".conf"
+PIDIFILE="${TEST_DIR}/var/run/"${PROGRAM}"/"${PROGRAM}".pid"
 directories=("${DOTDIR}" \
-"${TEST_DIR}"/var/log/"${DAEMON}" \
-"${TEST_DIR}"/var/lib/"${DAEMON}" \
-"${TEST_DIR}"/var/lib/"${DAEMON}"/6 \
-"${TEST_DIR}"/var/run/"${DAEMON}")
+"${TEST_DIR}"/var/log/"${PROGRAM}" \
+"${TEST_DIR}"/var/lib/"${PROGRAM}" \
+"${TEST_DIR}"/var/lib/"${PROGRAM}"/6 \
+"${TEST_DIR}"/var/run/"${PROGRAM}")
 
 echo "------------------------------------------"
 echo "--------create directory structure--------"
@@ -22,9 +22,9 @@ done
 echo "------------------------------------------"
 echo "---------------create config--------------"
 echo "------------------------------------------"
-if [ ! -e ${DAEMONCONF}  ]; then
-    echo "${DAEMONCONF}"
-    cat <<EOT > "${DAEMONCONF}"
+if [ ! -e ${PROGRAMCONF}  ]; then
+    echo "${PROGRAMCONF}"
+    cat <<EOT > "${PROGRAMCONF}"
 [DEFAULT]
 interface        = lo
 
@@ -35,13 +35,6 @@ log_maxbytes            = 104857600
 log_backups             = 8
 log_file                = ${TEST_DIR}/var/log/anycast-healthchecker/anycast-healthchecker.log
 stderr_file             = ${TEST_DIR}/var/log/anycast-healthchecker/stderr.log
-stdout_file             = ${TEST_DIR}/var/log/anycast-healthchecker/stdout.log
-
-json_logging            = false
-http_server             = sharpener-provision.anycast.prod.booking.com
-http_server_port        = 2813
-http_server_protocol    = http
-http_server_timeout     = 0.1
 
 ipv4                    = true
 bird_conf               = ${TEST_DIR}/var/lib/anycast-healthchecker/anycast-prefixes.conf
@@ -167,8 +160,8 @@ done
 echo "------------------------------------------"
 echo "---------------bird status----------------"
 echo "------------------------------------------"
-BIRD_DAEMONS=(bird bird6)
-for bird_daemon in ${BIRD_DAEMONS[@]}; do
+BIRD_PROGRAMS=(bird bird6)
+for bird_daemon in ${BIRD_PROGRAMS[@]}; do
     bird_pid=$(pgrep -x "${bird_daemon}")
     if [ ! -z "${bird_pid}" ]; then
         echo "${bird_daemon} seems to be running pid:${bird_pid}"
@@ -177,9 +170,9 @@ for bird_daemon in ${BIRD_DAEMONS[@]}; do
     fi
 done
 
-version=$("${DAEMON}" -v)
+version=$("${PROGRAM}" -v)
 echo "------------------------------------------"
-echo "---------starting daemon------------------"
+echo "---------starting program-----------------"
 echo "------------------------------------------"
 pgrep -F "${PIDIFILE}" >/dev/null 2>&1
 if [ $? -eq 0 ]; then
@@ -188,7 +181,7 @@ if [ $? -eq 0 ]; then
     sleep 1
 fi
 
-"${DAEMON}" -f "${DAEMONCONF}" -d "${DOTDIR}"
+"${PROGRAM}" -f "${PROGRAMCONF}" -d "${DOTDIR}"
 if [ $? -eq 0 ]; then
     echo "anycast-healtchecker ${version} started!"
     echo 'run: nohup  python3 -m http.server --bind 10.52.12.2 8888 & nohup python3 -m http.server --bind 10.52.12.1 8888 &'
