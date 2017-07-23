@@ -7,7 +7,7 @@
 # pylint: disable=too-few-public-methods
 # pylint: disable=too-many-lines
 """Provide functions and classes that are used within anycast_healthchecker."""
-
+from collections import Counter
 import re
 import os
 import sys
@@ -370,6 +370,7 @@ def service_configuration_check(config):
     services = config.sections()
     # we don't need it during sanity check for services check
     services.remove('daemon')
+    ip_prefixes = []
 
     for service in services:
         for option, getter in SERVICE_OPTIONS_TYPE.items():
@@ -391,6 +392,8 @@ def service_configuration_check(config):
                    .format(name=service,
                            val=config.get(service, 'on_disabled')))
             raise ValueError(msg)
+
+        ip_prefixes.append(config.get(service, 'ip_prefix'))
 
         if not valid_ip_prefix(config.get(service, 'ip_prefix')):
             msg = ("invalid value ({val}) for 'ip_prefix' option in service "
@@ -422,6 +425,12 @@ def service_configuration_check(config):
                            cmd=config.get(service, 'check_cmd'),
                            err=exc))
             raise ValueError(msg)
+
+    occurrences_of_ip_prefixes = Counter(ip_prefixes)
+    for ip_prefix, counter in occurrences_of_ip_prefixes.items():
+        if counter > 1:
+            raise ValueError("{ip} is used by {c} service checks"
+                             .format(ip=ip_prefix, c=counter))
 
 
 def build_bird_configuration(config):
