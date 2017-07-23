@@ -268,9 +268,9 @@ accordingly in order for anycast-healthchecker to modify it.
             10.189.200.255/32
         ];
 
-anycast-healthchecker daemon removes IP prefixes from the list for which a
-service check is not configured. But, the IP prefix set in ``dummy_ip_prefix``
-does not need a service check configuration.
+anycast-healthchecker removes IP prefixes from the list for which a service
+check is not configured. But, the IP prefix set in ``dummy_ip_prefix`` does not
+need a service check configuration.
 
 This the equivalent list for IPv6 prefixes::
 
@@ -313,8 +313,8 @@ Configuring anycast-healthchecker
 #################################
 
 anycast-healthchecker uses the popular `INI`_ format for its configuration
-files. This is an example configuration file for the daemon
-(/etc/anycast-healthchecker.conf)::
+files. This is an example configuration file(/etc/anycast-healthchecker.conf)
+for configuring anycast-healthchecker::
 
     [DEFAULT]
     interface            = lo
@@ -437,16 +437,16 @@ anycast-healthchecker **does not** perform any checks for it.
 * **bird_keep_changes** Defaults to **false**
 
 Keep a history of changes for ``bird_conf`` file by copying it to a directory.
-During the startup of the daemon a directory with the name ``history`` is
-created under the directory where ``bird_conf`` file resides. The daemon has to
-have sufficient privileges to create that directory.
+During the startup of anycast-healthchecker a directory with the name ``history``
+is created under the directory where ``bird_conf`` file resides. The daemon has
+to have sufficient privileges to create that directory.
 
 * **bird6_keep_changes** Defaults to **false**
 
 Keep a history of changes for ``bird6_conf`` file by copying it to a directory.
-During the startup of the daemon a directory with the name ``history`` is
-created under the directory where ``bird6_conf`` file resides. The daemon has to
-have sufficient privileges to create that directory.
+During the startup of anycast-healthchecker a directory with the name ``history``
+is created under the directory where ``bird6_conf`` file resides. The daemon has
+to have sufficient privileges to create that directory.
 WARNING: When keeping a history of changes is enabled for both IP versions then
 configuration files set in ``bird_conf`` and ``bird6_conf`` settings **must** be
 stored on two different directories.
@@ -681,10 +681,10 @@ Multiple sections may be combined in one file or provide one file per section.
 File must be stored under one directory and their name should use ``.conf``
 as suffix (foo.bar.com.conf).
 
-Starting the daemon
-###################
+Starting anycast-healthchecker
+##############################
 
-Daemon CLI usage::
+CLI usage::
 
     anycast-healthchecker --help
     A simple healthchecker for Anycasted services.
@@ -693,7 +693,7 @@ Daemon CLI usage::
         anycast-healthchecker [ -f <file> -c -p -P ] [ -d <directory> | -F <file> ]
 
     Options:
-        -f, --file=<file>          read settings for the daemon from <file>
+        -f, --file=<file>          read settings from <file>
                                    [default: /etc/anycast-healthchecker.conf]
         -d, --dir=<dir>            read settings for service checks from files
                                    under <dir> directory
@@ -701,18 +701,17 @@ Daemon CLI usage::
         -F, --service-file=<file>  read <file> for settings of a single service
                                    check
         -c, --check                perform a sanity check on configuration
-        -p, --print                show default settings for daemon and service
-                                   checks
+        -p, --print                show default settings for anycast-healthchecker
+                                   and service checks
         -P, --print-conf           show running configuration with default settings
                                    applied
         -v, --version              show version
         -h, --help                 show this screen
 
-The daemon can be launched by supplying a configuration file and a directory
-with configuration files for service checks::
+You can launch it by supplying a configuration file and a directory with
+configuration files for service checks::
 
   anycast-healthchecker -f ./anycast-healthchecker.conf -d ./anycast-healthchecker.d
-
 
 At the root of the project there is System V init and a Systemd unit file for
 proper integration with OS startup tools.
@@ -721,13 +720,18 @@ Systemd and SysVinit integration
 ################################
 
 Under contrib/systemd and contrib/SysVinit directories there are the necessary
-Unit service and startup files which can be used to start the daemon on boot.
+startup files which can be used to start anycast-healthchecker on boot.
+
+**IMPORTANT:** Version 0.8.0 dropped support for daemonization and therefore
+you can't use the System V init script stored under contrib/SysVinit directory
+with newer versions. If you want to use version 0.8.0 and higher on Operating
+Systems that don't support Systemd then you have to use a tool like supervisord.
 
 Nagios check
 ############
 
-Under contrib/nagios directory there is a nagios plugin to check if daemon is
-up and if all threads are running.
+Under contrib/nagios directory there is a nagios plugin to check if the program
+is up and if all threads are running.
 
 Installation
 ------------

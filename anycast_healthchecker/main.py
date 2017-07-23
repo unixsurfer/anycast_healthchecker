@@ -8,7 +8,7 @@ Usage:
     anycast-healthchecker [ -f <file> -c -p -P ] [ -d <directory> | -F <file> ]
 
 Options:
-    -f, --file=<file>          read settings for the daemon from <file>
+    -f, --file=<file>          read settings from <file>
                                [default: /etc/anycast-healthchecker.conf]
     -d, --dir=<dir>            read settings for service checks from files
                                under <dir> directory
@@ -16,8 +16,8 @@ Options:
     -F, --service-file=<file>  read <file> for settings of a single service
                                check
     -c, --check                perform a sanity check on configuration
-    -p, --print                show default settings for daemon and service
-                               checks
+    -p, --print                show default settings for anycast-healthchecker
+                               and service checks
     -P, --print-conf           show running configuration with default settings
                                applied
     -v, --version              show version
