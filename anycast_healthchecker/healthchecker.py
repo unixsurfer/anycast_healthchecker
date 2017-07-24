@@ -17,12 +17,18 @@ from anycast_healthchecker.utils import (SERVICE_OPTIONS_TYPE,
 
 
 class HealthChecker(object):
-    """Lunch service checks and triggers a reconfiguration on BIRD daemon.
+    """Lunch threads for each service check and reconfigure BIRD daemon.
+
+    It starts a thread for each service check we have in the configuration and
+    then waits for reconfiguring Bird daemon based on the results of the
+    service checks.
+
+    It uses a queue as a way to communicate with all threads. Each thread will
+    add an item in the queue, which contains the IP prefix to remove from or to
+    add to BIRD configuration file. When item is added we pick it up, adjust
+    BIRD configuration and then reload BIRD.
 
     This class should be instantiated once.
-
-    It uses a queue as a store for IP prefixes to be removed from and added to
-    BIRD configuration file.
 
     Arguments:
         config (configparger obj): A configparser object with the configuration
@@ -30,7 +36,7 @@ class HealthChecker(object):
         based on the state of health check. An item is a tuple of 3 elements:
             1st: name of the thread.
             2nd: IP prefix.
-            3nd: Action to take, either 'add' or 'del'.
+            3nd: IP version, either '4' or '6'.
 
     Methods:
         run(): Lunches checks and updates BIRD configuration based on
@@ -67,7 +73,9 @@ class HealthChecker(object):
     def _update_bird_conf_file(self, operation):
         """Update BIRD configuration.
 
-        Adds/removes entries from a list and updates generation time stamp.
+        It adds to or removes IP prefix from BIRD configuration. It also
+        updates generation time stamp in the configuration file.
+
         Main program will exit if configuration file cant be read/written.
 
         Arguments:

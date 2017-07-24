@@ -18,7 +18,7 @@ from anycast_healthchecker.utils import AddOperation, DeleteOperation
 
 
 class ServiceCheck(Thread):
-    """Handles the health checking for a service.
+    """Handle the health checking for a service.
 
     Arguments:
         service (str): The name of the service to monitor.
