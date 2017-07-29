@@ -823,8 +823,7 @@ def update_pidfile(pidfile):
             else:
                 # pidfile exists with a PID for a process that is not running.
                 # Let's update PID.
-                print("updating processID in pidfile, current processID is {}"
-                      .format(pid))
+                print("updating stale processID({}) in pidfile".format(pid))
                 write_pid(pidfile)
     except FileNotFoundError:
         # Either it's 1st time we run or previous run was terminated
