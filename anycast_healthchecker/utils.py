@@ -554,6 +554,10 @@ def running(processid):
         #   signal is actually sent. The null signal can be used to check the
         #   validity of pid
         os.kill(processid, 0)
+    except OverflowError as exc:
+        print("checking validity of pid ({p}) failed with: {e}"
+              .format(p=processid, e=exc))
+        sys.exit(1)
     except OSError:
         return False
     else:
