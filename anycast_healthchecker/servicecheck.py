@@ -35,7 +35,7 @@ class ServiceCheck(Thread):
         """Set the name of thread to be the name of the service."""
         super(ServiceCheck, self).__init__()
         self.name = service  # Used by Thread()
-        self.daemon = True   # user by Thread()
+        self.daemon = True   # Used by Thread()
         self.config = config
         self.action = action
         # sanity check has already been done, so the following *should* not
