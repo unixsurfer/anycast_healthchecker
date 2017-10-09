@@ -903,6 +903,11 @@ def setup_logger(config):
         None
     )
     logger.setLevel(num_level)
+    lengths = []
+    for section in config:
+        lengths.append(len(section))
+
+    width = sorted(lengths)[-1] + 1
 
     def log_format():
         """Produce a log format line."""
@@ -923,7 +928,8 @@ def setup_logger(config):
                                          prefix=PROGRAM_NAME)
     formatter = logging.Formatter(
         '%(asctime)s {program}[%(process)d] %(levelname)-8s '
-        '%(threadName)-32s %(message)s'.format(program=PROGRAM_NAME)
+        '%(threadName)-{width}s %(message)s'
+        .format(program=PROGRAM_NAME, width=width)
     )
 
     # Register logging handlers based on configuration.
