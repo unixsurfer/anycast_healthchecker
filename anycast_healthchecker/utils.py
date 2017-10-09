@@ -979,7 +979,7 @@ def setup_logger(config):
         )
     elif (config.has_option('daemon', 'stderr_log_server')
           and not config.has_option('daemon', 'stderr_file')):
-        sys.stderr = CustomUdpLogger(  # pylint:disable=redefined-variable-type
+        sys.stderr = CustomUdpLogger(
             server=config.get('daemon', 'log_server'),
             port=config.getint('daemon', 'log_server_port')
         )
