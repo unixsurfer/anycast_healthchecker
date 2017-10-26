@@ -16,7 +16,7 @@ from anycast_healthchecker.utils import (SERVICE_OPTIONS_TYPE,
                                          archive_bird_conf)
 
 
-class HealthChecker(object):
+class HealthChecker:
     """Lunch threads for each service check and reconfigure BIRD daemon.
 
     It starts a thread for each service check we have in the configuration and
