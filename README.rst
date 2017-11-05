@@ -639,6 +639,7 @@ The following people have contributed to project with feedback, commits and code
 - Károly Nagy (@charlesnagy)
 - Nick Demou (@ndemou)
 - Ralf Ertzinger (@alufu)
+- Carlo Rengo (@sevencastles)
 
 Licensing
 ---------
