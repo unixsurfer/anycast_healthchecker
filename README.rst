@@ -23,7 +23,7 @@ In older versions ( < 0.8.0 ), anycast-healthchecker used the `daemon`_ library 
 What is Anycast
 ---------------
 
-Anycast is a network addressing scheme where traffic from a sender has more than one potential receivers, but only one of them receives it. 
+Anycast is a network addressing scheme where traffic from a sender has more than one potential receivers, but only one of them receives it.
 Routing protocols decide which one of the potential receivers will actually receive traffic, according to the topology of the network. The main attribute contributing to this decision is the cost of the network path between a sender and a receiver.
 
 Cost is a protocol specific value (usually an integer) that has meaning only within the domain of the protocol itself, and it is used as a metric of distance.
@@ -41,7 +41,7 @@ The three pictures below show how traffic is routed between a sender and multipl
    :scale: 60%
 
 These potential receivers use `BGP`_ or `OSPF`_ and simultaneously announce the same destination IP address from different places on the network. Due to the nature of Anycast, receivers can be located on any location across a global
-network infrastructure. 
+network infrastructure.
 
 Anycast doesn't balance traffic, as only one receiver attracts traffic from senders. For instance, if there are two receivers announcing the same destination IP address in different locations, traffic will be distributed between these two receivers unevenly, as senders can be spread across the network in an uneven way.
 
@@ -65,7 +65,7 @@ This grants the possibility to perform traffic load-balancing across multiple se
 * destination IP
 * destination PORT
 
-Each unique combination of these four properties is called network flow. For each different network flow a different destination is selected so that traffic is evenly balanced across all servers. These nodes run an Internet Routing software in the same way as in the Anycast case, but with the major difference that all servers receive traffic at the 
+Each unique combination of these four properties is called network flow. For each different network flow a different destination is selected so that traffic is evenly balanced across all servers. These nodes run an Internet Routing software in the same way as in the Anycast case, but with the major difference that all servers receive traffic at the
 same time.
 
 The main characteristic of this type of load-balancing is that it is stateless. Router balances traffic to a destination IP address based on the quadruple network flow without the need to understand and inspect protocols above Layer3.
@@ -482,7 +482,7 @@ What to do when check is disabled, either ``withdraw`` or ``advertise``
 
 * **ip_prefix** Unset by default
 
-IP prefix associated with the service. It **must be** assigned to the interface set in ``interface`` parameter unless ``ip_check_disabled`` is set to ``true``. Prefix length is optional and defaults to 32 for IPv4 addresses and to 128 for IPv6 addresses. 
+IP prefix associated with the service. It **must be** assigned to the interface set in ``interface`` parameter unless ``ip_check_disabled`` is set to ``true``. Prefix length is optional and defaults to 32 for IPv4 addresses and to 128 for IPv6 addresses.
 
 * **ip_check_disabled** Defaults to **false**
 
