@@ -386,7 +386,7 @@ anycast-healthchecker doesn't log to STDOUT/STDERR when either log file or a rem
 You can configure it to use a log file and a remote UDP syslog server at the same time, so logging messages can be stored locally and remotely. This is convenient when remote log server is in trouble and loses log messages.
 
 The best logging configuration in terms of resiliency is to enable logging only to a remote UDP syslog server. Sending data over UDP protocol is done in no-blocking mode and therefore anycast-healthchecker isn't blocked in any way
-when it logs messages. Furthermore, when it logs to a log file and there isn't any more space available on the filesystem, the sofware will crash. You can easily avoid this failure by using UDP syslog server.
+when it logs messages. Furthermore, when it logs to a log file and there isn't any more space available on the filesystem, the software will crash. You can easily avoid this failure by using UDP syslog server.
 
 Last but not least, anycast-healthchecker handles the rotation of old log files, so you don't need to configure any other tools(logrotate) for that.
 
