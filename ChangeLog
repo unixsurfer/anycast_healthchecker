@@ -1,6 +1,26 @@
 CHANGES
 =======
 
+0.8.0
+-----
+
+* RELEASE 0.8.0 version
+* Fix a typo in README
+* Remove trailing whitespace character
+* Add Carlo Rengo in the contributers list
+* Grammar fixes to improve readability
+* Remove unnecessary sub-classing
+* Remove unnecessary pylint config
+* Dynamically set width in log formatter
+* Fix typo in comment
+* Print a more meaningful message
+* Catch the case where pid is higher than allowed
+* Rephrase some docstrings
+* Remove from local_run.sh redundant settings
+* Refuse to start if one IP address is used by multiple service checks
+* MAJOR: Drop support for daemonization
+* Make docstrings compatible with EP257
+
 0.7.4
 -----
 
