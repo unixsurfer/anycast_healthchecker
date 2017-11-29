@@ -1,6 +1,12 @@
 CHANGES
 =======
 
+0.8.1
+-----
+
+* RELEASE 0.8.1 version
+* Make the JSON formatted logs more compatible with syslog
+
 0.8.0
 -----
 
