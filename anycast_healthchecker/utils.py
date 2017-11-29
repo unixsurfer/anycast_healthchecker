@@ -925,7 +925,7 @@ def setup_logger(config):
 
     custom_format = log_format()
     json_formatter = CustomJsonFormatter(custom_format,
-                                         prefix=PROGRAM_NAME)
+                                         prefix=PROGRAM_NAME + ': ')
     formatter = logging.Formatter(
         '%(asctime)s {program}[%(process)d] %(levelname)-8s '
         '%(threadName)-{width}s %(message)s'
