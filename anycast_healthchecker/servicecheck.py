@@ -60,31 +60,6 @@ class ServiceCheck(Thread):
         }
         self.log.info("loading check for %s", self.name, extra=self.extra)
 
-    def _update_status(self, status):
-        """Log and update status of the service.
-
-        The severity of the log message depends on the value of status:
-            status  : severity
-            OK      : info
-            DOWN    : critical
-            unknown : warning
-
-        Arguments:
-            status (str): status to report and
-
-        Returns:
-            None
-
-        """
-        self.extra['status'] = status
-
-        if status == 'UP':
-            self.log.info('status %s', status, extra=self.extra)
-        elif status == 'DOWN':
-            self.log.critical('status %s', status, extra=self.extra)
-        elif status == 'unknown':
-            self.log.warning('status %s', status, extra=self.extra)
-
     def _run_check(self):
         """Execute a check command.
 
