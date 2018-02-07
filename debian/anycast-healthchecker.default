@@ -1,0 +1,3 @@
+RUN_AS_USER="bird"
+RUN_AS_GROUP="bird"
+OPTIONS="-f /etc/anycast-healthchecker/anycast-healthchecker.conf -d /etc/anycast-healthchecker/check.d/"

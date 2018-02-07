@@ -1,0 +1,48 @@
+Source: anycast-healthchecker
+Section: python
+Priority: optional
+Maintainer: Maximilian Wilhelm <max@sdn.clinic>
+Build-Depends: debhelper (>= 9), dh-python, dh-systemd,
+               python3-all,
+               python3-setuptools,
+               python3-pbr
+Standards-Version: 3.9.5
+Homepage: https://github.com/unixsurfer/anycast_healthchecker
+X-Python3-Version: >= 3.2
+
+Package: python3-anycast-healthchecker
+Architecture: all
+Depends: ${python3:Depends}, ${misc:Depends}, python3-lockfile, python3-daemon, python3-docopt
+Description: A healthchecker for Anycasted services
+ anycast-healthchecker monitors a service by doing periodic health checks and
+ based on the result instructs Bird daemon to either advertise or withdraw the
+ route to reach the monitored service. As a result Bird will only advertise
+ routes for healthy services. Routes for IPv4 and IPv6 addresses are supported.
+ .
+ Bird must be configured in a certain way to interface properly with
+ anycast-healthchecker.
+ .
+ anycast-healthchecker is a Python program, which uses the daemon library to
+ implement a well-behaved Unix daemon process and threading to run multiple
+ service checks in parallel.
+ .
+ This package installs the library for Python 3.
+
+Package: anycast-healthchecker
+Architecture: all
+Depends: ${python3:Depends}, ${misc:Depends}, bird, python3-anycast-healthchecker (= ${source:Version})
+Description: A healthchecker for Anycasted services
+ anycast-healthchecker monitors a service by doing periodic health checks and
+ based on the result instructs Bird daemon to either advertise or withdraw the
+ route to reach the monitored service. As a result Bird will only advertise
+ routes for healthy services. Routes for IPv4 and IPv6 addresses are supported.
+ .
+ Bird must be configured in a certain way to interface properly with
+ anycast-healthchecker.
+ .
+ anycast-healthchecker is a Python program, which uses the daemon library to
+ implement a well-behaved Unix daemon process and threading to run multiple
+ service checks in parallel.
+ .
+ This package contains the files required to run the tool as
+ a standalone daemon.

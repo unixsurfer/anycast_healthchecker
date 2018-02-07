@@ -1,0 +1,24 @@
+Building a Debian package for anycast healthchecker is rather easy. Just follow
+the steps below. Building the package from within GIT is not encouraged as some
+part of the building system is trying to be smart and does naughty things with
+the ChangeLog and AUTHORS file and stuff.
+
+Here you go:
+
+  Create a pristine build dir
+
+    mkdir /tmp/ah-build
+
+  Create a tarball for the latest stable version
+
+    git archive --format tar --prefix=anycast-healthchecker-0.8.1/ HEAD | xz > /tmp/ah-build/anycast-healthchecker_0.8.1.orig.tar.xz
+
+  Extract the tarball and change into the build directory
+
+    cd /tmp/ah-build && tar xf anycast-healthchecker_0.8.1.orig.tar.xz && cd anycast-healthchecker-0.8.1
+
+  Build the package
+
+    dpkg-buildpackage -uc -us -rfakeroot
+
+  Enjoy :-)

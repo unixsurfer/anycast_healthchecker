@@ -1,0 +1,19 @@
+diff --git a/setup.cfg b/setup.cfg
+index 9c102fb..9806560 100644
+--- a/setup.cfg
++++ b/setup.cfg
+@@ -27,10 +27,10 @@ keywords = healthchecker anycast ECMP
+ [files]
+ packages =
+     anycast_healthchecker
+-    anycast
+-    healthchecker
+-    Equal-Cost Multi-Pathing
+-    monitor
++#    anycast
++#    healthchecker
++#    Equal-Cost Multi-Pathing
++#    monitor
+ 
+ [entry_points]
+ console_scripts =

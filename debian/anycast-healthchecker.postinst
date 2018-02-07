@@ -1,0 +1,7 @@
+#!/bin/sh
+
+. /etc/default/anycast-healthchecker
+
+for dir in /var/log/anycast-healthchecker/  /var/lib/anycast-healthchecker/; do
+	chown "${RUN_AS_USER}" "${dir}"
+done
