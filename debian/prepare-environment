@@ -1,0 +1,37 @@
+#!/bin/sh
+#
+# (C) 2018 Maximilian Wilhelm <max@sdn.clinic>
+#  -- Wed, 07 Feb 2018 22:13:35 +0100
+#
+
+set -eu
+
+RUN_DIR=/var/run/anycast-healthchecker
+. /etc/default/anycast-healthchecker
+
+
+mkdir --parents "${RUN_DIR}";
+
+OWNER=""
+
+if [ "${RUN_AS_USER}" ]; then
+    if ! getent passwd "${RUN_AS_USER}" >/dev/null; then
+	echo "Configured user '$RUN_AS_USER' doesn't exist."
+	exit 1
+    fi
+
+    OWNER="${RUN_AS_USER}"
+fi
+
+if [ "${RUN_AS_GROUP}" ]; then
+    if ! getent group $RUN_AS_GROUP >/dev/null; then
+	echo "Configured group '$RUN_AS_GROUP' doesn't exist."
+	exit 1
+    fi
+
+    OWNER="${RUN_AS_USER}:${RUN_AS_GROUP}"
+fi
+
+if [ "${OWNER}" ]; then
+	chown --silent "${OWNER}" "${RUN_DIR}"
+fi

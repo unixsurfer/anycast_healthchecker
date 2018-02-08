@@ -1,0 +1,3 @@
+usr/bin/*
+anycast-healthchecker.conf etc/anycast-healthchecker/
+debian/prepare-environment usr/share/anycast-healthchecker/

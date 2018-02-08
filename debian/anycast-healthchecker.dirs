@@ -1,0 +1,5 @@
+/etc/anycast-healthchecker/
+/etc/anycast-healthchecker/check.d/
+/usr/share/anycast-healthchecker/
+/var/lib/anycast-healthchecker/
+/var/log/anycast-healthchecker/
