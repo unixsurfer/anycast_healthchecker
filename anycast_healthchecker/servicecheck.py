@@ -90,7 +90,7 @@ class ServiceCheck(Thread):
             msg = "check duration {t:.3f}ms".format(
                 t=(time.time() - start_time) * 1000)
             self.log.info(msg)
-            if proc.returncode == 0:
+            if proc.returncode == 0:  # pylint: disable=no-else-return
                 return True
             else:
                 self.log.info("stderr from the check %s", errs)
@@ -151,7 +151,7 @@ class ServiceCheck(Thread):
                            ' '.join(cmd), error)
             return True
         else:
-            if self.ip_with_prefixlen in output:  # pylint: disable=E1135
+            if self.ip_with_prefixlen in output:  # pylint: disable=E1135,R1705
                 msg = "{i} assigned to loopback interface".format(
                     i=self.ip_with_prefixlen)
                 self.log.debug(msg)
