@@ -45,4 +45,4 @@ Description: A healthchecker for Anycasted services
  service checks in parallel.
  .
  This package contains the files required to run the tool as
- a standalone daemon.
+ a native systemd service.
