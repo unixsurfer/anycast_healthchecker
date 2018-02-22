@@ -631,7 +631,7 @@ Requirements for running ``local_run.sh``
 
 #. sudo access to assign IPs on the loopback interface using ``ip`` tool
 
-Contributers
+Contributors
 ############
 
 The following people have contributed to project with feedback, commits and code reviews
