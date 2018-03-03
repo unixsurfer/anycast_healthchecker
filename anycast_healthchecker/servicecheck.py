@@ -11,6 +11,7 @@ import time
 import logging
 from threading import Thread
 import ipaddress
+import random
 import shlex
 
 from anycast_healthchecker import PROGRAM_NAME
@@ -25,19 +26,21 @@ class ServiceCheck(Thread):
         config (dict): A dictionary with the configuration of the service.
         action (Queue obj): A queue object to place actions based on the result
         of the health check.
+        splay_startup: (float): The maximum time to delay the startup.
 
     Methods:
         run(): Run method of the thread.
 
     """
 
-    def __init__(self, service, config, action):
+    def __init__(self, service, config, action, splay_startup):
         """Set the name of thread to be the name of the service."""
         super(ServiceCheck, self).__init__()
         self.name = service  # Used by Thread()
         self.daemon = True   # Used by Thread()
         self.config = config
         self.action = action
+        self.splay_startup = splay_startup
         # sanity check has already been done, so the following *should* not
         # raise an exception
         _ip_prefix = ipaddress.ip_network(self.config['ip_prefix'])
@@ -225,6 +228,11 @@ class ServiceCheck(Thread):
         # Service check will abort if it is disabled.
         if self._check_disabled():
             return
+
+        if self.splay_startup is not None:
+            sleep_time = float("%.3f" % random.uniform(0, self.splay_startup))
+            self.log.info("delaying startup for %ssecs", sleep_time)
+            time.sleep(sleep_time)
 
         interval = self.config['check_interval']
         start_offset = time.time() % interval

@@ -376,6 +376,14 @@ The port on the remote syslog server to forward logging messages over UDP.
 ``true`` enables structured logging when **log_server** is set to a remote UDP
 syslog server.
 
+* **splay_startup** Unset by default
+
+The maximum time to delay the startup of service checks. You can use either integer or floating-point number as a value.
+
+In order to avoid launching all checks at the same time, after anycast-healthchecker is started, we can delay the 1st check in random way. This can be useful in cases where we have a lot of service checks and launching all them at the same time can overload the system.  We randomize the delay of the 1st check for each service and **splay_startup** sets the maximum time we can delay that 1st check.
+
+The interval of the check doesn't drift, thanks to 9cbbeaff455c49b35670c, and as a result the service checks will be always launched in different times during the life time of anycast-healthchecker.
+
 How to configure logging
 ************************
 

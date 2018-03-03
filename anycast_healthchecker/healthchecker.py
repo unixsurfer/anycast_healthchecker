@@ -175,13 +175,19 @@ class HealthChecker:
             self.log.warning("no service checks are configured")
         else:
             self.log.info("going to lunch %s threads", len(self.services))
+            if self.config.has_option('daemon', 'splay_startup'):
+                splay_startup = self.config.getfloat('daemon', 'splay_startup')
+            else:
+                splay_startup = None
+
             for service in self.services:
                 self.log.debug("lunching thread for %s", service)
                 _config = {}
                 for option, getter in SERVICE_OPTIONS_TYPE.items():
                     _config[option] = getattr(self.config, getter)(service,
                                                                    option)
-                _thread = ServiceCheck(service, _config, self.action)
+                _thread = ServiceCheck(service, _config, self.action,
+                                       splay_startup)
                 _thread.start()
 
         # Stay running until we are stopped

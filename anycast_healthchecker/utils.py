@@ -62,12 +62,14 @@ DAEMON_OPTIONS_TYPE = {
     'bird6_changes_counter': 'getint',
     'bird_reconfigure_cmd': 'get',
     'bird6_reconfigure_cmd': 'get',
+    'splay_startup': 'getfloat',
 }
 DAEMON_OPTIONAL_OPTIONS = [
     'stderr_log_server',
     'stderr_file',
     'log_server',
     'log_file',
+    'splay_startup',
 ]
 
 
