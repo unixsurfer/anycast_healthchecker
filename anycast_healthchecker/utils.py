@@ -18,7 +18,6 @@ import time
 import datetime
 import configparser
 import glob
-import copy
 import shlex
 import shutil
 import ipaddress
@@ -275,12 +274,8 @@ def load_configuration(config_file, config_dir, service_file):
 
     """
     config_files = [config_file]
-    defaults = copy.copy(DEFAULT_OPTIONS['DEFAULT'])
-    daemon_defaults = {
-        'daemon': copy.copy(DEFAULT_OPTIONS['daemon'])
-    }
-    config = configparser.ConfigParser(defaults=defaults)
-    config.read_dict(daemon_defaults)
+    config = configparser.ConfigParser()
+    config.read_dict(DEFAULT_OPTIONS)
     if service_file is not None:
         if not os.path.isfile(service_file):
             raise ValueError("{f} configuration file for a service check "
