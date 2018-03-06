@@ -32,11 +32,7 @@ class HealthChecker:
 
     Arguments:
         config (configparger obj): A configparser object with the configuration
-        action (Queue obj): A queue of IP prefixes and their action to be taken
-        based on the state of health check. An item is a tuple of 3 elements:
-            1st: name of the thread.
-            2nd: IP prefix.
-            3nd: IP version, either '4' or '6'.
+        bird_configuration (dict): A dictionary with Bird settings.
 
     Methods:
         run(): Lunches checks and updates BIRD configuration based on
@@ -48,6 +44,11 @@ class HealthChecker:
         """Initialization."""
         self.log = logging.getLogger(PROGRAM_NAME)
         self.config = config
+        # A queue with IP prefixes and their action to be taken based on the
+        # state of health check. An item is a tuple of 3 elements:
+        #     1st: name of the thread.
+        #     2nd: IP prefix.
+        #     3nd: IP version, either '4' or '6'.
         self.action = Queue()
         self.bird_configuration = bird_configuration
         self.log.debug(self.bird_configuration)
@@ -65,7 +66,8 @@ class HealthChecker:
                 ip_version)
 
             _ip_prefixes.add(
-                self.bird_configuration[ip_version]['dummy_ip_prefix'])
+                self.bird_configuration[ip_version]['dummy_ip_prefix']
+            )
             self.ip_prefixes[ip_version] = _ip_prefixes
 
         self.log.info('initialize healthchecker')
