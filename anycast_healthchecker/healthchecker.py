@@ -13,7 +13,8 @@ from anycast_healthchecker.utils import (SERVICE_OPTIONS_TYPE,
                                          get_ip_prefixes_from_config,
                                          reconfigure_bird,
                                          write_temp_bird_conf,
-                                         archive_bird_conf)
+                                         archive_bird_conf,
+                                         ServiceCheckDied)
 
 
 class HealthChecker:
@@ -196,6 +197,15 @@ class HealthChecker:
         while True:
             # Fetch items from action queue
             operation = self.action.get(block=True)
+
+            if isinstance(operation, ServiceCheckDied):
+                self.log.info(operation)
+                self.log.critical("This is a fatal error and the only way to "
+                                  "recover is to restart, thus exiting with a "
+                                  "non-zero code and let systemd act by "
+                                  "triggering a restart")
+                sys.exit(1)
+
             self.log.info("returned an item from the queue for %s with IP "
                           "prefix %s and action to %s Bird configuration",
                           operation.name,

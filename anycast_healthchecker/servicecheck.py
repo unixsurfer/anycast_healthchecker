@@ -15,7 +15,8 @@ import random
 import shlex
 
 from anycast_healthchecker import PROGRAM_NAME
-from anycast_healthchecker.utils import AddOperation, DeleteOperation
+from anycast_healthchecker.utils import (AddOperation, DeleteOperation,
+                                         ServiceCheckDied)
 
 
 class ServiceCheck(Thread):
@@ -204,6 +205,15 @@ class ServiceCheck(Thread):
         return False
 
     def run(self):
+        """Wrap _run method."""
+        # Catch all possible exceptions raised by the running thread
+        # and let parent process know about it.
+        try:
+            self._run()
+        except Exception as exc:  # pylint: disable=broad-except
+            self.action.put(ServiceCheckDied(self.name, exc))
+
+    def _run(self):
         """Discovers the health of a service.
 
         Runs until it is being killed from main program and is responsible to

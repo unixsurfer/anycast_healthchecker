@@ -1107,3 +1107,15 @@ class CustomJsonFormatter(jsonlogger.JsonFormatter):
         # return jsonlogger.JsonFormatter.process_log_record(self, log_record)
 
         return log_record
+
+
+class ServiceCheckDied(Exception):
+    def __init__(self, name, raised):
+        """Initialize."""
+        self.name = name
+        self.raised = raised
+
+    def __str__(self):
+        """More useful."""
+        return "service {n} died due to {e!r}".format(n=self.name,
+                                                      e=repr(self.raised))
