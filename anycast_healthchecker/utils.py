@@ -1114,6 +1114,7 @@ class ServiceCheckDiedError(Exception):
 
     def __init__(self, name, raised):
         """Initialize."""
+        super().__init__()
         self.name = name
         self.raised = raised
 
