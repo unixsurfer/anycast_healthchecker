@@ -1109,7 +1109,9 @@ class CustomJsonFormatter(jsonlogger.JsonFormatter):
         return log_record
 
 
-class ServiceCheckDied(Exception):
+class ServiceCheckDiedError(Exception):
+    """Raised when a thread that runs service check dies."""
+
     def __init__(self, name, raised):
         """Initialize."""
         self.name = name

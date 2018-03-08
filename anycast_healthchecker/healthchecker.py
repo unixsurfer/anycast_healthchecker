@@ -14,7 +14,7 @@ from anycast_healthchecker.utils import (SERVICE_OPTIONS_TYPE,
                                          reconfigure_bird,
                                          write_temp_bird_conf,
                                          archive_bird_conf,
-                                         ServiceCheckDied)
+                                         ServiceCheckDiedError)
 
 
 class HealthChecker:
@@ -198,7 +198,7 @@ class HealthChecker:
             # Fetch items from action queue
             operation = self.action.get(block=True)
 
-            if isinstance(operation, ServiceCheckDied):
+            if isinstance(operation, ServiceCheckDiedError):
                 self.log.info(operation)
                 self.log.critical("This is a fatal error and the only way to "
                                   "recover is to restart, thus exiting with a "

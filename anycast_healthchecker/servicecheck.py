@@ -16,7 +16,7 @@ import shlex
 
 from anycast_healthchecker import PROGRAM_NAME
 from anycast_healthchecker.utils import (AddOperation, DeleteOperation,
-                                         ServiceCheckDied)
+                                         ServiceCheckDiedError)
 
 
 class ServiceCheck(Thread):
@@ -211,7 +211,7 @@ class ServiceCheck(Thread):
         try:
             self._run()
         except Exception as exc:  # pylint: disable=broad-except
-            self.action.put(ServiceCheckDied(self.name, exc))
+            self.action.put(ServiceCheckDiedError(self.name, exc))
 
     def _run(self):
         """Discovers the health of a service.
