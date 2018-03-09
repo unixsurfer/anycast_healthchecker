@@ -199,7 +199,7 @@ class HealthChecker:
             operation = self.action.get(block=True)
 
             if isinstance(operation, ServiceCheckDiedError):
-                self.log.info(operation)
+                self.log.critical(operation)
                 self.log.critical("This is a fatal error and the only way to "
                                   "recover is to restart, thus exiting with a "
                                   "non-zero code and let systemd act by "
