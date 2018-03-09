@@ -1110,15 +1110,20 @@ class CustomJsonFormatter(jsonlogger.JsonFormatter):
 
 
 class ServiceCheckDiedError(Exception):
-    """Raised when a thread that runs service check dies."""
+    """Raised when a thread that runs service check dies.
 
-    def __init__(self, name, raised):
+    Arguments:
+        name (str): the name of the thread
+        trace (str): A trace, preferably the output of traceback.format_exc()
+    """
+
+    def __init__(self, name, trace):
         """Initialize."""
         super().__init__()
         self.name = name
-        self.raised = raised
+        self.trace = trace
 
     def __str__(self):
         """More useful."""
-        return "service {n} died due to {e!r}".format(n=self.name,
-                                                      e=repr(self.raised))
+        return ("thread for service {n} died due to : {t}"
+                .format(n=self.name, t=self.trace))

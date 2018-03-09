@@ -9,6 +9,7 @@
 import subprocess
 import time
 import logging
+import traceback
 from threading import Thread
 import ipaddress
 import random
@@ -210,8 +211,10 @@ class ServiceCheck(Thread):
         # and let parent process know about it.
         try:
             self._run()
-        except Exception as exc:  # pylint: disable=broad-except
-            self.action.put(ServiceCheckDiedError(self.name, exc))
+        except Exception:  # pylint: disable=broad-except
+            self.action.put(
+                ServiceCheckDiedError(self.name, traceback.format_exc())
+            )
 
     def _run(self):
         """Discovers the health of a service.
