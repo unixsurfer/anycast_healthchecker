@@ -162,7 +162,7 @@ def main():
               .format(c=' '.join(cmd), r=exc.returncode))
         sys.exit(3)
     except subprocess.TimeoutExpired:
-        print("UNKNOWN: running '{}' ftimeout".format(' '.join(cmd)))
+        print("UNKNOWN: running '{}' timed out".format(' '.join(cmd)))
         sys.exit(3)
     else:
         output_lines = out.splitlines()
