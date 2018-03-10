@@ -2,9 +2,8 @@
 # pylint: disable=too-many-branches
 # pylint: disable=too-many-statements
 # pylint: disable=too-many-locals
-# -*- coding: utf-8 -*-
 # vim:fenc=utf-8
-"""Check if anycast-healthchecker and all configured threads are running
+"""Check if anycast-healthchecker and all configured threads are running.
 
 Usage:
     check_anycast_healthchecker.py [-v]
@@ -21,8 +20,7 @@ from docopt import docopt
 
 
 def get_processid(config):
-    """
-    Return process id of anycast-healthchecker
+    """Return process id of anycast-healthchecker.
 
     Arguments:
         config (obj): A configparser object with the configuration of
@@ -37,6 +35,7 @@ def get_processid(config):
         - pid is either -1 or 1
         - stale pidfile, either with no data or invalid data
         - failure to read pidfile
+
     """
     pidfile = config.get('daemon', 'pidfile', fallback=None)
     if pidfile is None:
@@ -65,8 +64,7 @@ def get_processid(config):
 
 
 def running(pid):
-    """
-    Check the validity of a process ID.
+    """Check the validity of a process ID.
 
     Note: We need root privilege for this.
 
@@ -75,6 +73,7 @@ def running(pid):
 
     Returns:
         True if process ID is found otherwise False.
+
     """
     try:
         # From kill(2)
@@ -100,6 +99,7 @@ def parse_services(config, services):
 
     Returns:
         A number (int) of enabled service checks.
+
     """
     enabled = 0
     for service in services:
@@ -111,7 +111,8 @@ def parse_services(config, services):
 
 
 def main():
-    """
+    """Run check.
+
     anycast-healthchecker is a multi-threaded software and for each
     service check it holds a thread. If a thread dies then the service
     is not monitored anymore and the route for the IP associated with service
@@ -182,6 +183,7 @@ def main():
                   "number of threads is {c} OpDocs ANYCAST-03"
                   .format(n=running_threads - 1, c=configured_threads - 1))
             sys.exit(2)
+
 
 # This is the standard boilerplate that calls the main() function.
 if __name__ == '__main__':
