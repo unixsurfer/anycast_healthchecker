@@ -34,8 +34,6 @@ from anycast_healthchecker.utils import (load_configuration, shutdown,
                                          ip_prefixes_sanity_check,
                                          update_pidfile, setup_logger)
 
-LOCK_SOCKET = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
-
 
 def main():
     """Parse CLI and starts main program."""
@@ -68,12 +66,14 @@ def main():
         sys.exit(0)
 
     try:
-        LOCK_SOCKET.bind('\0' + "{}".format(PROGRAM_NAME))
+        lock_socket = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+        lock_socket.bind('\0' + "{}".format(PROGRAM_NAME))
     except socket.error as exc:
         sys.exit("failed to acquire a lock by creating an abstract namespace"
                  " socket: {}".format(exc))
     else:
-        print("acquired a lock by creating an abstract namespace socket")
+        print("acquired a lock by creating an abstract namespace socket: {}"
+              .format(lock_socket))
 
     # Clean old pidfile, if it exists, and write PID to it.
     pidfile = config.get('daemon', 'pidfile')
