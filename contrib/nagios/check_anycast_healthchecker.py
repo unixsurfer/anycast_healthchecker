@@ -88,8 +88,7 @@ def running(pid):
 
 
 def parse_services(config, services):
-    """
-    Parse configuration to return number of enabled service checks.
+    """Parse configuration to return number of enabled service checks.
 
     Arguments:
         config (obj): A configparser object with the configuration of
