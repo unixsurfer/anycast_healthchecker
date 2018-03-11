@@ -94,7 +94,7 @@ def main():
 
     # Create our master process.
     checker = healthchecker.HealthChecker(config, bird_configuration)
-    logger.info("starting %s %s version", PROGRAM_NAME, __version__)
+    logger.info("starting %s version %s", PROGRAM_NAME, __version__)
     checker.run()
 
 
