@@ -95,12 +95,12 @@ class ServiceCheck(Thread):
             msg = "check duration {t:.3f}ms".format(
                 t=(time.time() - start_time) * 1000)
             self.log.info(msg)
-            if proc.returncode == 0:  # pylint: disable=no-else-return
-                return True
-            else:
+
+            if proc.returncode != 0:
                 self.log.info("stderr from the check %s", errs)
                 self.log.info("stdout from the check %s", outs)
-                return False
+
+            return proc.returncode == 0
 
     def _ip_assigned(self):
         """Check if IP prefix is assigned to loopback interface.
