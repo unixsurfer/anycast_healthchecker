@@ -115,7 +115,7 @@ def touch(file_path):
 
 
 def get_ip_prefixes_from_config(config, services, ip_version):
-    """Build a set of IP prefixes found in configuration files.
+    """Build a set of IP prefixes found in service configuration files.
 
     Arguments:
         config (obg): A configparser object which holds our configuration.
