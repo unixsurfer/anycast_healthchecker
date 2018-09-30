@@ -168,10 +168,10 @@ def modify_ip_prefixes(
         ip_version):
     """Modify IP prefixes in Bird configuration.
 
-    - Depending on the configuration either remove or report IP prefixes found
+    Depending on the configuration either removes or reports IP prefixes found
     in Bird configuration for which we don't have a service check associated
-    with them.
-    - Add ``dummy_ip_prefix`` in Bird configuration if it is missing
+    with them. Moreover, it adds the dummy IP prefix if it isn't present and
+    ensures that the correct variable name is set.
 
     Arguments:
         config (obg): A configparser object which holds our configuration.
@@ -196,6 +196,16 @@ def modify_ip_prefixes(
         log.error("failed to open Bird configuration %s, this is a FATAL "
                   "error, thus exiting main program", error)
         sys.exit(1)
+
+    _name = get_variable_name_from_bird(config_file)
+    if _name is None:
+        log.warning("failed to find variable name in %s, going to add it",
+                    config_file)
+        update_bird_conf = True
+    elif _name != variable_name:
+        log.warning("found incorrect variable name in %s, going to add the "
+                    "correct one %s", _name, variable_name)
+        update_bird_conf = True
 
     if dummy_ip_prefix not in ip_prefixes_in_bird:
         log.warning("dummy IP prefix %s is missing from bird configuration "
@@ -229,8 +239,6 @@ def modify_ip_prefixes(
                         ','.join(ip_prefixes_without_check),
                         config_file)
 
-    # Either dummy IP-Prefix was added or an IP-Prefix(es) without a service
-    # check was removed.
     if update_bird_conf:
         if keep_changes:
             archive_bird_conf(config_file, changes_counter)
@@ -492,6 +500,42 @@ def build_bird_configuration(config):
         }
 
     return bird_configuration
+
+
+def get_variable_name_from_bird(bird_conf):
+    """Return the variable name set in Bird configuration.
+
+    The variable name in Bird configuration is set with the keyword 'define',
+    here is an example:
+
+        define ACAST_PS_ADVERTISE =
+
+    and we exract the string between the word 'define' and the equals sign.
+
+    Arguments:
+        bird_conf (str): The absolute file name path of Bird configuration.
+
+    Returns:
+        The variable name as a string or None if it isn't found.
+
+    """
+    bird_variable_pattern = re.compile(
+        r'''
+        ^\s*
+        define\s+
+        (?P<name>\S+\b)
+        \s+
+        =
+        ''', re.VERBOSE
+    )
+
+    with open(bird_conf, 'r') as content:
+        for line in content.readlines():
+            variable_match = bird_variable_pattern.search(line)
+            if variable_match:
+                return variable_match.group('name')
+
+    return None
 
 
 def create_bird_config_files(bird_configuration):
