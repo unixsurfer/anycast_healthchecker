@@ -257,6 +257,7 @@ Below are the default settings for all service checks, see `Configuring checks f
 :check_disabled: true
 :on_disabled: withdraw
 :ip_check_disabled: false
+:custom_bird_reconfigure_cmd_timeout: 2
 
 Daemon section
 **************
@@ -504,6 +505,15 @@ Therefore, it should be only enabled in environments where the network or the ne
 * **interface** Defaults to **lo**
 
 The name of the interface that ``ip_prefix`` is assigned to
+
+* **custom_bird_reconfigure_cmd** Unset by default
+
+A custom command to trigger a reconfiguration of Bird daemon. This overwrites the value of **bird_reconfigure_cmd** and **bird6_reconfigure_cmd** settings. This setting allows the use of a custom command to trigger a reconfiguration of Bird daemon after an IP prefix is either added to or removed from Bird configuration. If return code is not a zero value then an error is logged together with STDERR of the command, if there is any. anycast-healthchecker passes one argument to the command, which is *up* when IP prefix is added or *down* when is removed, so the command can perform different things depending the status of the service.
+
+* **custom_bird_reconfigure_cmd_timeout** Defaults to **2** (seconds)
+
+Maximum time in seconds for the **custom_bird_reconfigure_cmd** to complete. anycast-healthchecker will try kill the command if it doesn't return after **custom_bird_reconfigure_cmd_timeout** seconds. If **custom_bird_reconfigure_cmd** runs under another user account (root) via sudo then it won't be killed.  anycast-healthchecker could run as root to overcome this problem, but it is highly recommended to run it as normal user.
+
 
 Multiple sections may be combined in one file or provide one file per section. File must be stored under one directory and their name should use ``.conf`` as suffix (foo.bar.com.conf).
 

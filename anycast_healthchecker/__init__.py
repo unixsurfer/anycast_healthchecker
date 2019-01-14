@@ -19,6 +19,7 @@ DEFAULT_OPTIONS = {
         'check_disabled': 'true',
         'on_disabled': 'withdraw',
         'ip_check_disabled': 'false',
+        'custom_bird_reconfigure_cmd_timeout': 2,
     },
     'daemon': {
         'ipv4': 'true',

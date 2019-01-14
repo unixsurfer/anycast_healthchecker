@@ -63,13 +63,33 @@ class ServiceCheck(Thread):
             'ip_check_disabled': self.ip_check_disabled,
             'status': 'unknown',
         }
+        self.add_operation = AddOperation(
+            name=self.name,
+            ip_prefix=self.ip_with_prefixlen,
+            ip_version=self.ip_version,
+            bird_reconfigure_timeout=(
+                config['custom_bird_reconfigure_cmd_timeout']
+            ),
+            bird_reconfigure_cmd=config.get('custom_bird_reconfigure_cmd',
+                                            None)
+        )
+        self.del_operation = DeleteOperation(
+            name=self.name,
+            ip_prefix=self.ip_with_prefixlen,
+            ip_version=self.ip_version,
+            bird_reconfigure_timeout=(
+                config['custom_bird_reconfigure_cmd_timeout']
+            ),
+            bird_reconfigure_cmd=config.get('custom_bird_reconfigure_cmd',
+                                            None)
+        )
         self.log.info("loading check for %s", self.name, extra=self.extra)
 
     def _run_check(self):
         """Execute a check command.
 
         Returns:
-            True if the exit code of the command was 0 otherwise False.
+            True if the exit code of the command is 0 otherwise False.
 
         """
         cmd = shlex.split(self.config['check_cmd'])
@@ -185,21 +205,15 @@ class ServiceCheck(Thread):
         if (self.config['check_disabled'] and
                 self.config['on_disabled'] == 'withdraw'):
             self.log.info("Check is disabled and ip_prefix will be withdrawn")
-            del_operation = DeleteOperation(name=self.name,
-                                            ip_prefix=self.ip_with_prefixlen,
-                                            ip_version=self.ip_version)
             self.log.info("adding %s in the queue", self.ip_with_prefixlen)
-            self.action.put(del_operation)
+            self.action.put(self.del_operation)
             self.log.info("Check is now permanently disabled")
             return True
         elif (self.config['check_disabled'] and
               self.config['on_disabled'] == 'advertise'):
             self.log.info("check is disabled, ip_prefix wont be withdrawn")
-            add_operation = AddOperation(name=self.name,
-                                         ip_prefix=self.ip_with_prefixlen,
-                                         ip_version=self.ip_version)
             self.log.info("adding %s in the queue", self.ip_with_prefixlen)
-            self.action.put(add_operation)
+            self.action.put(self.add_operation)
             self.log.info('check is now permanently disabled')
             return True
 
@@ -261,14 +275,10 @@ class ServiceCheck(Thread):
                                  extra=self.extra)
                 if check_state != 'DOWN':
                     check_state = 'DOWN'
-                    del_operation = DeleteOperation(
-                        name=self.name,
-                        ip_prefix=self.ip_with_prefixlen,
-                        ip_version=self.ip_version)
                     self.log.info("adding %s in the queue",
                                   self.ip_with_prefixlen,
                                   extra=self.extra)
-                    self.action.put(del_operation)
+                    self.action.put(self.del_operation)
             elif self._run_check():
                 if up_cnt == (self.config['check_rise'] - 1):
                     self.extra['status'] = 'up'
@@ -279,14 +289,10 @@ class ServiceCheck(Thread):
                     # reloads when a service flaps between states.
                     if check_state != 'UP':
                         check_state = 'UP'
-                        operation = AddOperation(
-                            name=self.name,
-                            ip_prefix=self.ip_with_prefixlen,
-                            ip_version=self.ip_version)
                         self.log.info("adding %s in the queue",
                                       self.ip_with_prefixlen,
                                       extra=self.extra)
-                        self.action.put(operation)
+                        self.action.put(self.add_operation)
                 elif up_cnt < self.config['check_rise']:
                     up_cnt += 1
                     self.log.info("going up %s", up_cnt, extra=self.extra)
@@ -306,14 +312,10 @@ class ServiceCheck(Thread):
                     # between states
                     if check_state != 'DOWN':
                         check_state = 'DOWN'
-                        del_operation = DeleteOperation(
-                            name=self.name,
-                            ip_prefix=self.ip_with_prefixlen,
-                            ip_version=self.ip_version)
                         self.log.info("adding %s in the queue",
                                       self.ip_with_prefixlen,
                                       extra=self.extra)
-                        self.action.put(del_operation)
+                        self.action.put(self.del_operation)
                 elif down_cnt < self.config['check_fail']:
                     down_cnt += 1
                     self.log.info("going down %s", down_cnt, extra=self.extra)
