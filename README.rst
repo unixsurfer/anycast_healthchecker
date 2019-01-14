@@ -508,7 +508,7 @@ The name of the interface that ``ip_prefix`` is assigned to
 
 * **custom_bird_reconfigure_cmd** Unset by default
 
-A custom command to trigger a reconfiguration of Bird daemon. This overwrites the value of **bird_reconfigure_cmd** and **bird6_reconfigure_cmd** settings, which allows to use a custom command to trigger a reconfiguration of Bird daemon after and IP prefix is either added to or removed from Bird configuration. It allows to use a different command per service as it is a setting per service check. If return code is not a zero value then an error is logged together with STDERR of the command, if there is any.
+A custom command to trigger a reconfiguration of Bird daemon. This overwrites the value of **bird_reconfigure_cmd** and **bird6_reconfigure_cmd** settings, which allows to use a custom command to trigger a reconfiguration of Bird daemon after and IP prefix is either added to or removed from Bird configuration. It allows to use a different command per service as it is a setting per service check. If return code is not a zero value then an error is logged together with STDERR of the command, if there is any. anycast-healthchecker passes one argument to the command, which is *up* when IP prefix is added or *down* when is removed.
 
 * **custom_bird_reconfigure_cmd_timeout** Defaults to **2** (seconds)
 
