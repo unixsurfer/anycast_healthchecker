@@ -652,6 +652,11 @@ class BaseOperation(object):
     Arguments:
         name (string): The name of the service for the given ip_prefix
         ip_prefix (string): The value to run the operation
+        ip_version (string): IP protocol version
+        bird_reconfigure_cmd (string): A custom command to trigger
+        reconfiguration to Bird Daemon.
+        bird_reconfigure_cmd_timeout (float): Maximum time to wait for command
+        to complete.
     """
 
     def __init__(
@@ -1195,8 +1200,14 @@ class ServiceCheckDiedError(Exception):
 def run_custom_bird_reconfigure(operation):
     """Reconfigure BIRD daemon by running a custom command.
 
+    It adds one argument to the command, either "up" or "down".
+    If command times out then we kill it. In order to avoid leaving any orphan
+    processes, that may have been started by the command, we start a new
+    session when we invoke the command and then we kill process group of that
+    session.
+
     Arguments:
-        cmd (string): A command to trigger a reconfiguration of Bird daemon
+        operation (obj): Either a AddOperation or DeleteOperation object.
 
     """
     log = logging.getLogger(PROGRAM_NAME)
