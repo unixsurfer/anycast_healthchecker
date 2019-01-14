@@ -9,6 +9,7 @@
 from collections import Counter
 import re
 import os
+import signal
 import sys
 import subprocess
 import logging
@@ -36,7 +37,14 @@ SERVICE_OPTIONS_TYPE = {
     'ip_prefix': 'get',
     'interface': 'get',
     'ip_check_disabled': 'getboolean',
+    'custom_bird_reconfigure_cmd_timeout': 'getfloat',
+    'custom_bird_reconfigure_cmd': 'get',
 }
+SERVICE_OPTIONAL_OPTIONS = {
+    'custom_bird_reconfigure_cmd_timeout',
+    'custom_bird_reconfigure_cmd',
+}
+
 DAEMON_OPTIONS_TYPE = {
     'pidfile': 'get',
     'bird_conf': 'get',
@@ -380,6 +388,9 @@ def service_configuration_check(config):
         for option, getter in SERVICE_OPTIONS_TYPE.items():
             try:
                 getattr(config, getter)(service, option)
+            except configparser.NoOptionError as error:
+                if option not in SERVICE_OPTIONAL_OPTIONS:
+                    raise ValueError(error)
             except configparser.Error as error:
                 raise ValueError(error)
             except ValueError as exc:
@@ -643,11 +654,19 @@ class BaseOperation(object):
         ip_prefix (string): The value to run the operation
     """
 
-    def __init__(self, name, ip_prefix, ip_version):  # noqa:D102
+    def __init__(
+            self,
+            name,
+            ip_prefix,
+            ip_version,
+            bird_reconfigure_cmd,
+            bird_reconfigure_timeout):  # noqa:D102
         self.name = name
         self.ip_prefix = ip_prefix
         self.log = logging.getLogger(PROGRAM_NAME)
         self.ip_version = ip_version
+        self.bird_reconfigure_cmd = bird_reconfigure_cmd
+        self.bird_reconfigure_timeout = bird_reconfigure_timeout
 
 
 class AddOperation(BaseOperation):
@@ -1171,3 +1190,43 @@ class ServiceCheckDiedError(Exception):
         """More useful."""
         return ("thread for service {n} died due to : {t}"
                 .format(n=self.name, t=self.trace))
+
+
+def run_custom_bird_reconfigure(operation):
+    """Reconfigure BIRD daemon by running a custom command.
+
+    Arguments:
+        cmd (string): A command to trigger a reconfiguration of Bird daemon
+
+    """
+    log = logging.getLogger(PROGRAM_NAME)
+    if isinstance(operation, AddOperation):
+        status = 'up'
+    else:
+        status = 'down'
+    cmd = shlex.split(operation.bird_reconfigure_cmd + " " + status)
+    log.info("reconfiguring BIRD by running custom command %s", ' '.join(cmd))
+    try:
+        proc = subprocess.Popen(cmd,
+                                start_new_session=True,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+        outs, errs = proc.communicate(
+            timeout=operation.bird_reconfigure_cmd_timeout
+        )
+    except FileNotFoundError as exc:
+        log.error("reconfiguring BIRD failed with: %s", exc)
+    except subprocess.TimeoutExpired as exc:
+        log.error("reconfiguring bird timed out")
+        if proc.poll() is None:  # if process is still alive
+            try:
+                os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+            except PermissionError as exc:
+                log.error("failed to terminate custom bird command: %s", exc)
+    else:
+        if proc.returncode != 0:
+            log.error("reconfiguring BIRD failed with return code: %s and "
+                      "stderr: %s", proc.returncode, errs)
+            log.info("stdout from the command %s", outs)
+
+        return proc.returncode == 0

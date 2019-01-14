@@ -1,6 +1,7 @@
 # pylint: disable=too-few-public-methods
 
 """A library which provides the HealthChecker class."""
+from configparser import NoOptionError
 import os
 import sys
 import logging
@@ -14,7 +15,8 @@ from anycast_healthchecker.utils import (SERVICE_OPTIONS_TYPE,
                                          reconfigure_bird,
                                          write_temp_bird_conf,
                                          archive_bird_conf,
-                                         ServiceCheckDiedError)
+                                         ServiceCheckDiedError,
+                                         run_custom_bird_reconfigure)
 
 
 class HealthChecker:
@@ -187,8 +189,12 @@ class HealthChecker:
                 self.log.debug("lunching thread for %s", service)
                 _config = {}
                 for option, getter in SERVICE_OPTIONS_TYPE.items():
-                    _config[option] = getattr(self.config, getter)(service,
-                                                                   option)
+                    try:
+                        _config[option] = getattr(self.config, getter)(service,
+                                                                       option)
+                    except NoOptionError:
+                        pass  # for optional settings
+
                 _thread = ServiceCheck(service, _config, self.action,
                                        splay_startup)
                 _thread.start()
@@ -215,5 +221,8 @@ class HealthChecker:
             self.action.task_done()
             if bird_updated:
                 ip_version = operation.ip_version
-                cmd = self.bird_configuration[ip_version]['reconfigure_cmd']
-                reconfigure_bird(cmd)
+                if operation.bird_reconfigure_cmd is None:
+                    reconfigure_bird(
+                        self.bird_configuration[ip_version]['reconfigure_cmd'])
+                else:
+                    run_custom_bird_reconfigure(operation)
