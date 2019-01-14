@@ -67,8 +67,9 @@ class ServiceCheck(Thread):
             name=self.name,
             ip_prefix=self.ip_with_prefixlen,
             ip_version=self.ip_version,
-            bird_reconfigure_timeout=\
-                config['custom_bird_reconfigure_cmd_timeout'],
+            bird_reconfigure_timeout=(
+                config['custom_bird_reconfigure_cmd_timeout']
+            ),
             bird_reconfigure_cmd=config.get('custom_bird_reconfigure_cmd',
                                             None)
         )
@@ -76,8 +77,9 @@ class ServiceCheck(Thread):
             name=self.name,
             ip_prefix=self.ip_with_prefixlen,
             ip_version=self.ip_version,
-            bird_reconfigure_timeout=\
-                config['custom_bird_reconfigure_cmd_timeout'],
+            bird_reconfigure_timeout=(
+                config['custom_bird_reconfigure_cmd_timeout']
+            ),
             bird_reconfigure_cmd=config.get('custom_bird_reconfigure_cmd',
                                             None)
         )
