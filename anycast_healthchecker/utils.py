@@ -1211,8 +1211,8 @@ def run_custom_bird_reconfigure(operation):
                                 start_new_session=True,
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE)
-        outs, errs = proc.communicate(
-            timeout=operation.bird_reconfigure_cmd_timeout
+        _, errs = proc.communicate(
+            timeout=operation.bird_reconfigure_timeout
         )
     except FileNotFoundError as exc:
         log.error("reconfiguring BIRD failed with: %s", exc)
@@ -1227,6 +1227,5 @@ def run_custom_bird_reconfigure(operation):
         if proc.returncode != 0:
             log.error("reconfiguring BIRD failed with return code: %s and "
                       "stderr: %s", proc.returncode, errs)
-            log.info("stdout from the command %s", outs)
-
-        return proc.returncode == 0
+        else:
+            log.info("custom command successfully reconfigured Bird")
