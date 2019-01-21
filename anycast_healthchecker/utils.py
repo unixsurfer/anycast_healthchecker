@@ -1225,7 +1225,7 @@ def run_custom_bird_reconfigure(operation):
         _, errs = proc.communicate(
             timeout=operation.bird_reconfigure_timeout
         )
-    except FileNotFoundError as exc:
+    except OSError as exc:
         log.error("reconfiguring BIRD failed with: %s", exc)
     except subprocess.TimeoutExpired as exc:
         log.error("reconfiguring bird timed out")
