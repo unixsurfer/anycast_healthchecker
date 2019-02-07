@@ -202,19 +202,19 @@ class ServiceCheck(Thread):
             True if check is disabled otherwise False.
 
         """
-        if (self.config['check_disabled'] and
-                self.config['on_disabled'] == 'withdraw'):
-            self.log.info("Check is disabled and ip_prefix will be withdrawn")
-            self.log.info("adding %s in the queue", self.ip_with_prefixlen)
-            self.action.put(self.del_operation)
-            self.log.info("Check is now permanently disabled")
-            return True
-        elif (self.config['check_disabled'] and
-              self.config['on_disabled'] == 'advertise'):
-            self.log.info("check is disabled, ip_prefix wont be withdrawn")
-            self.log.info("adding %s in the queue", self.ip_with_prefixlen)
-            self.action.put(self.add_operation)
-            self.log.info('check is now permanently disabled')
+        if self.config['check_disabled']:
+            if self.config['on_disabled'] == 'withdraw':
+                self.log.info("Check is disabled and ip_prefix will be "
+                              "withdrawn")
+                self.log.info("adding %s in the queue", self.ip_with_prefixlen)
+                self.action.put(self.del_operation)
+                self.log.info("Check is now permanently disabled")
+            elif self.config['on_disabled'] == 'advertise':
+                self.log.info("check is disabled, ip_prefix wont be withdrawn")
+                self.log.info("adding %s in the queue", self.ip_with_prefixlen)
+                self.action.put(self.add_operation)
+                self.log.info('check is now permanently disabled')
+
             return True
 
         return False
