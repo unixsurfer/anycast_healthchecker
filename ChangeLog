@@ -1,6 +1,41 @@
 CHANGES
 =======
 
+0.9.0
+-----
+
+* RELEASE version 0.9.0 version
+* Update year in __copyright__
+* Simplify conditional statement
+* Add support for custom Bird reconfigure per service
+* Ensure correct variable name in Bird configuration
+* Make docstring more clear
+* Simplify return code from a function
+* Add docopt in the requires-dist
+* More clear log message
+* Report information about the lock
+* Fix typo in nagios check
+* PEP257 compatible docstring for nagios check
+* PEP257 compatible docstring for nagios check
+* Log stack-trace when a thread dies
+* Change the log severity to critical
+* Call super in ServiceCheckDiedError
+* Rename exception ServiceCheckDied to ServiceCheckDiedError
+* Exit main program when a thread dies
+* Update Copyright
+* Update docstring/comment
+* Remove unnecessary coding config
+* Add Maximilian Wilhelm to AUTHORS
+* Switch to integer for some default values
+* Simplify loading default configuration
+* Add support for delaying the 1st check
+* Fix typo in README
+* Rephrase a sentence
+* Remove the dependencies to daemon and lockfile
+* Disable pylint warnings
+* Add configuration for building Debian packages
+* Remove unused method _update_status
+
 0.8.1
 -----
 
@@ -470,9 +505,9 @@ CHANGES
 -----
 
 * added git push --tags step in README
-* Added (finally) some text in README
+* Added (finally)  some text in README
 * Renamed variable is_updated -> bird_updated
-* another small doc update
+* another small doc  update
 * Various small docstrings updates
 * Rewrote ServiceCheck class docstring and changed log severity to error
 * Fixed indentation issue and rewrote message when IP-PREFIX is configured
