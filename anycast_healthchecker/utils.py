@@ -293,6 +293,10 @@ def load_configuration(config_file, config_dir, service_file):
     config_files = [config_file]
     config = configparser.ConfigParser()
     config.read_dict(DEFAULT_OPTIONS)
+
+    if not os.path.isfile(config_file):
+        raise ValueError("{f} configuration file either isn't readable or "
+                         "doesn't exist".format(f=config_file))
     if service_file is not None:
         if not os.path.isfile(service_file):
             raise ValueError("{f} configuration file for a service check "
