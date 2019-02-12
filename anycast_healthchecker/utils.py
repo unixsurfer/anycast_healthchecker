@@ -286,6 +286,8 @@ def load_configuration(config_file, config_dir, service_file):
     Returns:
         A tuple with 1st element a ConfigParser object and 2nd element
         a dictionary.
+    Raises:
+        ValueError if a sanity check fails.
 
     """
     config_files = [config_file]
