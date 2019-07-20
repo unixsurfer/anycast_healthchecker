@@ -66,7 +66,8 @@ def get_processid(config):
 def running(pid):
     """Check the validity of a process ID.
 
-    Note: We need root privilege for this.
+    Note: We need root privileges for this to work if we don't run under the same user
+    as **anycast-healthechecker**.
 
     Arguments:
         pid (int): Process ID number.
