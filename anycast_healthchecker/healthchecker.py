@@ -20,7 +20,7 @@ from anycast_healthchecker.utils import (SERVICE_OPTIONS_TYPE,
 
 
 class HealthChecker:
-    """Lunch threads for each service check and reconfigure BIRD daemon.
+    """Launch threads for each service check and reconfigure BIRD daemon.
 
     It starts a thread for each service check we have in the configuration and
     then waits for reconfiguring Bird daemon based on the results of the
@@ -38,7 +38,7 @@ class HealthChecker:
         bird_configuration (dict): A dictionary with Bird settings.
 
     Methods:
-        run(): Lunches checks and updates BIRD configuration based on
+        run(): Launches checks and updates BIRD configuration based on
         the result of the check.
 
     """
@@ -174,19 +174,19 @@ class HealthChecker:
         return conf_updated
 
     def run(self):
-        """Lunch checks and triggers updates on BIRD configuration."""
-        # Lunch a thread for each configuration
+        """Launch checks and triggers updates on BIRD configuration."""
+        # Launch a thread for each configuration
         if not self.services:
             self.log.warning("no service checks are configured")
         else:
-            self.log.info("going to lunch %s threads", len(self.services))
+            self.log.info("going to launch %s threads", len(self.services))
             if self.config.has_option('daemon', 'splay_startup'):
                 splay_startup = self.config.getfloat('daemon', 'splay_startup')
             else:
                 splay_startup = None
 
             for service in self.services:
-                self.log.debug("lunching thread for %s", service)
+                self.log.debug("launching thread for %s", service)
                 _config = {}
                 for option, getter in SERVICE_OPTIONS_TYPE.items():
                     try:
