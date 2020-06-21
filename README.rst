@@ -155,7 +155,7 @@ The most important parts are the lines ``include "/etc/bird.d/*.conf";`` and ``e
 match-route.conf
 ****************
 
-``match-route.conf`` file configures the ``match_route`` function, which performs the white/blacklisting of IP prefixes by looking at the IP prefix of the route in a list and exporting it if a matching entry is found::
+``match-route.conf`` file configures the ``match_route`` function, which performs the allow and deny of IP prefixes by looking at the IP prefix of the route in a list and exports it if it matches entry::
 
     function match_route()
     {
