@@ -1,11 +1,23 @@
 CHANGES
 =======
 
+0.9.1
+-----
+
+* RELEASE 0.9.1 version
+* Update year in \_\_copyright\_\_
+* Rephrase a sentence to eliminate the usege of black word
+* Typo fixes
+* Fix misleading docstring
+* Update Debian Changelog
+* Exit if configuration file passed with '-f' doesn't exist
+* Document what exception load\_configuration() raises
+
 0.9.0
 -----
 
 * RELEASE version 0.9.0 version
-* Update year in __copyright__
+* Update year in \_\_copyright\_\_
 * Simplify conditional statement
 * Add support for custom Bird reconfigure per service
 * Ensure correct variable name in Bird configuration
@@ -34,7 +46,7 @@ CHANGES
 * Remove the dependencies to daemon and lockfile
 * Disable pylint warnings
 * Add configuration for building Debian packages
-* Remove unused method _update_status
+* Remove unused method \_update\_status
 
 0.8.1
 -----
@@ -57,7 +69,7 @@ CHANGES
 * Print a more meaningful message
 * Catch the case where pid is higher than allowed
 * Rephrase some docstrings
-* Remove from local_run.sh redundant settings
+* Remove from local\_run.sh redundant settings
 * Refuse to start if one IP address is used by multiple service checks
 * MAJOR: Drop support for daemonization
 * Make docstrings compatible with EP257
@@ -76,7 +88,7 @@ CHANGES
 * Fix incorrect format for enumerated list in README
 * fix typo reqeusts->requests (issue #9)
 * Mention that IPv6 or v4 is disabled for our software
-* Fix type in on_disabled setting
+* Fix type in on\_disabled setting
 * Add puppet module
 * Mention that parent directories for log and pifile files must be present
 
@@ -85,7 +97,7 @@ CHANGES
 
 * RELEASE 0.7.3 version
 * Refuse to start when parent directory of pidfile is missing
-* Turn on bird6_keep_changes in example config
+* Turn on bird6\_keep\_changes in example config
 * Make local.sh to create directories under var/lib
 * Remove the logic, which creates parent directories
 * Add Returns and Returns section in docstring
@@ -108,9 +120,9 @@ CHANGES
 -----
 
 * RELEASE 0.7.1 version
-* Update local_run.sh with latest config
-* Don't handle bird configuration in local_run.sh
-* Allow floating numbers for check_[timeout,interval]
+* Update local\_run.sh with latest config
+* Don't handle bird configuration in local\_run.sh
+* Allow floating numbers for check\_[timeout,interval]
 * Instruct Systemd to restart daemon upon failure
 * Use standard path rather our custom one
 * Mention that prefix length is optional
@@ -122,7 +134,7 @@ CHANGES
 -----
 
 * RELEASE 0.7.0 version
-* Drop 3.4 version of python for the local_run
+* Drop 3.4 version of python for the local\_run
 * Rephrase usage of CLI
 * MAJOR: Add support for IPv6
 
@@ -130,7 +142,7 @@ CHANGES
 -----
 
 * RELEASE 0.6.3 version
-* Add a note for bird_conf setting
+* Add a note for bird\_conf setting
 * Keep a history of changes for bird configuration
 * Add support for specifying a single service check
 
@@ -138,7 +150,7 @@ CHANGES
 -----
 
 * RELEASE 0.6.2 version
-* Remove die parameter from get_ip_prefixes_from_bird
+* Remove die parameter from get\_ip\_prefixes\_from\_bird
 * Remove unnecessary call to rstrip function
 * Use ConfigParser method to fetch configuration
 * Don't exit when there aren't any service checks
@@ -177,7 +189,7 @@ CHANGES
 
 * RELEASE 0.5.9 version
 * Remove inaccurate note from README
-* Catch the case where check_cmd can't be killed
+* Catch the case where check\_cmd can't be killed
 * Skip string formatting operation
 
 0.5.8
@@ -287,7 +299,7 @@ CHANGES
 -----
 
 * RELEASE 0.4.4 version
-* Update docstring of ip_prefixes_check()
+* Update docstring of ip\_prefixes\_check()
 * Remove import of an unused exception
 * Change the way we handle IP prefixes without check
 * Add Ralf Ertzinger in the contributers list
@@ -330,13 +342,13 @@ CHANGES
 * use correct statement to include images
 * add drawings to illustrate how anycasted traffic is routed
 * tiny fixes in README
-* local_run: get only the list of IPv4 addresses
+* local\_run: get only the list of IPv4 addresses
 * tiny fixes on README
 * fix typos in README
 * add details in README on how someone can test the software
 * fix typo in README
-* local_run: report if bird is running
-* several clean ups on local_run
+* local\_run: report if bird is running
+* several clean ups on local\_run
 
 0.4.0
 -----
@@ -352,7 +364,7 @@ CHANGES
 * fix for real the typos in README
 * fix typos in README
 * some tiny updates on README
-* add support for bird_reconfigure_cmd
+* add support for bird\_reconfigure\_cmd
 * reStructured text is fun:-(
 * Revert "align left the parameter names"
 * align left the parameter names
@@ -361,8 +373,8 @@ CHANGES
 * update diagram about RIB in bird
 * add proper description/examples/configution
 * add example and working bird configuration
-* use a more reasonable default value for log_backups option
-* ServiceCheck: remove unnecessary check for wrong value for on_disabled option
+* use a more reasonable default value for log\_backups option
+* ServiceCheck: remove unnecessary check for wrong value for on\_disabled option
 * ServiceCheck: updates on docstrings/comments
 * HealthChecker: docstrings/comment updates
 * add an item to TODO
@@ -372,12 +384,12 @@ CHANGES
 * include an example anycast-healthchecker.conf file
 * healthchecker: remove unnecessary import of re module
 * remove unnecessary empty line
-* healthchecker: use get_ip_prefixes_from_bird to fetch IP prefixes
+* healthchecker: use get\_ip\_prefixes\_from\_bird to fetch IP prefixes
 * ServiceCheck: remove unnecessary code
-* local_run: drop sleep as it isn't needed anymore
+* local\_run: drop sleep as it isn't needed anymore
 * MAJOR: drop event system as it is not needed anymore
-* local_run: use correct file extension
-* utils: get_ip_prefixes_from_bird returns a list
+* local\_run: use correct file extension
+* utils: get\_ip\_prefixes\_from\_bird returns a list
 * HealthChecker: docstring updates
 * utils: remove unnecessary commented lines
 * utils: fix typo in variable name
@@ -403,21 +415,21 @@ CHANGES
 * detect the case where Ddummy ip prefix is missing from bird conf
 * detect prefixes in bird without a configuration
 * serviceCheck and healthchecker classes get a config option
-* configuration_check accept a config object rather a dir with conf files
-* provide a get_config() to parse json files and return a dict
-* add get_config_files() to return the absolute path of json files
-* utils:configuration_check:mention the value for invalid types
+* configuration\_check accept a config object rather a dir with conf files
+* provide a get\_config() to parse json files and return a dict
+* add get\_config\_files() to return the absolute path of json files
+* utils:configuration\_check:mention the value for invalid types
 * move running function to utils module
 * allocate a pid file after all checks has been passed
-* refactor configuration_check function
+* refactor configuration\_check function
 * remove items from TODO which are completed
 * exit if we can't write to bird configuration file
 * don't print filename as it is mentioned in exception message
 * add support for supplying dummy IP prefix in CLI
 * make sure log files exists before we start
 * add a touch function in utils module
-* introduce utils module with valid_ip_prefix function
-* remove unused code from local_run
+* introduce utils module with valid\_ip\_prefix function
+* remove unused code from local\_run
 * one item from TODO is implemented
 * add support for version in CLI, print it to log as well
 * update TODO
@@ -434,15 +446,15 @@ CHANGES
 * RELEASE 0.2.1 version
 * polish some log messages, no code changes
 * reset always counters for states to zero when state is in transition
-* more updates on local_run
+* more updates on local\_run
 * updates on TODO
 * permission changes
 * use birdc rather birdcl to reconfigure bird
 * adjust interval in service checks
-* updates on local_run
-* updates on local_run
-* local_run assign IPs and install bird configuration
-* some updates on local_run
+* updates on local\_run
+* updates on local\_run
+* local\_run assign IPs and install bird configuration
+* some updates on local\_run
 * exit when parsing bird configuration results to an empty list of IP prefixes
 * a script to run the daemon on a development node
 * update AUTHORS
@@ -459,14 +471,14 @@ CHANGES
 * use gmail mail address
 * remove old readme
 * better catch of IPs in bird config
-* include license to __init__
+* include license to \_\_init\_\_
 * change License to Apache v2.0
 
 0.2.0
 -----
 
 * RELEASE 0.2.0 version
-* add some useful info in __init__
+* add some useful info in \_\_init\_\_
 * servicecheck.py: less versbose warning
 * servicecheck.py: check if we hare received stop signal before perform IP check
 * ServiceCheck.py: check was unnecessarily executed twice
@@ -474,12 +486,12 @@ CHANGES
 * add requirements file
 * add a function to perform a sanity check on the configuration
 * servicecheck: Tiny rewrite of comment
-* servicecheck: Renamed previou_state to check_state
+* servicecheck: Renamed previou\_state to check\_state
 * Fixed argument name collision
 * Fixed typo
 * Made configurable the rotation policy for log files
-* _update_bird_prefix_conf(): Doc string update
-* Report valid values for on_disabled setting
+* \_update\_bird\_prefix\_conf(): Doc string update
+* Report valid values for on\_disabled setting
 * Update ChangeLog
 
 0.1.1
@@ -506,12 +518,12 @@ CHANGES
 
 * added git push --tags step in README
 * Added (finally)  some text in README
-* Renamed variable is_updated -> bird_updated
+* Renamed variable is\_updated -> bird\_updated
 * another small doc  update
 * Various small docstrings updates
 * Rewrote ServiceCheck class docstring and changed log severity to error
 * Fixed indentation issue and rewrote message when IP-PREFIX is configured
-* Catch the case where conf says check disabled but value for on_disabled is wrong
+* Catch the case where conf says check disabled but value for on\_disabled is wrong
 * Changelog updated
 
 0.0.9
