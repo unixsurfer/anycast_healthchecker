@@ -1,7 +1,7 @@
 [Unit]
 Description=Anycast healthchecker
-After=network.service
-Requires=network.service
+After=network.target
+Requires=network.target
 Documentation=https://github.com/unixsurfer/anycast_healthchecker/blob/master/README.rst
 
 [Service]
