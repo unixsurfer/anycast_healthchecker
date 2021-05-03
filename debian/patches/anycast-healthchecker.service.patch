@@ -2,13 +2,11 @@ diff --git a/contrib/systemd/anycast-healthchecker.service b/contrib/systemd/any
 index fc9f044..aed8cb3 100644
 --- a/contrib/systemd/anycast-healthchecker.service
 +++ b/contrib/systemd/anycast-healthchecker.service
-@@ -1,15 +1,17 @@
+@@ -1,17 +1,19 @@
  [Unit]
  Description=Anycast healthchecker
--After=network.service
--Requires=network.service
-+After=network.target
-+Requires=network.target
+ After=network.target
+ Requires=network.target
  Documentation=https://github.com/unixsurfer/anycast_healthchecker/blob/master/README.rst
  
  [Service]
@@ -25,3 +23,5 @@ index fc9f044..aed8cb3 100644
  ExecStart=/usr/bin/anycast-healthchecker $OPTIONS
  Restart=on-failure
  
+ [Install]
+ WantedBy=multi-user.target
