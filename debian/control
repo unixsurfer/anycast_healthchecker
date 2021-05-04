@@ -22,9 +22,9 @@ Description: A healthchecker for Anycasted services
  Bird must be configured in a certain way to interface properly with
  anycast-healthchecker.
  .
- anycast-healthchecker is a Python program, which uses the daemon library to
- implement a well-behaved Unix daemon process and threading to run multiple
- service checks in parallel.
+ anycast-healthchecker is a Python program operated as a native
+ systemd service. It uses threading to run multiple service checks in
+ parallel.
  .
  This package installs the library for Python 3.
 
@@ -40,9 +40,9 @@ Description: A healthchecker for Anycasted services
  Bird must be configured in a certain way to interface properly with
  anycast-healthchecker.
  .
- anycast-healthchecker is a Python program, which uses the daemon library to
- implement a well-behaved Unix daemon process and threading to run multiple
- service checks in parallel.
+ anycast-healthchecker is a Python program operated as a native
+ systemd service. It uses threading to run multiple service checks in
+ parallel.
  .
  This package contains the files required to run the tool as
  a native systemd service.
