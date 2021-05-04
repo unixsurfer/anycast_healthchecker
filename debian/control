@@ -12,7 +12,7 @@ X-Python3-Version: >= 3.2
 
 Package: python3-anycast-healthchecker
 Architecture: all
-Depends: ${python3:Depends}, ${misc:Depends}, python3-docopt
+Depends: ${python3:Depends}, ${misc:Depends}, python3-docopt, python3-pythonjsonlogger
 Description: A healthchecker for Anycasted services
  anycast-healthchecker monitors a service by doing periodic health checks and
  based on the result instructs Bird daemon to either advertise or withdraw the
