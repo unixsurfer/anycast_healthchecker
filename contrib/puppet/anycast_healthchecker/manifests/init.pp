@@ -55,20 +55,6 @@
 # [*configuration_file*]
 #   Read settings for the daemon from
 #
-# [*dummy_ip_prefix*]
-#   An IP prefix in the form <IP>/<prefix length> which will be always available in
-#   the list defined by ``bird_variable`` to avoid having an empty list.
-#   The ``dummy_ip_prefix`` **must not** be used by any service or assigned to the
-#   interface set with ``interface`` or configured anywhere on the network as
-#   anycast-healthchecker **does not** perform any checks for it.
-#
-# [*dummy_ip6_prefix*]
-#   An IPv6 prefix in the form <IPv6>/<prefix length> which will be always
-#   available in the list defined by ``bird6_variable`` to avoid having an empty
-#   list. The ``dummy_ip6_prefix`` **must not** be used by any service or assigned
-#   to the interface set with ``interface`` or configured anywhere on the network as
-#   anycast-healthchecker **does not** perform any checks for it.
-#
 # [*group*]
 #   Set the UNIX group that anycast-healthchecker is executed.
 #   WARNING: Group must exist in the system.
@@ -167,8 +153,6 @@ class anycast_healthchecker (
   $bird6_changes_counter = $::anycast_healthchecker::params::bird6_changes_counter,
   $configuration_dir     = $::anycast_healthchecker::params::configuration_dir,
   $configuration_file    = $::anycast_healthchecker::params::configuration_file,
-  $dummy_ip_prefix       = $::anycast_healthchecker::params::dummy_ip_prefix,
-  $dummy_ip6_prefix      = $::anycast_healthchecker::params::dummy_ip6_prefix,
   $group                 = $::anycast_healthchecker::params::group,
   $http_server           = $::anycast_healthchecker::params::http_server,
   $http_server_port      = $::anycast_healthchecker::params::http_server_port,

@@ -68,9 +68,6 @@ class HealthChecker:
                 self.services,
                 ip_version)
 
-            _ip_prefixes.add(
-                self.bird_configuration[ip_version]['dummy_ip_prefix']
-            )
             self.ip_prefixes[ip_version] = _ip_prefixes
 
         self.log.info('initialize healthchecker')
@@ -97,8 +94,6 @@ class HealthChecker:
         variable_name = self.bird_configuration[ip_version]['variable_name']
         changes_counter =\
             self.bird_configuration[ip_version]['changes_counter']
-        dummy_ip_prefix =\
-            self.bird_configuration[ip_version]['dummy_ip_prefix']
 
         try:
             prefixes = get_ip_prefixes_from_bird(config_file)
@@ -106,18 +101,6 @@ class HealthChecker:
             self.log.error("failed to open Bird configuration %s, this is a "
                            "FATAL error, thus exiting main program", error)
             sys.exit(1)
-
-        if not prefixes:
-            self.log.error("found empty bird configuration %s, this is a FATAL"
-                           " error, thus exiting main program", config_file)
-            sys.exit(1)
-
-        if dummy_ip_prefix not in prefixes:
-            self.log.warning("dummy IP prefix %s wasn't found in bird "
-                             "configuration, adding it. This shouldn't have "
-                             "happened!", dummy_ip_prefix)
-            prefixes.insert(0, dummy_ip_prefix)
-            conf_updated = True
 
         ip_prefixes_without_check = set(prefixes).difference(
             self.ip_prefixes[ip_version])
@@ -149,7 +132,6 @@ class HealthChecker:
         # some IP prefixes are either removed or added, create
         # configuration with new data.
         tempname = write_temp_bird_conf(
-            dummy_ip_prefix,
             config_file,
             variable_name,
             prefixes
@@ -165,8 +147,7 @@ class HealthChecker:
             self.log.info("Bird configuration for IPv%s is updated",
                           ip_version)
 
-        # dummy_ip_prefix is always there
-        if len(prefixes) == 1:
+        if len(prefixes) == 0:
             self.log.warning("Bird configuration doesn't have IP prefixes for "
                              "any of the services we monitor! It means local "
                              "node doesn't receive any traffic")

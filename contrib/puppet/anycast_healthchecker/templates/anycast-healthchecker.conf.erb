@@ -19,7 +19,6 @@ log_backups          = <%= @log_backups %>
 log_file             = <%= @log_file %>
 stderr_file          = <%= @stderr_file %>
 stdout_file          = <%= @stdout_file %>
-dummy_ip_prefix      = <%= @dummy_ip_prefix %>
 <%- if @ipv6 -%>
 ipv6                  = <%= @ipv6 %>
 bird6_conf            = <%= @bird6_conf %>
@@ -27,7 +26,6 @@ bird6_variable        = <%= @bird6_variable %>
 bird6_reconfigure_cmd = <%= @bird6_reconfigure_cmd %>
 bird6_keep_changes    = <%= @bird6_keep_changes %>
 bird6_changes_counter = <%= @bird6_changes_counter %>
-dummy_ip6_prefix      = <%= @dummy_ip6_prefix %>
 <%- end -%>
 <%- if @json_logging -%>
 json_logging         = true

@@ -30,8 +30,6 @@ DEFAULT_OPTIONS = {
         'bird6_variable': 'ACAST6_PS_ADVERTISE',
         'bird_reconfigure_cmd': 'sudo /usr/sbin/birdc configure',
         'bird6_reconfigure_cmd': 'sudo /usr/sbin/birdc6 configure',
-        'dummy_ip_prefix': '10.189.200.255/32',
-        'dummy_ip6_prefix': '2001:db8::1/128',
         'bird_keep_changes': 'false',
         'bird6_keep_changes': 'false',
         'bird_changes_counter': 128,
