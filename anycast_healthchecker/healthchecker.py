@@ -12,9 +12,12 @@ from anycast_healthchecker.servicecheck import ServiceCheck
 from anycast_healthchecker.utils import (SERVICE_OPTIONS_TYPE,
                                          get_ip_prefixes_from_bird,
                                          get_ip_prefixes_from_config,
+                                         get_ip_prefixes_from_config_on_exit,
                                          reconfigure_bird,
                                          write_temp_bird_conf,
                                          archive_bird_conf,
+                                         AddOperation,
+                                         DeleteOperation,
                                          ServiceCheckDiedError,
                                          run_custom_bird_reconfigure)
 
@@ -226,3 +229,50 @@ class HealthChecker:
                         self.bird_configuration[ip_version]['reconfigure_cmd'])
                 else:
                     run_custom_bird_reconfigure(operation)
+
+    def on_exit(self):
+        for ip_version in self.bird_configuration:
+            config_file = self.bird_configuration[ip_version]['config_file']
+            ip_prefixes_in_bird = get_ip_prefixes_from_bird(config_file)
+            _ip_prefix_withdraw = get_ip_prefixes_from_config_on_exit(
+                self.config,
+                self.services,
+                ip_version,
+                'withdraw')
+            _ip_prefix_advertise = get_ip_prefixes_from_config_on_exit(
+                self.config,
+                self.services,
+                ip_version,
+                'advertise')
+
+            pprint(vars(_ip_prefix_advertise))
+            pprint(vars(_ip_prefix_withdraw))
+
+            for withdraw_ip_prefix in set(ip_prefixes_in_bird).intersection(_ip_prefix_withdraw):
+                _delete_operation = DeleteOperation(
+                    name='on_exit',
+                    ip_prefix=withdraw_ip_prefix,
+                    ip_version=ip_version,
+                    bird_reconfigure_timeout=(
+                        self.config['daemon'].get('custom_bird_reconfigure_cmd_timeout')
+                    ),
+                    bird_reconfigure_cmd=(
+                        self.config['daemon'].get('custom_bird_reconfigure_cmd')
+                    )
+                )
+                self._update_bird_conf_file(_delete_operation)
+
+            for add_ip_prefix in set(_ip_prefix_advertise).difference(ip_prefixes_in_bird):
+                _add_operation = AddOperation(
+                    name='on_exit',
+                    ip_prefix=add_ip_prefix,
+                    ip_version=ip_version,
+                    bird_reconfigure_timeout=(
+                        self.config['daemon'].get('custom_bird_reconfigure_cmd_timeout')
+                    ),
+                    bird_reconfigure_cmd=(
+                        self.config['daemon'].get('custom_bird_reconfigure_cmd')
+                    )
+                )
+                self._update_bird_conf_file(_add_operation)
+

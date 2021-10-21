@@ -18,6 +18,7 @@ DEFAULT_OPTIONS = {
         'check_fail': 2,
         'check_disabled': 'true',
         'on_disabled': 'withdraw',
+        'on_exit': 'none',
         'ip_check_disabled': 'false',
         'custom_bird_reconfigure_cmd_timeout': 2,
     },

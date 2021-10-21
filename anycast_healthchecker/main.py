@@ -79,8 +79,10 @@ def main():
     pidfile = config.get('daemon', 'pidfile')
     update_pidfile(pidfile)
 
+    checker = healthchecker.HealthChecker(config, bird_configuration)
+
     # Register our shutdown handler to various termination signals.
-    shutdown_handler = partial(shutdown, pidfile)
+    shutdown_handler = partial(shutdown, pidfile, checker)
     signal.signal(signal.SIGHUP, shutdown_handler)
     signal.signal(signal.SIGTERM, shutdown_handler)
     signal.signal(signal.SIGABRT, shutdown_handler)
@@ -93,7 +95,6 @@ def main():
     ip_prefixes_sanity_check(config, bird_configuration)
 
     # Create our master process.
-    checker = healthchecker.HealthChecker(config, bird_configuration)
     logger.info("starting %s version %s", PROGRAM_NAME, __version__)
     checker.run()
 
