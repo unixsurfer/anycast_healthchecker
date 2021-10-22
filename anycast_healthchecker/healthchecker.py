@@ -245,9 +245,6 @@ class HealthChecker:
                 ip_version,
                 'advertise')
 
-            pprint(vars(_ip_prefix_advertise))
-            pprint(vars(_ip_prefix_withdraw))
-
             for withdraw_ip_prefix in set(ip_prefixes_in_bird).intersection(_ip_prefix_withdraw):
                 _delete_operation = DeleteOperation(
                     name='on_exit',
