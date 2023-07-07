@@ -6,6 +6,9 @@
 
 # === Parameters:
 #
+# [*interface*] <string>               - Interface that the service IP resides on.
+#                                        Defaults to 'lo'.
+#
 # [*check_cmd*] <string>               - Full path of the command to run for
 #                                        healthchecking the service.
 #
@@ -58,14 +61,15 @@
 # Pavlos Parissis <pavlos.parissis@gmail.com>
 #
 define anycast_healthchecker::check (
-  $check_cmd         = '/bin/false',
-  $check_interval    = 10,
-  $check_timeout     = 5,
-  $check_rise        = 2,
-  $check_fail        = 2,
-  $check_disabled    = false,
-  $on_disabled       = "withdraw",
-  $ip_check_disabled = false,
+  String[1] $interface = 'lo',
+  $check_cmd           = '/bin/false',
+  $check_interval      = 10,
+  $check_timeout       = 5,
+  $check_rise          = 2,
+  $check_fail          = 2,
+  $check_disabled      = false,
+  $on_disabled         = "withdraw",
+  $ip_check_disabled   = false,
   $ip_prefix,
   ) {
 
