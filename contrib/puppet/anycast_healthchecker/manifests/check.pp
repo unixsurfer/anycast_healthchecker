@@ -17,10 +17,10 @@
 # [*check_timeout*] <number>           - Maximum time in seconds to wait for
 #                                        a check to finish.
 #
-# [*check_rise*] <number>              - Number of consecutive successful checks
+# [*check_rise*] <integer>             - Number of consecutive successful checks
 #                                        to consider the service healhty.
 #
-# [*check_fail*] <number>              - Number of consecutive unsuccessful
+# [*check_fail*] <integer>             - Number of consecutive unsuccessful
 #                                        checks to consider the service dead.
 #
 # [*check_disabled*] <boolean>         - Disables check for service.
@@ -31,7 +31,7 @@
 # [*ip_prefix*]  <IP_PREFIX>           - The ip_prefix associated with the
 #                                        service in a IP address/prefix_len format.
 #
-# [*ip_check_disabled] <boolean>       - true disables the assignment check of
+# [*ip_check_disabled*] <boolean>      - true disables the assignment check of
 #                                        ip_prefix to the interface set in interface,
 #                                        false enables it.
 #
@@ -61,53 +61,35 @@
 # Pavlos Parissis <pavlos.parissis@gmail.com>
 #
 define anycast_healthchecker::check (
-  String[1] $interface = 'lo',
-  $check_cmd           = '/bin/false',
-  $check_interval      = 10,
-  $check_timeout       = 5,
-  $check_rise          = 2,
-  $check_fail          = 2,
-  $check_disabled      = false,
-  $on_disabled         = "withdraw",
-  $ip_check_disabled   = false,
-  $ip_prefix,
-  ) {
+  Variant[Stdlib::IP::Address::V4::CIDR,
+          Stdlib::IP::Address::V6::CIDR] $ip_prefix,
+  String[1]                              $interface         = 'lo',
+  String[1]                              $check_cmd         = '/bin/false',
+  Numeric                                $check_interval    = 10,
+  Numeric                                $check_timeout     = 5,
+  Integer[1]                             $check_rise        = 2,
+  Integer[1]                             $check_fail        = 2,
+  Boolean                                $check_disabled    = false,
+  Enum['withdraw', 'advertise']          $on_disabled       = 'withdraw',
+  Boolean                                $ip_check_disabled = false,
+) {
 
-  if ! is_float($check_interval) {
-    fail("anycast_healthchecker::check::${name} check_interval must be an integer or float")
-  }
   if $check_interval < 0 {
     fail("anycast_healthchecker::check::${name} check_interval must be higher than zero")
   }
-  if ! is_float($check_timeout) {
-    fail("anycast_healthchecker::check::${name} check_timeout must be an integer or float")
+  if $check_timeout < 0 {
+    fail("anycast_healthchecker::check::${name} check_timeout must be higher than zero")
   }
-  if ! is_integer($check_rise) {
-    fail("anycast_healthchecker::check::${name} check_rise must be an integer")
-  }
-  if $check_rise < 1 {
-    fail("anycast_healthchecker::check::${name} check_rise must be higher than zero")
-  }
-  if ! is_integer($check_fail) {
-    fail("anycast_healthchecker::check::${name} check_fail must be an integer")
-  }
-  if $check_fail < 1 {
-    fail("anycast_healthchecker::check::${name} check_fail must be higher than zero")
-  }
-  validate_bool($check_disabled)
-  validate_re($on_disabled, '^withdraw$|^advertise$')
-  validate_bool($ip_check_disabled)
-
 
   $python_ver = regsubst($::anycast_healthchecker::package_name, '^blue-python(\d)(\d)-.*', '\1.\2')
   $_cmd = "/opt/blue-python/${python_ver}/bin/anycast-healthchecker"
   file {
-    "$::anycast_healthchecker::configuration_dir/${name}.conf":
-      mode     => '0444',
-      owner    => root,
-      group    => root,
-      notify   => Service[$::anycast_healthchecker::service_name],
-      validate_cmd => "su -s /bin/bash - $::anycast_healthchecker::user -c \'${_cmd} -c -F %\'",
-      content  => template('anycast_healthchecker/check.conf.erb');
+    "${::anycast_healthchecker::configuration_dir}/${name}.conf":
+      mode         => '0444',
+      owner        => root,
+      group        => root,
+      notify       => Service[$::anycast_healthchecker::service_name],
+      validate_cmd => "su -s /bin/bash - ${::anycast_healthchecker::user} -c \'${_cmd} -c -F %\'",
+      content      => template('anycast_healthchecker/check.conf.erb');
   }
 }
