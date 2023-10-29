@@ -8,6 +8,8 @@ __version__ = '0.9.1'
 __copyright__ = 'Copyright 2015-2020 Pavlos Parissis'
 
 PROGRAM_NAME = __title__.replace('_', '-')
+METRIC_PREFIX = __title__
+
 
 DEFAULT_OPTIONS = {
     'DEFAULT': {
@@ -45,5 +47,8 @@ DEFAULT_OPTIONS = {
         'json_log_server': 'false',
         'log_maxbytes': 104857600,
         'log_backups': 8,
+        'prometheus_exporter': 'false',
+        'prometheus_collector_textfile_dir': '/var/cache/textfile_collector/'
+
     }
 }

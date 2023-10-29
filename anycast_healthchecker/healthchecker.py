@@ -7,7 +7,7 @@ import sys
 import logging
 from queue import Queue
 
-from anycast_healthchecker import PROGRAM_NAME
+from anycast_healthchecker import PROGRAM_NAME, METRIC_PREFIX
 from anycast_healthchecker.servicecheck import ServiceCheck
 from anycast_healthchecker.utils import (SERVICE_OPTIONS_TYPE,
                                          get_ip_prefixes_from_bird,
@@ -16,7 +16,10 @@ from anycast_healthchecker.utils import (SERVICE_OPTIONS_TYPE,
                                          write_temp_bird_conf,
                                          archive_bird_conf,
                                          ServiceCheckDiedError,
-                                         run_custom_bird_reconfigure)
+                                         run_custom_bird_reconfigure,
+                                         MainExporter)
+
+from prometheus_client import Gauge, CollectorRegistry, Counter
 
 
 class HealthChecker:
@@ -176,6 +179,46 @@ class HealthChecker:
     def run(self):
         """Launch checks and triggers updates on BIRD configuration."""
         # Launch a thread for each configuration
+        registry = CollectorRegistry()
+        metric_state = Gauge(
+            name="service_state",
+            documentation='The status of the service check: 0 = down, 1 = up',
+            labelnames=['service_name', 'ip_prefix'],
+            namespace=f"{METRIC_PREFIX}",
+            registry=registry
+        )
+        metric_check_duration = Gauge(
+            name='service_check_duration_milliseconds',
+            namespace=f"{METRIC_PREFIX}",
+            labelnames=['service_name', 'ip_prefix'],
+            documentation='Service check duration in milliseconds',
+            registry=registry
+        )
+        metric_check_ip_assignment = Gauge(
+            name='service_check_ip_assignment',
+            namespace=f"{METRIC_PREFIX}",
+            labelnames=['service_name', 'ip_prefix'],
+            documentation=(
+                'Service IP assignment check: 0 = not aissgned, 1 = assigned'
+            ),
+            registry=registry
+        )
+        metric_check_timeout = Counter(
+            name='service_check_timeout',
+            namespace=f"{METRIC_PREFIX}",
+            labelnames=['service_name', 'ip_prefix'],
+            documentation='The number of times a service check timed out',
+            registry=registry
+        )
+
+        if self.config.getboolean('daemon', 'prometheus_exporter'):
+            thread_exporter = MainExporter(
+                registry=registry,
+                services=self.services,
+                config=self.config
+            )
+            thread_exporter.start()
+
         if not self.services:
             self.log.warning("no service checks are configured")
         else:
@@ -195,8 +238,14 @@ class HealthChecker:
                     except NoOptionError:
                         pass  # for optional settings
 
-                _thread = ServiceCheck(service, _config, self.action,
-                                       splay_startup)
+                _thread = ServiceCheck(service,
+                                       _config,
+                                       self.action,
+                                       splay_startup,
+                                       metric_state,
+                                       metric_check_duration,
+                                       metric_check_ip_assignment,
+                                       metric_check_timeout)
                 _thread.start()
 
         # Stay running until we are stopped

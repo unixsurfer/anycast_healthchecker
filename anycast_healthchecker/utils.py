@@ -14,6 +14,7 @@ import sys
 import subprocess
 import logging
 import logging.handlers
+from threading import Thread
 import time
 import datetime
 import configparser
@@ -24,7 +25,11 @@ import ipaddress
 
 from pythonjsonlogger import jsonlogger
 
-from anycast_healthchecker import DEFAULT_OPTIONS, PROGRAM_NAME, __version__
+from anycast_healthchecker import DEFAULT_OPTIONS, PROGRAM_NAME, __version__, METRIC_PREFIX
+
+from prometheus_client import Gauge, CollectorRegistry, write_to_textfile, Info
+
+
 
 SERVICE_OPTIONS_TYPE = {
     'check_cmd': 'get',
@@ -69,6 +74,8 @@ DAEMON_OPTIONS_TYPE = {
     'bird_reconfigure_cmd': 'get',
     'bird6_reconfigure_cmd': 'get',
     'splay_startup': 'getfloat',
+    'prometheus_exporter': 'getboolean',
+    'prometheus_collector_textfile_dir': 'get',
 }
 DAEMON_OPTIONAL_OPTIONS = [
     'stderr_log_server',
@@ -1246,3 +1253,80 @@ def run_custom_bird_reconfigure(operation):
                       "stderr: %s", proc.returncode, errs)
         else:
             log.info("custom command successfully reconfigured Bird")
+
+
+class MainExporter(Thread):
+    """Handle the health checking for a service.
+
+    Methods:
+        run(): Run method of the thread.
+
+    """
+
+    def __init__(self, registry, services, config):
+        """Set the name of thread to be the name of the service."""
+        super(MainExporter, self).__init__()
+        self.registry = registry
+        self.uptime = Gauge(
+            name='uptime',
+            namespace=f"{METRIC_PREFIX}",
+            documentation='Uptime of the process in seconds since the epoch',
+            registry=registry
+        )
+        self.state = Gauge(
+            name='state',
+            namespace=f"{METRIC_PREFIX}",
+            documentation='The current state of the process: 0 = down, 1 = up',
+            registry=registry
+        )
+        self.info = Info(
+            name='version',
+            documentation='Version of the software',
+            namespace=f"{METRIC_PREFIX}",
+            registry=registry
+        )
+        self.metric_services = Gauge(
+            name='service',
+            namespace=f"{METRIC_PREFIX}",
+            labelnames=['service_name', 'ip_prefix'],
+            documentation='The configured service checks',
+            registry=registry
+        )
+        self.services = services
+        self.config = config
+
+    def run(self):
+        """Wrap _run method."""
+
+        textfile = os.path.join(
+            self.config.get(
+                'daemon',
+                'prometheus_collector_textfile_dir'
+            ),
+            "anycast_healthchecker.prom",
+        )
+        log = logging.getLogger(PROGRAM_NAME)
+        interval = 10
+        start_offset = time.time() % interval
+        # Go in a loop until we are told to stop
+        while True:
+            self.uptime.set_to_current_time()
+            self.state.set(1)
+            self.info.info({'version': __version__})
+            for service in self.services:
+                self.metric_services.labels(
+                    service,
+                    getattr(self.config, SERVICE_OPTIONS_TYPE['ip_prefix'])(
+                        service, 'ip_prefix')
+                ).set(1)
+
+            try:
+                write_to_textfile(path=textfile, registry=self.registry)
+            except OSError as err:
+                log.critical(f"failed to write metrics to {textfile}:{err}")
+            log.debug(f"dumped Prometheus metrics to {textfile}")
+            # calculate sleep time
+            sleep = start_offset - time.time() % interval
+            if sleep < 0:
+                sleep += interval
+            time.sleep(sleep)
