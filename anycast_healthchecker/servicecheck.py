@@ -35,7 +35,9 @@ class ServiceCheck(Thread):
 
     """
 
-    def __init__(self, service, config, action, splay_startup):
+    def __init__(self, service, config, action, splay_startup, metric_state,
+                 metric_check_duration, metric_check_ip_assignment,
+                 metric_check_timeout):
         """Set the name of thread to be the name of the service."""
         super(ServiceCheck, self).__init__()
         self.name = service  # Used by Thread()
@@ -85,6 +87,15 @@ class ServiceCheck(Thread):
         )
         self.log.info("loading check for %s", self.name, extra=self.extra)
 
+        self.metric_state = metric_state
+        self.metric_check_duration = metric_check_duration
+        self.metric_check_ip_assignment = metric_check_ip_assignment
+        self.metric_check_timeout = metric_check_timeout
+        self.labels = {
+            "service_name": self.name,
+            "ip_prefix": self.ip_with_prefixlen
+        }
+
     def _run_check(self):
         """Execute a check command.
 
@@ -102,6 +113,7 @@ class ServiceCheck(Thread):
             outs, errs = proc.communicate(timeout=self.config['check_timeout'])
         except subprocess.TimeoutExpired:
             self.log.error("check timed out")
+            self.metric_check_timeout.labels(**self.labels).inc()
             if proc.poll() is None:
                 try:
                     proc.kill()
@@ -112,9 +124,10 @@ class ServiceCheck(Thread):
 
             return False
         else:
-            msg = "check duration {t:.3f}ms".format(
-                t=(time.time() - start_time) * 1000)
+            duration = (time.time() - start_time) * 1000
+            msg = "check duration {t:.3f}ms".format(t=duration)
             self.log.info(msg)
+            self.metric_check_duration.labels(**self.labels).set(duration)
 
             if proc.returncode != 0:
                 self.log.info("stderr from the check %s", errs)
@@ -139,11 +152,12 @@ class ServiceCheck(Thread):
             'to',
             self.ip_with_prefixlen,
         ]
+        result = False
 
         if self.ip_check_disabled:
             self.log.info("checking for IP assignment on interface %s is "
                           "disabled", self.config['interface'])
-            return True
+            result = True
 
         self.log.debug("running %s", ' '.join(cmd))
         try:
@@ -155,11 +169,11 @@ class ServiceCheck(Thread):
             self.log.error("error checking IP-PREFIX %s: %s",
                            cmd, error.output)
             # Because it is unlikely to ever get an error we return True
-            return True
+            result = True
         except subprocess.TimeoutExpired:
             self.log.error("timeout running %s", ' '.join(cmd))
             # Because it is unlikely to ever get a timeout we return True
-            return True
+            result = True
         except ValueError as error:
             # We have been getting intermittent ValueErrors, see here
             # gist.github.com/unixsurfer/67db620d87f667423f6f6e3a04e0bff5
@@ -174,7 +188,7 @@ class ServiceCheck(Thread):
             # know. A retry logic could be a more proper solution.
             self.log.error("running %s raised ValueError exception:%s",
                            ' '.join(cmd), error)
-            return True
+            result = True
         else:
             if self.ip_with_prefixlen in output:  # pylint: disable=E1135,R1705
                 msg = "{i} assigned to {n} interface".format(
@@ -182,17 +196,20 @@ class ServiceCheck(Thread):
                     n=self.config['interface']
                 )
                 self.log.debug(msg)
-                return True
+                result = True
             else:
                 msg = ("{i} isn't assigned to {d} interface"
                        .format(i=self.ip_with_prefixlen,
                                d=self.config['interface']))
                 self.log.warning(msg)
-                return False
+                result = False
 
-        self.log.debug("I shouldn't land here!, it is a BUG")
+        if result:
+            self.metric_check_ip_assignment.labels(**self.labels).set(1)
+        else:
+            self.metric_check_ip_assignment.labels(**self.labels).set(0)
 
-        return False
+        return result
 
     def _check_disabled(self):
         """Check if health check is disabled.
@@ -276,6 +293,7 @@ class ServiceCheck(Thread):
                                  self.ip_with_prefixlen,
                                  self.config['interface'],
                                  extra=self.extra)
+                self.metric_state.labels(**self.labels).set(0)
                 if check_state != 'DOWN':
                     check_state = 'DOWN'
                     self.log.info("adding %s in the queue",
@@ -286,6 +304,7 @@ class ServiceCheck(Thread):
                 if up_cnt == (self.config['check_rise'] - 1):
                     self.extra['status'] = 'up'
                     self.log.info("status UP", extra=self.extra)
+                    self.metric_state.labels(**self.labels).set(1)
                     # Service exceeded all consecutive checks. Set its state
                     # accordingly and put an item in queue. But do it only if
                     # previous state was different, to prevent unnecessary bird
@@ -313,6 +332,7 @@ class ServiceCheck(Thread):
                     # But do it only if previous state was different, to
                     # prevent unnecessary bird reloads when a service flaps
                     # between states
+                    self.metric_state.labels(**self.labels).set(0)
                     if check_state != 'DOWN':
                         check_state = 'DOWN'
                         self.log.info("adding %s in the queue",

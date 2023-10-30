@@ -241,6 +241,8 @@ anycast-healthchecker uses the popular `INI`_ format for its configuration files
     json_stdout           = false
     json_log_file         = false
     json_log_server       = false
+    prometheus_exporter   = false
+    prometheus_collector_textfile_dir = /var/cache/textfile_collector/
 
 The above settings are used as defaults when anycast-healthchecker is launched without a configuration file. anycast-healthchecker **does not** need to run as root as long as it has sufficient privileges to modify the Bird configuration set in ``bird_conf`` or ``bird6_conf``, and trigger a reconfiguration of Bird by running the command configured in ``bird_reconfigure_cmd`` or ``bird6_reconfigure_cmd``. In the above example ``sudo`` is used for that purpose (``sudoers`` file has been modified for that purpose).
 
@@ -377,6 +379,14 @@ The port on the remote syslog server to forward logging messages over UDP.
 ``true`` enables structured logging when **log_server** is set to a remote UDP
 syslog server.
 
+* **prometheus_exporter** Defaults to **false**
+
+``true`` enables prometheus exporter.
+
+* **prometheus_collector_textfile_dir** Defaults to **/var/cache/textfile_collector/**
+
+The directory to store the exported statistics.
+
 * **splay_startup** Unset by default
 
 The maximum time to delay the startup of service checks. You can use either integer or floating-point number as a value.
@@ -384,6 +394,48 @@ The maximum time to delay the startup of service checks. You can use either inte
 In order to avoid launching all checks at the same time, after anycast-healthchecker is started, we can delay the 1st check in random way. This can be useful in cases where we have a lot of service checks and launching all them at the same time can overload the system.  We randomize the delay of the 1st check for each service and **splay_startup** sets the maximum time we can delay that 1st check.
 
 The interval of the check doesn't drift, thanks to 9cbbeaff455c49b35670c, and as a result the service checks will be always launched in different times during the life time of anycast-healthchecker.
+
+Prometheus exporter
+************************
+
+anycast-healthchecker comes with a Prometheus exporter to expose various statistics. This functionality is not enabled by default and users need to set **prometheus_exporter** setting to **true** and also adjust **prometheus_collector_textfile_dir** parameter according to their setup.
+
+Below is the exported metrics when there are three service checks configured::
+
+    # HELP anycast_healthchecker_service_state The status of the service check: 0 = down, 1 = up
+    # TYPE anycast_healthchecker_service_state gauge
+    anycast_healthchecker_service_state{ip_prefix="fd12:aba6:57db:ffff::1/128",service_name="foo1IPv6.bar.com"} 0.0
+    anycast_healthchecker_service_state{ip_prefix="10.52.12.1/32",service_name="foo.bar.com"} 0.0
+    anycast_healthchecker_service_state{ip_prefix="10.52.12.2/32",service_name="foo1.bar.com"} 0.0
+    # HELP anycast_healthchecker_service_check_duration_milliseconds Service check duration in milliseconds
+    # TYPE anycast_healthchecker_service_check_duration_milliseconds gauge
+    anycast_healthchecker_service_check_duration_milliseconds{ip_prefix="10.52.12.1/32",service_name="foo.bar.com"} 5.141496658325195
+    # HELP anycast_healthchecker_service_check_ip_assignment Service IP assignment check: 0 = not aissgned, 1 = assigned
+    # TYPE anycast_healthchecker_service_check_ip_assignment gauge
+    anycast_healthchecker_service_check_ip_assignment{ip_prefix="10.52.12.1/32",service_name="foo.bar.com"} 1.0
+    anycast_healthchecker_service_check_ip_assignment{ip_prefix="fd12:aba6:57db:ffff::1/128",service_name="foo1IPv6.bar.com"} 0.0
+    anycast_healthchecker_service_check_ip_assignment{ip_prefix="10.52.12.2/32",service_name="foo1.bar.com"} 1.0
+    # HELP anycast_healthchecker_service_check_timeout_total The number of times a service check timed out
+    # TYPE anycast_healthchecker_service_check_timeout_total counter
+    anycast_healthchecker_service_check_timeout_total{ip_prefix="10.52.12.2/32",service_name="foo1.bar.com"} 3.0
+    # HELP anycast_healthchecker_service_check_timeout_created The number of times a service check timed out
+    # TYPE anycast_healthchecker_service_check_timeout_created gauge
+    anycast_healthchecker_service_check_timeout_created{ip_prefix="10.52.12.2/32",service_name="foo1.bar.com"} 1.698693786243282e+09
+    # HELP anycast_healthchecker_uptime Uptime of the process in seconds since the epoch
+    # TYPE anycast_healthchecker_uptime gauge
+    anycast_healthchecker_uptime 1.6986938162371802e+09
+    # HELP anycast_healthchecker_state The current state of the process: 0 = down, 1 = up
+    # TYPE anycast_healthchecker_state gauge
+    anycast_healthchecker_state 1.0
+    # HELP anycast_healthchecker_version_info Version of the software
+    # TYPE anycast_healthchecker_version_info gauge
+    anycast_healthchecker_version_info{version="0.9.1"} 1.0
+    # HELP anycast_healthchecker_service The configured service checks
+    # TYPE anycast_healthchecker_service gauge
+    anycast_healthchecker_service{ip_prefix="10.52.12.1/32",service_name="foo.bar.com"} 1.0
+    anycast_healthchecker_service{ip_prefix="fd12:aba6:57db:ffff::1/128",service_name="foo1IPv6.bar.com"} 1.0
+    anycast_healthchecker_service{ip_prefix="10.52.12.2/32",service_name="foo1.bar.com"} 1.0
+
 
 How to configure logging
 ************************
