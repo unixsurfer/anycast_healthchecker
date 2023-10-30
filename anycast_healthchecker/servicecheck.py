@@ -123,7 +123,7 @@ class ServiceCheck(Thread):
             return proc.returncode == 0
 
     def _ip_assigned(self):
-        """Check if IP prefix is assigned to loopback interface.
+        """Check if IP prefix is assigned to the interface.
 
         Returns:
             True if IP prefix found assigned otherwise False.
@@ -177,8 +177,10 @@ class ServiceCheck(Thread):
             return True
         else:
             if self.ip_with_prefixlen in output:  # pylint: disable=E1135,R1705
-                msg = "{i} assigned to loopback interface".format(
-                    i=self.ip_with_prefixlen)
+                msg = "{i} assigned to {n} interface".format(
+                    i=self.ip_with_prefixlen,
+                    n=self.config['interface']
+                )
                 self.log.debug(msg)
                 return True
             else:
@@ -270,8 +272,9 @@ class ServiceCheck(Thread):
                 up_cnt = 0
                 self.extra['status'] = 'down'
                 self.log.warning("status DOWN because %s isn't assigned to "
-                                 "loopback interface.",
+                                 "%s interface.",
                                  self.ip_with_prefixlen,
+                                 self.config['interface'],
                                  extra=self.extra)
                 if check_state != 'DOWN':
                     check_state = 'DOWN'
