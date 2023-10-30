@@ -4,8 +4,8 @@
 __title__ = 'anycast_healthchecker'
 __author__ = 'Pavlos Parissis'
 __license__ = 'Apache 2.0'
-__version__ = '0.9.1'
-__copyright__ = 'Copyright 2015-2020 Pavlos Parissis'
+__version__ = '0.9.2'
+__copyright__ = 'Copyright 2015-2023 Pavlos Parissis'
 
 PROGRAM_NAME = __title__.replace('_', '-')
 METRIC_PREFIX = __title__

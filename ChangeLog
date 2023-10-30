@@ -1,6 +1,18 @@
 CHANGES
 =======
 
+0.9.2
+-----
+
+* RELEASE 0.9.2 version
+* Remove references to loopback interface
+* Add support for exporting Prometheus metrics
+* Remove deprecated validate\_ functions from puppet check
+* Add an interface parameter to anycast\_healthchecker::check puppet type
+* Set an interface on each check.conf file in puppet
+* Use the network target on the Systemd unit file
+* Add docopt module to requirements.txt
+
 0.9.1
 -----
 
