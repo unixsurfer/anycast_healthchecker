@@ -1299,7 +1299,7 @@ class MainExporter(Thread):
         self.config = config
 
     def run(self):
-        """Wrap _run method."""
+        """The run method."""
 
         textfile = os.path.join(
             self.config.get(
