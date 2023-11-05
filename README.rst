@@ -243,6 +243,7 @@ anycast-healthchecker uses the popular `INI`_ format for its configuration files
     json_log_server       = false
     prometheus_exporter   = false
     prometheus_collector_textfile_dir = /var/cache/textfile_collector/
+    prometheus_exporter_interval      = 20
 
 The above settings are used as defaults when anycast-healthchecker is launched without a configuration file. anycast-healthchecker **does not** need to run as root as long as it has sufficient privileges to modify the Bird configuration set in ``bird_conf`` or ``bird6_conf``, and trigger a reconfiguration of Bird by running the command configured in ``bird_reconfigure_cmd`` or ``bird6_reconfigure_cmd``. In the above example ``sudo`` is used for that purpose (``sudoers`` file has been modified for that purpose).
 
@@ -386,6 +387,10 @@ syslog server.
 * **prometheus_collector_textfile_dir** Defaults to **/var/cache/textfile_collector/**
 
 The directory to store the exported statistics.
+
+* **prometheus_exporter_interval** Defaults to **20** seconds
+
+How often to export Prometheus metrics.
 
 * **splay_startup** Unset by default
 

@@ -76,6 +76,7 @@ DAEMON_OPTIONS_TYPE = {
     'splay_startup': 'getfloat',
     'prometheus_exporter': 'getboolean',
     'prometheus_collector_textfile_dir': 'get',
+    'prometheus_exporter_interval': 'getint',
 }
 DAEMON_OPTIONAL_OPTIONS = [
     'stderr_log_server',
@@ -1307,7 +1308,7 @@ class MainExporter(Thread):
             "anycast_healthchecker.prom",
         )
         log = logging.getLogger(PROGRAM_NAME)
-        interval = 10
+        interval = self.config.getint('daemon', 'prometheus_exporter_interval')
         start_offset = time.time() % interval
         # Go in a loop until we are told to stop
         while True:

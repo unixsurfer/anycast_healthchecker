@@ -48,7 +48,8 @@ DEFAULT_OPTIONS = {
         'log_maxbytes': 104857600,
         'log_backups': 8,
         'prometheus_exporter': 'false',
-        'prometheus_collector_textfile_dir': '/var/cache/textfile_collector/'
+        'prometheus_collector_textfile_dir': '/var/cache/textfile_collector/',
+        'prometheus_exporter_interval': 10,
 
     }
 }
