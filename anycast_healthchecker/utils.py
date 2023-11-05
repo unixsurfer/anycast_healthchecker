@@ -1266,6 +1266,7 @@ class MainExporter(Thread):
     def __init__(self, registry, services, config):
         """Set the name of thread to be the name of the service."""
         super(MainExporter, self).__init__()
+        self.daemon = True
         self.registry = registry
         self.uptime = Gauge(
             name='uptime',
