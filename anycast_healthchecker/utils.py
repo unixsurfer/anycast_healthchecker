@@ -1268,6 +1268,7 @@ class MainExporter(Thread):
         """Set the name of thread to be the name of the service."""
         super(MainExporter, self).__init__()
         self.daemon = True
+        self.name = 'PrometheusExporter'
         self.registry = registry
         self.uptime = Gauge(
             name='uptime',
