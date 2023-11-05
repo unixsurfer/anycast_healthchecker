@@ -76,6 +76,7 @@ DAEMON_OPTIONS_TYPE = {
     'splay_startup': 'getfloat',
     'prometheus_exporter': 'getboolean',
     'prometheus_collector_textfile_dir': 'get',
+    'prometheus_exporter_interval': 'getint',
 }
 DAEMON_OPTIONAL_OPTIONS = [
     'stderr_log_server',
@@ -1267,6 +1268,7 @@ class MainExporter(Thread):
         """Set the name of thread to be the name of the service."""
         super(MainExporter, self).__init__()
         self.daemon = True
+        self.name = 'PrometheusExporter'
         self.registry = registry
         self.uptime = Gauge(
             name='uptime',
@@ -1297,7 +1299,7 @@ class MainExporter(Thread):
         self.config = config
 
     def run(self):
-        """Wrap _run method."""
+        """The run method."""
 
         textfile = os.path.join(
             self.config.get(
@@ -1307,7 +1309,7 @@ class MainExporter(Thread):
             "anycast_healthchecker.prom",
         )
         log = logging.getLogger(PROGRAM_NAME)
-        interval = 10
+        interval = self.config.getint('daemon', 'prometheus_exporter_interval')
         start_offset = time.time() % interval
         # Go in a loop until we are told to stop
         while True:
