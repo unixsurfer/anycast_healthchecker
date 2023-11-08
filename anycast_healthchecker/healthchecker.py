@@ -199,7 +199,7 @@ class HealthChecker:
             namespace=f"{METRIC_PREFIX}",
             labelnames=['service_name', 'ip_prefix'],
             documentation=(
-                'Service IP assignment check: 0 = not aissgned, 1 = assigned'
+                'Service IP assignment check: 0 = not assigned, 1 = assigned'
             ),
             registry=registry
         )

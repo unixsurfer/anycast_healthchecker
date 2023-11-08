@@ -415,7 +415,7 @@ Below is the exported metrics when there are three service checks configured::
     # HELP anycast_healthchecker_service_check_duration_milliseconds Service check duration in milliseconds
     # TYPE anycast_healthchecker_service_check_duration_milliseconds gauge
     anycast_healthchecker_service_check_duration_milliseconds{ip_prefix="10.52.12.1/32",service_name="foo.bar.com"} 5.141496658325195
-    # HELP anycast_healthchecker_service_check_ip_assignment Service IP assignment check: 0 = not aissgned, 1 = assigned
+    # HELP anycast_healthchecker_service_check_ip_assignment Service IP assignment check: 0 = not assigned, 1 = assigned
     # TYPE anycast_healthchecker_service_check_ip_assignment gauge
     anycast_healthchecker_service_check_ip_assignment{ip_prefix="10.52.12.1/32",service_name="foo.bar.com"} 1.0
     anycast_healthchecker_service_check_ip_assignment{ip_prefix="fd12:aba6:57db:ffff::1/128",service_name="foo1IPv6.bar.com"} 0.0
