@@ -628,15 +628,11 @@ Use pip::
 
 From Source::
 
-   sudo python setup.py install
+   sudo python -m pip install .
 
-Build (source) RPMs::
+Build a python wheel for manual installation::
 
-   python setup.py clean --all; python setup.py bdist_rpm
-
-Build a source archive for manual installation::
-
-   python setup.py sdist
+   python -m pip install build; python -m build --wheel
 
 
 Release
@@ -652,9 +648,9 @@ Release
 
       git tag -s 0.1.3 -m 'bump release'
 
-#. Create the source distribution archive (the archive will be placed in the **dist** directory)::
+#. Create the package wheel (the whl file will be placed in the **dist** directory)::
 
-      python setup.py sdist
+      python -m pip install build; python -m build --wheel
 
 #. pbr will update ChangeLog file and we want to squeeze them to the previous commit thus we run::
 
@@ -666,7 +662,7 @@ Release
 
 #. Push changes::
 
-      git push;git push --tags
+      git push; git push --tags
 
 
 Development
@@ -686,7 +682,7 @@ for testing purposes. It does the following:
 
 #. Generates bird configuration(anycast-prefixes.conf)
 
-#. Installs anycast-healthchecker with ``python3 setup.py install``
+#. Installs anycast-healthchecker with ``python3 -m pip install .``
 
 #. Assigns 4 IPv4 addresses and 2 IPv6 addresses to loopback interface
 

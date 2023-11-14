@@ -1,0 +1,41 @@
+[project]
+name = "anycast-healthchecker"
+description = "A healthchecker for Anycasted Services"
+authors = [{name = "Pavlos Parissis", email = "pavlos.parissis@gmail.com"}]
+license = {text = "Apache 2.0"}
+keywords = ["healthchecker", "anycast", "ECMP"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: System Administrators",
+    "Natural Language :: English",
+    "Operating System :: POSIX",
+    "Programming Language :: Python",
+    "Topic :: System :: Monitoring",
+    "Topic :: Utilities",
+]
+dynamic = ["version", "readme"]
+dependencies = [
+    "python-json-logger",
+    "docopt",
+    "prometheus_client",
+]
+
+[project.urls]
+documentation = "https://github.com/unixsurfer/anycast_healthchecker#readme"
+repository = "https://github.com/unixsurfer/anycast_healthchecker"
+
+[project.scripts]
+anycast-healthchecker = 'anycast_healthchecker.main:main'
+
+[tool.setuptools]
+packages = ["anycast_healthchecker"]
+
+[tool.setuptools.dynamic]
+version = {attr = "anycast_healthchecker.__version__"}
+readme = {file = ["README.rst"]}
+
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"

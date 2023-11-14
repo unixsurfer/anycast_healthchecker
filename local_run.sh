@@ -116,7 +116,7 @@ fi
 echo "------------------------------------------"
 echo "--------installing software---------------"
 echo "------------------------------------------"
-python3 setup.py install
+python3 -m pip install .
 
 echo "------------------------------------------"
 echo "--------Assign IPs in loopback------------"
