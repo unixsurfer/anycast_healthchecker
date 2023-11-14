@@ -1,6 +1,13 @@
 CHANGES
 =======
 
+0.9.4
+-----
+
+* RELEASE 0.9.4 version
+* Migrating from setup.py to pyproject.toml
+* Fix a typo in the doc of Prometheus metric
+
 0.9.3
 -----
 
