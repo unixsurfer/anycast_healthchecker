@@ -37,5 +37,5 @@ version = {attr = "anycast_healthchecker.__version__"}
 readme = {file = ["README.rst"]}
 
 [build-system]
-requires = ["setuptools>=45", "wheel"]
+requires = ["setuptools>=61", "wheel"]
 build-backend = "setuptools.build_meta"
