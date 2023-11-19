@@ -1,6 +1,12 @@
 CHANGES
 =======
 
+0.9.6
+-----
+
+* RELEASE 0.9.6 version
+* Use install\_requires instead of requires-dist
+
 0.9.5
 -----
 
