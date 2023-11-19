@@ -1,6 +1,13 @@
 CHANGES
 =======
 
+0.9.5
+-----
+
+* RELEASE 0.9.5 version
+* Restore setup.cfg and setup.py
+* Require setuptools 61+ for [project] metadata
+
 0.9.4
 -----
 
