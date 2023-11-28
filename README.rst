@@ -426,6 +426,10 @@ Below is the exported metrics when there are three service checks configured::
     # HELP anycast_healthchecker_service_check_timeout_created The number of times a service check timed out
     # TYPE anycast_healthchecker_service_check_timeout_created gauge
     anycast_healthchecker_service_check_timeout_created{ip_prefix="10.52.12.2/32",service_name="foo1.bar.com"} 1.698693786243282e+09
+    # HELP anycast_healthchecker_service_check_exitcode The exit code of the check command
+    # TYPE anycast_healthchecker_service_check_exitcode gauge
+    anycast_healthchecker_service_check_exitcode{ip_prefix="10.52.12.2/32",service_name="foo1.bar.com"} 126.0
+    anycast_healthchecker_service_check_exitcode{ip_prefix="10.52.12.1/32",service_name="foo.bar.com"} 0.0
     # HELP anycast_healthchecker_uptime Uptime of the process in seconds since the epoch
     # TYPE anycast_healthchecker_uptime gauge
     anycast_healthchecker_uptime 1.6986938162371802e+09

@@ -37,7 +37,7 @@ class ServiceCheck(Thread):
 
     def __init__(self, service, config, action, splay_startup, metric_state,
                  metric_check_duration, metric_check_ip_assignment,
-                 metric_check_timeout):
+                 metric_check_timeout, metric_check_exitcode):
         """Set the name of thread to be the name of the service."""
         super(ServiceCheck, self).__init__()
         self.name = service  # Used by Thread()
@@ -91,6 +91,7 @@ class ServiceCheck(Thread):
         self.metric_check_duration = metric_check_duration
         self.metric_check_ip_assignment = metric_check_ip_assignment
         self.metric_check_timeout = metric_check_timeout
+        self.metric_check_exitcode = metric_check_exitcode
         self.labels = {
             "service_name": self.name,
             "ip_prefix": self.ip_with_prefixlen
@@ -122,6 +123,7 @@ class ServiceCheck(Thread):
                                      "access rights, check could be running "
                                      "under another user(root) via sudo")
 
+            self.metric_check_exitcode.labels(**self.labels).set(126)
             return False
         else:
             duration = (time.time() - start_time) * 1000
@@ -132,6 +134,8 @@ class ServiceCheck(Thread):
             if proc.returncode != 0:
                 self.log.info("stderr from the check %s", errs)
                 self.log.info("stdout from the check %s", outs)
+
+            self.metric_check_exitcode.labels(**self.labels).set(proc.returncode)
 
             return proc.returncode == 0
 

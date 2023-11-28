@@ -210,6 +210,13 @@ class HealthChecker:
             documentation='The number of times a service check timed out',
             registry=registry
         )
+        metric_check_exitcode = Gauge(
+            name='service_check_exitcode',
+            namespace=f"{METRIC_PREFIX}",
+            labelnames=['service_name', 'ip_prefix'],
+            documentation='The exit code of the check command',
+            registry=registry
+        )
 
         if self.config.getboolean('daemon', 'prometheus_exporter'):
             thread_exporter = MainExporter(
@@ -245,7 +252,8 @@ class HealthChecker:
                                        metric_state,
                                        metric_check_duration,
                                        metric_check_ip_assignment,
-                                       metric_check_timeout)
+                                       metric_check_timeout,
+                                       metric_check_exitcode)
                 _thread.start()
 
         # Stay running until we are stopped
