@@ -1,15 +1,17 @@
 CHANGES
 =======
 
+0.9.7
+-----
+
+* RELEASE 0.9.7 version
+* Add a metric to capture the return code of the check
+
 0.9.6
 -----
 
 * RELEASE 0.9.6 version
 * Use install\_requires instead of requires-dist
-
-0.9.5
------
-
 * RELEASE 0.9.5 version
 * Restore setup.cfg and setup.py
 * Require setuptools 61+ for [project] metadata
