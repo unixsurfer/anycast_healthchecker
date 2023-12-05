@@ -1,6 +1,13 @@
 CHANGES
 =======
 
+0.9.8
+-----
+
+* RELEASE 0.9.8 version
+* Use a more meaningful value for uptime metric
+* Pass the exit code of check\_cmd to service\_state metric
+
 0.9.7
 -----
 
