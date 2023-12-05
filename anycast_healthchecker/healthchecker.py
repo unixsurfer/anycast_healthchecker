@@ -182,7 +182,9 @@ class HealthChecker:
         registry = CollectorRegistry()
         metric_state = Gauge(
             name="service_state",
-            documentation='The status of the service check: 0 = down, 1 = up',
+            documentation=(
+                'The status of the service check: 0 = healthy, any other value = unhealthy'
+            ),
             labelnames=['service_name', 'ip_prefix'],
             namespace=f"{METRIC_PREFIX}",
             registry=registry
@@ -208,13 +210,6 @@ class HealthChecker:
             namespace=f"{METRIC_PREFIX}",
             labelnames=['service_name', 'ip_prefix'],
             documentation='The number of times a service check timed out',
-            registry=registry
-        )
-        metric_check_exitcode = Gauge(
-            name='service_check_exitcode',
-            namespace=f"{METRIC_PREFIX}",
-            labelnames=['service_name', 'ip_prefix'],
-            documentation='The exit code of the check command',
             registry=registry
         )
 
@@ -252,8 +247,7 @@ class HealthChecker:
                                        metric_state,
                                        metric_check_duration,
                                        metric_check_ip_assignment,
-                                       metric_check_timeout,
-                                       metric_check_exitcode)
+                                       metric_check_timeout)
                 _thread.start()
 
         # Stay running until we are stopped

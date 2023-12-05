@@ -37,7 +37,7 @@ class ServiceCheck(Thread):
 
     def __init__(self, service, config, action, splay_startup, metric_state,
                  metric_check_duration, metric_check_ip_assignment,
-                 metric_check_timeout, metric_check_exitcode):
+                 metric_check_timeout):
         """Set the name of thread to be the name of the service."""
         super(ServiceCheck, self).__init__()
         self.name = service  # Used by Thread()
@@ -91,7 +91,6 @@ class ServiceCheck(Thread):
         self.metric_check_duration = metric_check_duration
         self.metric_check_ip_assignment = metric_check_ip_assignment
         self.metric_check_timeout = metric_check_timeout
-        self.metric_check_exitcode = metric_check_exitcode
         self.labels = {
             "service_name": self.name,
             "ip_prefix": self.ip_with_prefixlen
@@ -101,7 +100,7 @@ class ServiceCheck(Thread):
         """Execute a check command.
 
         Returns:
-            True if the exit code of the command is 0 otherwise False.
+            The exit code of the command.
 
         """
         cmd = shlex.split(self.config['check_cmd'])
@@ -123,8 +122,7 @@ class ServiceCheck(Thread):
                                      "access rights, check could be running "
                                      "under another user(root) via sudo")
 
-            self.metric_check_exitcode.labels(**self.labels).set(126)
-            return False
+            return 126
         else:
             duration = (time.time() - start_time) * 1000
             msg = "check duration {t:.3f}ms".format(t=duration)
@@ -135,9 +133,7 @@ class ServiceCheck(Thread):
                 self.log.info("stderr from the check %s", errs)
                 self.log.info("stdout from the check %s", outs)
 
-            self.metric_check_exitcode.labels(**self.labels).set(proc.returncode)
-
-            return proc.returncode == 0
+            return proc.returncode
 
     def _ip_assigned(self):
         """Check if IP prefix is assigned to the interface.
@@ -297,60 +293,62 @@ class ServiceCheck(Thread):
                                  self.ip_with_prefixlen,
                                  self.config['interface'],
                                  extra=self.extra)
-                self.metric_state.labels(**self.labels).set(0)
+                self.metric_state.labels(**self.labels).set(1)
                 if check_state != 'DOWN':
                     check_state = 'DOWN'
                     self.log.info("adding %s in the queue",
                                   self.ip_with_prefixlen,
                                   extra=self.extra)
                     self.action.put(self.del_operation)
-            elif self._run_check():
-                if up_cnt == (self.config['check_rise'] - 1):
-                    self.extra['status'] = 'up'
-                    self.log.info("status UP", extra=self.extra)
-                    self.metric_state.labels(**self.labels).set(1)
-                    # Service exceeded all consecutive checks. Set its state
-                    # accordingly and put an item in queue. But do it only if
-                    # previous state was different, to prevent unnecessary bird
-                    # reloads when a service flaps between states.
-                    if check_state != 'UP':
-                        check_state = 'UP'
-                        self.log.info("adding %s in the queue",
-                                      self.ip_with_prefixlen,
-                                      extra=self.extra)
-                        self.action.put(self.add_operation)
-                elif up_cnt < self.config['check_rise']:
-                    up_cnt += 1
-                    self.log.info("going up %s", up_cnt, extra=self.extra)
-                else:
-                    self.log.error("up_cnt is higher %s, it's a BUG!",
-                                   up_cnt,
-                                   extra=self.extra)
-                down_cnt = 0
             else:
-                if down_cnt == (self.config['check_fail'] - 1):
-                    self.extra['status'] = 'down'
-                    self.log.info("status DOWN", extra=self.extra)
-                    # Service exceeded all consecutive checks.
-                    # Set its state accordingly and put an item in queue.
-                    # But do it only if previous state was different, to
-                    # prevent unnecessary bird reloads when a service flaps
-                    # between states
-                    self.metric_state.labels(**self.labels).set(0)
-                    if check_state != 'DOWN':
-                        check_state = 'DOWN'
-                        self.log.info("adding %s in the queue",
-                                      self.ip_with_prefixlen,
-                                      extra=self.extra)
-                        self.action.put(self.del_operation)
-                elif down_cnt < self.config['check_fail']:
-                    down_cnt += 1
-                    self.log.info("going down %s", down_cnt, extra=self.extra)
+                check_status = self._run_check()
+                if check_status == 0:
+                    if up_cnt == (self.config['check_rise'] - 1):
+                        self.extra['status'] = 'up'
+                        self.log.info("status UP", extra=self.extra)
+                        self.metric_state.labels(**self.labels).set(check_status)
+                        # Service exceeded all consecutive checks. Set its state
+                        # accordingly and put an item in queue. But do it only if
+                        # previous state was different, to prevent unnecessary bird
+                        # reloads when a service flaps between states.
+                        if check_state != 'UP':
+                            check_state = 'UP'
+                            self.log.info("adding %s in the queue",
+                                        self.ip_with_prefixlen,
+                                        extra=self.extra)
+                            self.action.put(self.add_operation)
+                    elif up_cnt < self.config['check_rise']:
+                        up_cnt += 1
+                        self.log.info("going up %s", up_cnt, extra=self.extra)
+                    else:
+                        self.log.error("up_cnt is higher %s, it's a BUG!",
+                                    up_cnt,
+                                    extra=self.extra)
+                    down_cnt = 0
                 else:
-                    self.log.error("up_cnt is higher %s, it's a BUG!",
-                                   up_cnt,
-                                   extra=self.extra)
-                up_cnt = 0
+                    if down_cnt == (self.config['check_fail'] - 1):
+                        self.extra['status'] = 'down'
+                        self.log.info("status DOWN", extra=self.extra)
+                        # Service exceeded all consecutive checks.
+                        # Set its state accordingly and put an item in queue.
+                        # But do it only if previous state was different, to
+                        # prevent unnecessary bird reloads when a service flaps
+                        # between states
+                        self.metric_state.labels(**self.labels).set(check_status)
+                        if check_state != 'DOWN':
+                            check_state = 'DOWN'
+                            self.log.info("adding %s in the queue",
+                                        self.ip_with_prefixlen,
+                                        extra=self.extra)
+                            self.action.put(self.del_operation)
+                    elif down_cnt < self.config['check_fail']:
+                        down_cnt += 1
+                        self.log.info("going down %s", down_cnt, extra=self.extra)
+                    else:
+                        self.log.error("up_cnt is higher %s, it's a BUG!",
+                                    up_cnt,
+                                    extra=self.extra)
+                    up_cnt = 0
 
             self.log.info("wall clock time %.3fms",
                           (time.time() - timestamp) * 1000,
