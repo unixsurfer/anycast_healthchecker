@@ -1273,7 +1273,7 @@ class MainExporter(Thread):
         self.uptime = Gauge(
             name='uptime',
             namespace=f"{METRIC_PREFIX}",
-            documentation='Uptime of the process in seconds since the epoch',
+            documentation='Uptime of the process in seconds',
             registry=registry
         )
         self.state = Gauge(
@@ -1297,6 +1297,7 @@ class MainExporter(Thread):
         )
         self.services = services
         self.config = config
+        self.startup_time = time.time()
 
     def run(self):
         """The run method."""
@@ -1313,7 +1314,7 @@ class MainExporter(Thread):
         start_offset = time.time() % interval
         # Go in a loop until we are told to stop
         while True:
-            self.uptime.set_to_current_time()
+            self.uptime.set(int(time.time() - self.startup_time))
             self.state.set(1)
             self.info.info({'version': __version__})
             for service in self.services:
