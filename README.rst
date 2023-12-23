@@ -243,7 +243,7 @@ anycast-healthchecker uses the popular `INI`_ format for its configuration files
     json_log_server       = false
     prometheus_exporter   = false
     prometheus_collector_textfile_dir = /var/cache/textfile_collector/
-    prometheus_exporter_interval      = 20
+    prometheus_exporter_interval      = 10
 
 The above settings are used as defaults when anycast-healthchecker is launched without a configuration file. anycast-healthchecker **does not** need to run as root as long as it has sufficient privileges to modify the Bird configuration set in ``bird_conf`` or ``bird6_conf``, and trigger a reconfiguration of Bird by running the command configured in ``bird_reconfigure_cmd`` or ``bird6_reconfigure_cmd``. In the above example ``sudo`` is used for that purpose (``sudoers`` file has been modified for that purpose).
 
@@ -340,12 +340,12 @@ NOTE: Those IP-Prefixes are always removed from the configuration files set in `
 
 Log level to use, possible values are: debug, info, warning, error, critical
 
-* **log_file** Defaults to **STDOUT**
+* **log_file** Unset by default
 
 File to log messages to. The parent directory must be created prior the initial
-launch.
+launch. If unset, log messages are written to stdout.
 
-* **log_maxbytes** Defaults to **104857600** (bytes)
+* **log_maxbytes** Defaults to **104857600** (bytes, equals 100MiB)
 
 Maximum size in bytes for log files. It is only used if **log_file** is set to
 a file.
@@ -355,9 +355,10 @@ a file.
 Number of old log files to maintain. It is only used if **log_file** is set to
 a file.
 
-* **stderr_file** Defaults to **STDERR**
+* **stderr_file** Unset by default
 
 File to redirect standard error to. The parent directory must be created prior the initial launch.
+If unset, stderr is not redirected.
 
 * **log_server** Unset by default
 
@@ -388,7 +389,7 @@ syslog server.
 
 The directory to store the exported statistics.
 
-* **prometheus_exporter_interval** Defaults to **20** seconds
+* **prometheus_exporter_interval** Defaults to **10** seconds
 
 How often to export Prometheus metrics.
 
@@ -522,7 +523,7 @@ The name of the section becomes the name of the service check and appears in the
 
 The command to run to determine the status of the service based **on the return code**. Complex health checking should be wrapped in a script. When check command fails, the stdout and stderr appears in the log file.
 
-* **check_interval** Defaults to **2** (seconds)
+* **check_interval** Defaults to **10** (seconds)
 
 How often to run the check
 
@@ -538,7 +539,7 @@ A service is considered DOWN after these many consecutive unsuccessful health ch
 
 A service is considered HEALTHY after these many consecutive successful health checks
 
-* **check_disabled** Defaults to **false**
+* **check_disabled** Defaults to **true**
 
 ``true`` disables the check, ``false`` enables it
 
