@@ -11,11 +11,11 @@ Here you go:
 
   Create a tarball for the latest stable version
 
-    git archive --format tar --prefix=anycast-healthchecker-0.9.1/ HEAD | xz > /tmp/ah-build/anycast-healthchecker_0.9.1.orig.tar.xz
+    git archive --format tar --prefix=anycast-healthchecker-0.9.8/ HEAD | xz > /tmp/ah-build/anycast-healthchecker_0.9.8.orig.tar.xz
 
   Extract the tarball and change into the build directory
 
-    cd /tmp/ah-build && tar xf anycast-healthchecker_0.9.1.orig.tar.xz && cd anycast-healthchecker-0.9.1
+    cd /tmp/ah-build && tar xf anycast-healthchecker_0.9.8.orig.tar.xz && cd anycast-healthchecker-0.9.8
 
   Build the package
 
