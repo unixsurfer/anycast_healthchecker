@@ -130,8 +130,10 @@ class ServiceCheck(Thread):
             self.metric_check_duration.labels(**self.labels).set(duration)
 
             if proc.returncode != 0:
-                self.log.info("stderr from the check %s", errs)
-                self.log.info("stdout from the check %s", outs)
+                if errs:
+                    self.log.info("stderr from the check %s", errs)
+                if outs:
+                    self.log.info("stdout from the check %s", outs)
 
             return proc.returncode
 
@@ -305,7 +307,6 @@ class ServiceCheck(Thread):
                 if check_status == 0:
                     if up_cnt == (self.config['check_rise'] - 1):
                         self.extra['status'] = 'up'
-                        self.log.info("status UP", extra=self.extra)
                         self.metric_state.labels(**self.labels).set(check_status)
                         # Service exceeded all consecutive checks. Set its state
                         # accordingly and put an item in queue. But do it only if
@@ -313,13 +314,16 @@ class ServiceCheck(Thread):
                         # reloads when a service flaps between states.
                         if check_state != 'UP':
                             check_state = 'UP'
+                            self.log.info("changed to UP", extra=self.extra)
                             self.log.info("adding %s in the queue",
                                         self.ip_with_prefixlen,
                                         extra=self.extra)
                             self.action.put(self.add_operation)
+                        else:
+                            self.log.info("status UP", extra=self.extra)
                     elif up_cnt < self.config['check_rise']:
                         up_cnt += 1
-                        self.log.info("going up %s", up_cnt, extra=self.extra)
+                        self.log.info("going up %s/%s", up_cnt, self.config['check_rise'], extra=self.extra)
                     else:
                         self.log.error("up_cnt is higher %s, it's a BUG!",
                                     up_cnt,
@@ -328,7 +332,6 @@ class ServiceCheck(Thread):
                 else:
                     if down_cnt == (self.config['check_fail'] - 1):
                         self.extra['status'] = 'down'
-                        self.log.info("status DOWN", extra=self.extra)
                         # Service exceeded all consecutive checks.
                         # Set its state accordingly and put an item in queue.
                         # But do it only if previous state was different, to
@@ -337,16 +340,19 @@ class ServiceCheck(Thread):
                         self.metric_state.labels(**self.labels).set(check_status)
                         if check_state != 'DOWN':
                             check_state = 'DOWN'
+                            self.log.info("changed to DOWN", extra=self.extra)
                             self.log.info("adding %s in the queue",
                                         self.ip_with_prefixlen,
                                         extra=self.extra)
                             self.action.put(self.del_operation)
+                        else:
+                            self.log.info("status DOWN", extra=self.extra)
                     elif down_cnt < self.config['check_fail']:
                         down_cnt += 1
-                        self.log.info("going down %s", down_cnt, extra=self.extra)
+                        self.log.info("going down %s/%s", down_cnt, self.config['check_fail'], extra=self.extra)
                     else:
-                        self.log.error("up_cnt is higher %s, it's a BUG!",
-                                    up_cnt,
+                        self.log.error("down_cnt is higher %s, it's a BUG!",
+                                    down_cnt,
                                     extra=self.extra)
                     up_cnt = 0
 
