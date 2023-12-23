@@ -7,12 +7,12 @@ Build-Depends: debhelper (>= 10~), dh-python, pybuild-plugin-pyproject,
                python3-setuptools
 Standards-Version: 3.9.5
 Homepage: https://github.com/unixsurfer/anycast_healthchecker
-X-Python3-Version: >= 3.2
+X-Python3-Version: >= 3.9
 
 Package: python3-anycast-healthchecker
 Architecture: all
 Depends: ${python3:Depends}, ${misc:Depends}, python3-docopt, python3-pythonjsonlogger
-Description: A healthchecker for Anycasted services
+Description: Healthchecker for Anycasted services
  anycast-healthchecker monitors a service by doing periodic health checks and
  based on the result instructs Bird daemon to either advertise or withdraw the
  route to reach the monitored service. As a result Bird will only advertise
@@ -30,7 +30,7 @@ Description: A healthchecker for Anycasted services
 Package: anycast-healthchecker
 Architecture: all
 Depends: ${python3:Depends}, ${misc:Depends}, bird, python3-anycast-healthchecker (= ${source:Version})
-Description: A healthchecker for Anycasted services
+Description: Healthchecker for Anycasted services
  anycast-healthchecker monitors a service by doing periodic health checks and
  based on the result instructs Bird daemon to either advertise or withdraw the
  route to reach the monitored service. As a result Bird will only advertise
