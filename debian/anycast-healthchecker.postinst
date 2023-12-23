@@ -4,7 +4,7 @@ set -e
 
 . /etc/default/anycast-healthchecker
 
-for dir in /var/log/anycast-healthchecker/  /var/lib/anycast-healthchecker/; do
+for dir in /var/log/anycast-healthchecker/ /var/lib/anycast-healthchecker/ /var/lib/anycast-healthchecker/6/ ; do
 	chown "${RUN_AS_USER}" "${dir}"
 done
 
