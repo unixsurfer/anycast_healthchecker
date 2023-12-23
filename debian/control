@@ -2,10 +2,9 @@ Source: anycast-healthchecker
 Section: python
 Priority: optional
 Maintainer: Maximilian Wilhelm <max@sdn.clinic>
-Build-Depends: debhelper (>= 10~), dh-python,
+Build-Depends: debhelper (>= 10~), dh-python, pybuild-plugin-pyproject,
                python3-all,
-               python3-setuptools,
-               python3-pbr
+               python3-setuptools
 Standards-Version: 3.9.5
 Homepage: https://github.com/unixsurfer/anycast_healthchecker
 X-Python3-Version: >= 3.2
