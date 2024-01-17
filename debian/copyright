@@ -2,7 +2,7 @@ Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: anycast-healthchecker
 Source: https://github.com/unixsurfer/anycast_healthchecker
 
-Files: anycast-healthchecker/*
+Files: *
 Copyright: 2014-2018 Pavlos Parissis
 License: Apache-2.0
 

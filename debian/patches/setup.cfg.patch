@@ -1,19 +1,56 @@
 diff --git a/setup.cfg b/setup.cfg
-index 9c102fb..9806560 100644
+deleted file mode 100644
+index 8a1b56a..0000000
 --- a/setup.cfg
-+++ b/setup.cfg
-@@ -27,10 +27,10 @@ keywords = healthchecker anycast ECMP
- [files]
- packages =
-     anycast_healthchecker
++++ /dev/null
+@@ -1,37 +0,0 @@
+-[metadata]
+-name = anycast-healthchecker
+-author = Pavlos Parissis
+-author-email = pavlos.parissis@gmail.com
+-maintainer = Pavlos Parissis
+-maintainer-email = pavlos.parissis@gmail.com
+-summary = A healthchecker for Anycasted Services
+-home-page = https://github.com/unixsurfer/anycast_healthchecker
+-license = Apache 2.0
+-classifier =
+-    Development Status :: 5 - Production/Stable
+-        Environment :: Console
+-        Intended Audience :: Information Technology
+-        Intended Audience :: System Administrators
+-        Natural Language :: English
+-        Operating System :: POSIX
+-        Programming Language :: Python :: 3.4
+-        Programming Language :: Python :: 3.5
+-        Topic :: System :: Monitoring
+-        Topic :: Utilities
+-install_requires =
+-    python-json-logger
+-    docopt
+-    prometheus_client
+-keywords = healthchecker anycast ECMP
+-
+-[files]
+-packages =
+-    anycast_healthchecker
 -    anycast
 -    healthchecker
 -    Equal-Cost Multi-Pathing
 -    monitor
-+#    anycast
-+#    healthchecker
-+#    Equal-Cost Multi-Pathing
-+#    monitor
- 
- [entry_points]
- console_scripts =
+-
+-[entry_points]
+-console_scripts =
+-     anycast-healthchecker = anycast_healthchecker.main:main
+diff --git a/setup.py b/setup.py
+deleted file mode 100644
+index b96e399..0000000
+--- a/setup.py
++++ /dev/null
+@@ -1,7 +0,0 @@
+-#!/usr/bin/env python
+-
+-import setuptools
+-
+-setuptools.setup(
+-    setup_requires=['pbr'],
+-    pbr=True)

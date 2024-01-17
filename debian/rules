@@ -7,8 +7,6 @@
 DPKG_EXPORT_BUILDFLAGS = 1
 include /usr/share/dpkg/default.mk
 
-export PBR_VERSION=0.5.5
-
 # main packaging script based on dh7 syntax
 %:
 	dh $@ --with python3 --buildsystem=pybuild

@@ -1,8 +1,20 @@
+anycast-healthchecker (0.9.8-1) stable; urgency=medium
+
+  * Release version 0.9.8.
+
+ -- Pavlos Parissis <pavlos.parissis@gmail.com>  Tue, 05 Dec 2023 20:04:44 +0100
+
+anycast-healthchecker (0.9.1-1) stable; urgency=medium
+
+  * Release version 0.9.1.
+
+ -- Pavlos Parissis <pavlos.parissis@gmail.com>  Sun, 02 Aug 2020 09:13:49 +0200
+
 anycast-healthchecker (0.9.0-1) stable; urgency=medium
 
-    * Release version 0.9.0.
+  * Release version 0.9.0.
 
- -- Pavlos Parissis <pavlos.parissis@gmail.com> Mon 15 Jul 2019 05:30:48 PM CEST
+ -- Pavlos Parissis <pavlos.parissis@gmail.com>  Mon, 15 Jul 2019 17:30:48 +0200
 
 anycast-healthchecker (0.8.1-1) stable; urgency=medium
 
