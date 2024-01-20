@@ -42,12 +42,10 @@ bird_variable           = ACAST_PS_ADVERTISE
 bird_keep_changes       = true
 bird_changes_counter    = 6
 bird_reconfigure_cmd    = /usr/bin/sudo /usr/sbin/birdc configure
-dummy_ip_prefix         = 10.189.200.255/32
 
 ipv6                    = true
 bird6_conf              = ${TEST_DIR}/var/lib/anycast-healthchecker/6/anycast-prefixes.conf
 bird6_variable          = ACAST6_PS_ADVERTISE
-dummy_ip6_prefix        = 2001:db8::1/128
 bird6_reconfigure_cmd   = sudo /usr/sbin/birdc6 configure
 bird6_keep_changes      = true
 bird6_changes_counter   = 6

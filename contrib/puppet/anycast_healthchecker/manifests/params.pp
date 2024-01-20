@@ -18,8 +18,6 @@ class anycast_healthchecker::params {
   $bird6_changes_counter = 128
   $configuration_dir     = '/etc/anycast-healthchecker.d'
   $configuration_file    = '/etc/anycast-healthchecker.conf'
-  $dummy_ip_prefix       = '10.189.200.255/32'
-  $dummy_ip6_prefix      = '2001:db8::1/128'
   $group                 = 'healthchecker'
   $http_server           = '127.0.0.1'
   $http_server_port      = 2813
