@@ -608,12 +608,20 @@ You can launch it by supplying a configuration file and a directory with configu
 
 At the root of the project there is System V init and a Systemd unit file for proper integration with OS startup tools.
 
+Sending a ``SIGURG`` signal to a running anycast-healthchecker process will trigger an immediate, additional (not changing the interval) execution of all active checks. This can be used to make external events faster rise/fail checks and thus announce/remove IPs, for example when some process dies. Note that the ``check_rise`` and ``check_fail`` options still apply.
+
 Systemd and SysVinit integration
 ################################
 
 Under contrib/systemd and contrib/SysVinit directories there are the necessary startup files that can be used to start anycast-healthchecker on boot.
 
 **IMPORTANT:** Version 0.8.0 dropped support for daemonization and therefore you can't use the System V init script stored under contrib/SysVinit directory with newer versions. If you want to use version 0.8.0 and higher on Operating Systems that don't support Systemd then you have to use a tool like supervisord.
+
+The following snippet/drop-in can be used on a monitored systemd service to make its start and stop (including due to failure) trigger an immediate check run::
+
+    [Service]
+    ExecStartPost=-/usr/bin/systemctl --system kill --signal=SIGURG anycast-healthchecker.service
+    ExecStopPost=-/usr/bin/systemctl --system kill --signal=SIGURG anycast-healthchecker.service
 
 Nagios check
 ############

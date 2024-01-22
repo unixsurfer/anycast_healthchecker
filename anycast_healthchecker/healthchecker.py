@@ -6,6 +6,7 @@ import os
 import sys
 import logging
 from queue import Queue
+import threading
 
 from anycast_healthchecker import PROGRAM_NAME, METRIC_PREFIX
 from anycast_healthchecker.servicecheck import ServiceCheck
@@ -75,6 +76,8 @@ class HealthChecker:
                 self.bird_configuration[ip_version]['dummy_ip_prefix']
             )
             self.ip_prefixes[ip_version] = _ip_prefixes
+
+        self._urgent_event = threading.Event()
 
         self.log.info('initialize healthchecker')
 
@@ -247,7 +250,8 @@ class HealthChecker:
                                        metric_state,
                                        metric_check_duration,
                                        metric_check_ip_assignment,
-                                       metric_check_timeout)
+                                       metric_check_timeout,
+                                       self._urgent_event)
                 _thread.start()
 
         # Stay running until we are stopped
@@ -277,3 +281,9 @@ class HealthChecker:
                         self.bird_configuration[ip_version]['reconfigure_cmd'])
                 else:
                     run_custom_bird_reconfigure(operation)
+
+    def run_all_checks_now(self):
+        """Immediately run all checks. This does not change the usual interval."""
+        self.log.info("Immediatly running all checks")
+        self._urgent_event.set()
+        self._urgent_event.clear()
