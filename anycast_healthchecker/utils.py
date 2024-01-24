@@ -39,6 +39,7 @@ SERVICE_OPTIONS_TYPE = {
     'check_fail': 'getint',
     'check_disabled': 'getboolean',
     'on_disabled': 'get',
+    'on_exit': 'get',
     'ip_prefix': 'get',
     'interface': 'get',
     'ip_check_disabled': 'getboolean',
@@ -152,6 +153,27 @@ def get_ip_prefixes_from_config(config, services, ip_version):
 
     return ip_prefixes
 
+def get_ip_prefixes_from_config_on_exit(config, services, ip_version, on_exit_status):
+    """Build a set of IP prefixes found in service configuration files.
+
+    Arguments:
+        config (obg): A configparser object which holds our configuration.
+        services (list): A list of section names which are the name of the
+        service checks.
+        ip_version (int): IP protocol version
+
+    Returns:
+        A set of IP prefixes.
+
+    """
+    ip_prefixes = set()
+
+    for service in services:
+        if config.get(service, 'on_exit') == on_exit_status:
+            ip_prefix = ipaddress.ip_network(config.get(service, 'ip_prefix'))
+            if ip_prefix.version == ip_version:
+                ip_prefixes.add(ip_prefix.with_prefixlen)
+    return ip_prefixes
 
 def ip_prefixes_sanity_check(config, bird_configuration):
     """Sanity check on IP prefixes.
@@ -420,6 +442,17 @@ def service_configuration_check(config):
                    "either to 'withdraw' or to 'advertise'"
                    .format(name=service,
                            val=config.get(service, 'on_disabled')))
+            raise ValueError(msg)
+
+        
+        if (config.get(service, 'on_exit') != 'withdraw' and
+                config.get(service, 'on_exit') != 'advertise' and
+                config.get(service, 'on_exit') != 'none'):
+            msg = ("'on_exit' option has invalid value ({val}) for "
+                   "service check {name}, 'on_exit option should be set "
+                   "either to 'withdraw' or to 'advertise' or to 'none'"
+                   .format(name=service,
+                           val=config.get(service, 'on_exit')))
             raise ValueError(msg)
 
         ip_prefixes.append(config.get(service, 'ip_prefix'))
@@ -931,7 +964,7 @@ def write_pid(pidfile):
         sys.exit("failed to write pidfile:{e}".format(e=exc))
 
 
-def shutdown(pidfile, signalnb=None, frame=None):
+def shutdown(pidfile, healthchecker, signalnb=None, frame=None):
     """Clean up pidfile upon shutdown.
 
     Notice:
@@ -950,6 +983,7 @@ def shutdown(pidfile, signalnb=None, frame=None):
     """
     log = logging.getLogger(PROGRAM_NAME)
     log.info("received %s at %s", signalnb, frame)
+    healthchecker.on_exit()
     log.info("going to remove pidfile %s", pidfile)
     # no point to catch possible errors when we delete the pid file
     os.unlink(pidfile)
