@@ -608,6 +608,8 @@ You can launch it by supplying a configuration file and a directory with configu
 
 At the root of the project there is System V init and a Systemd unit file for proper integration with OS startup tools.
 
+Sending a ``SIGURG`` signal to a running anycast-healthchecker process will trigger an immediate, additional (not changing the regular interval) execution of all active checks. For services with ``check_rise`` and/or ``check_fail`` set to ``1``, this can be used to make external events faster advertise and/or withdraw their prefixes.
+
 Systemd and SysVinit integration
 ################################
 

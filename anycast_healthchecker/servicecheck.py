@@ -37,7 +37,7 @@ class ServiceCheck(Thread):
 
     def __init__(self, service, config, action, splay_startup, metric_state,
                  metric_check_duration, metric_check_ip_assignment,
-                 metric_check_timeout):
+                 metric_check_timeout, urgent_event):
         """Set the name of thread to be the name of the service."""
         super(ServiceCheck, self).__init__()
         self.name = service  # Used by Thread()
@@ -85,6 +85,7 @@ class ServiceCheck(Thread):
             bird_reconfigure_cmd=config.get('custom_bird_reconfigure_cmd',
                                             None)
         )
+        self.urgent_event = urgent_event
         self.log.info("loading check for %s", self.name, extra=self.extra)
 
         self.metric_state = metric_state
@@ -365,4 +366,4 @@ class ServiceCheck(Thread):
             if sleep < 0:
                 sleep += interval
             self.log.debug("sleeping for %.3fsecs", sleep, extra=self.extra)
-            time.sleep(sleep)
+            self.urgent_event.wait(timeout=sleep)

@@ -94,6 +94,11 @@ def main():
 
     # Create our master process.
     checker = healthchecker.HealthChecker(config, bird_configuration)
+
+    # Register our SIGURG handler to immediately trigger all checks.
+    signal.signal(signal.SIGURG, lambda signum, frame: checker.run_all_checks_now())
+
+    # and start working
     logger.info("starting %s version %s", PROGRAM_NAME, __version__)
     checker.run()
 
