@@ -39,3 +39,7 @@ readme = {file = ["README.rst"]}
 [build-system]
 requires = ["setuptools>=61", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[tool.isort]
+# https://pycqa.github.io/isort/docs/configuration/profiles.html
+profile = "black"

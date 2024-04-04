@@ -22,17 +22,26 @@ Options:
     -v, --version              show version
     -h, --help                 show this screen
 """
-from functools import partial
-import socket
 import signal
+import socket
 import sys
+from functools import partial
+
 from docopt import docopt
 
-from anycast_healthchecker import (DEFAULT_OPTIONS, PROGRAM_NAME, __version__,
-                                   healthchecker)
-from anycast_healthchecker.utils import (load_configuration, shutdown,
-                                         ip_prefixes_sanity_check,
-                                         update_pidfile, setup_logger)
+from anycast_healthchecker import (
+    DEFAULT_OPTIONS,
+    PROGRAM_NAME,
+    __version__,
+    healthchecker,
+)
+from anycast_healthchecker.utils import (
+    ip_prefixes_sanity_check,
+    load_configuration,
+    setup_logger,
+    shutdown,
+    update_pidfile,
+)
 
 
 def main():

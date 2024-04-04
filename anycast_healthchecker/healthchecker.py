@@ -1,26 +1,28 @@
 # pylint: disable=too-few-public-methods
 
 """A library which provides the HealthChecker class."""
-from configparser import NoOptionError
+import logging
 import os
 import sys
-import logging
-from queue import Queue
 import threading
+from configparser import NoOptionError
+from queue import Queue
 
-from anycast_healthchecker import PROGRAM_NAME, METRIC_PREFIX
+from prometheus_client import CollectorRegistry, Counter, Gauge
+
+from anycast_healthchecker import METRIC_PREFIX, PROGRAM_NAME
 from anycast_healthchecker.servicecheck import ServiceCheck
-from anycast_healthchecker.utils import (SERVICE_OPTIONS_TYPE,
-                                         get_ip_prefixes_from_bird,
-                                         get_ip_prefixes_from_config,
-                                         reconfigure_bird,
-                                         write_temp_bird_conf,
-                                         archive_bird_conf,
-                                         ServiceCheckDiedError,
-                                         run_custom_bird_reconfigure,
-                                         MainExporter)
-
-from prometheus_client import Gauge, CollectorRegistry, Counter
+from anycast_healthchecker.utils import (
+    SERVICE_OPTIONS_TYPE,
+    MainExporter,
+    ServiceCheckDiedError,
+    archive_bird_conf,
+    get_ip_prefixes_from_bird,
+    get_ip_prefixes_from_config,
+    reconfigure_bird,
+    run_custom_bird_reconfigure,
+    write_temp_bird_conf,
+)
 
 
 class HealthChecker:
