@@ -17,9 +17,9 @@ classifiers = [
 ]
 dynamic = ["version", "readme"]
 dependencies = [
-    "python-json-logger",
     "docopt",
-    "prometheus_client",
+    "prometheus-client",
+    "python-json-logger",
 ]
 
 [project.urls]

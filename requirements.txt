@@ -1,2 +1,3 @@
 docopt
+prometheus-client
 python-json-logger
