@@ -11,11 +11,12 @@ Usage:
 Options:
     -v   report what it does
 """
-import os
-import sys
 import configparser
 import glob
+import os
 import subprocess
+import sys
+
 from docopt import docopt
 
 

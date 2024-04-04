@@ -6,18 +6,21 @@
 
 """A library which provides the ServiceCheck class."""
 
-import subprocess
-import time
-import logging
-import traceback
-from threading import Thread
 import ipaddress
+import logging
 import random
 import shlex
+import subprocess
+import time
+import traceback
+from threading import Thread
 
 from anycast_healthchecker import PROGRAM_NAME
-from anycast_healthchecker.utils import (AddOperation, DeleteOperation,
-                                         ServiceCheckDiedError)
+from anycast_healthchecker.utils import (
+    AddOperation,
+    DeleteOperation,
+    ServiceCheckDiedError,
+)
 
 
 class ServiceCheck(Thread):

@@ -6,30 +6,32 @@
 # pylint: disable=too-few-public-methods
 # pylint: disable=too-many-lines
 """Provide functions and classes that are used within anycast_healthchecker."""
-from collections import Counter
-import re
-import os
-import signal
-import sys
-import subprocess
+import configparser
+import datetime
+import glob
+import ipaddress
 import logging
 import logging.handlers
-from threading import Thread
-import time
-import datetime
-import configparser
-import glob
+import os
+import re
 import shlex
 import shutil
-import ipaddress
+import signal
+import subprocess
+import sys
+import time
+from collections import Counter
+from threading import Thread
 
+from prometheus_client import CollectorRegistry, Gauge, Info, write_to_textfile
 from pythonjsonlogger import jsonlogger
 
-from anycast_healthchecker import DEFAULT_OPTIONS, PROGRAM_NAME, __version__, METRIC_PREFIX
-
-from prometheus_client import Gauge, CollectorRegistry, write_to_textfile, Info
-
-
+from anycast_healthchecker import (
+    DEFAULT_OPTIONS,
+    METRIC_PREFIX,
+    PROGRAM_NAME,
+    __version__,
+)
 
 SERVICE_OPTIONS_TYPE = {
     'check_cmd': 'get',
