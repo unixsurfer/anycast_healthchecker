@@ -43,3 +43,13 @@ build-backend = "setuptools.build_meta"
 [tool.isort]
 # https://pycqa.github.io/isort/docs/configuration/profiles.html
 profile = "black"
+
+[tool.pylint.'MESSAGES CONTROL']
+disable = [
+    "line-too-long",
+    "missing-module-docstring",
+    "too-many-arguments",
+    "too-many-instance-attributes",
+    "too-many-locals",
+    "too-many-branches",
+]
