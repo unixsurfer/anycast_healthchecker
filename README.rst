@@ -103,8 +103,6 @@ A list of IP prefixes (<IP>/<prefix length>) is stored in a text file. IP prefix
 
 This configuration logic allows a separate process to update the list by adding or removing IP prefixes and trigger a reconfiguration of Bird in order to advertise or withdraw routes.  **anycast-healthchecker** is that separate process. It monitors Anycasted services and, based on the status of the health checks, updates the list of IP prefixes.
 
-Bird does not allow the definition of a list with no elements: if that happens Bird will produce an error and refuses to start. Because of this, anycast-healthchecker makes sure that there is always an IP prefix in the list, see ``dummy_ip_prefix`` and ``dummy_ip6_prefix`` settings in `Daemon section`_.
-
 Configuring anycast-healthchecker
 ---------------------------------
 
@@ -181,8 +179,6 @@ anycast-prefixes.conf
             10.189.200.255/32
         ];
 
-anycast-healthchecker removes IP prefixes from the list for which a service check is not configured. But, the IP prefix set in ``dummy_ip_prefix`` does not need a service check configuration.
-
 This the equivalent list for IPv6 prefixes::
 
     define ACAST6_PS_ADVERTISE =
@@ -227,8 +223,6 @@ anycast-healthchecker uses the popular `INI`_ format for its configuration files
     bird6_variable        = ACAST6_PS_ADVERTISE
     bird_reconfigure_cmd  = sudo /usr/sbin/birdc configure
     bird6_reconfigure_cmd = sudo /usr/sbin/birdc6 configure
-    dummy_ip_prefix       = 10.189.200.255/32
-    dummy_ip6_prefix      = 2001:db8::1/128
     bird_keep_changes     = false
     bird6_keep_changes    = false
     bird_changes_counter  = 128
@@ -304,14 +298,6 @@ Command to trigger a reconfiguration of IPv4 Bird daemon
 * **bird6_reconfigure_cmd** Defaults to **sudo /usr/sbin/birdc6 configure**
 
 Command to trigger a reconfiguration of IPv6 Bird daemon
-
-* **dummy_ip_prefix** Defaults to **10.189.200.255/32**
-
-An IP prefix in the form <IP>/<prefix length> which will be always available in the list defined by ``bird_variable`` to avoid having an empty list. The ``dummy_ip_prefix`` **must not** be used by any service or assigned to the interface set with ``interface`` or configured anywhere on the network as anycast-healthchecker **does not** perform any checks for it.
-
-* **dummy_ip6_prefix** Defaults to **2001:db8::1/128**
-
-An IPv6 prefix in the form <IPv6>/<prefix length> which will be always available in the list defined by ``bird6_variable`` to avoid having an empty list. The ``dummy_ip6_prefix`` **must not** be used by any service or assigned to the interface set with ``interface`` or configured anywhere on the network as anycast-healthchecker **does not** perform any checks for it.
 
 * **bird_keep_changes** Defaults to **false**
 

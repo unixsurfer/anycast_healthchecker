@@ -168,7 +168,6 @@ def ip_prefixes_sanity_check(config, bird_configuration):
         modify_ip_prefixes(config,
                            bird_configuration[ip_version]['config_file'],
                            bird_configuration[ip_version]['variable_name'],
-                           bird_configuration[ip_version]['dummy_ip_prefix'],
                            bird_configuration[ip_version]['reconfigure_cmd'],
                            bird_configuration[ip_version]['keep_changes'],
                            bird_configuration[ip_version]['changes_counter'],
@@ -179,7 +178,6 @@ def modify_ip_prefixes(
         config,
         config_file,
         variable_name,
-        dummy_ip_prefix,
         reconfigure_cmd,
         keep_changes,
         changes_counter,
@@ -188,14 +186,12 @@ def modify_ip_prefixes(
 
     Depending on the configuration either removes or reports IP prefixes found
     in Bird configuration for which we don't have a service check associated
-    with them. Moreover, it adds the dummy IP prefix if it isn't present and
-    ensures that the correct variable name is set.
+    with them. Moreover, it ensures that the correct variable name is set.
 
     Arguments:
         config (obg): A configparser object which holds our configuration.
         config_file (str): The file name of bird configuration
         variable_name (str): The name of the variable set in bird configuration
-        dummy_ip_prefix (str): The dummy IP prefix, which must be always
         reconfigure_cmd (str): The command to run to trigger a reconfiguration
         on Bird daemon upon successful configuration update
         keep_changes (boolean): To enable keeping a history of changes applied
@@ -225,19 +221,11 @@ def modify_ip_prefixes(
                     "correct one %s", _name, variable_name)
         update_bird_conf = True
 
-    if dummy_ip_prefix not in ip_prefixes_in_bird:
-        log.warning("dummy IP prefix %s is missing from bird configuration "
-                    "%s, adding it", dummy_ip_prefix, config_file)
-        ip_prefixes_in_bird.insert(0, dummy_ip_prefix)
-        update_bird_conf = True
-
     # Find IP prefixes in Bird configuration without a check.
     ip_prefixes_with_check = get_ip_prefixes_from_config(
         config,
         services,
         ip_version)
-    # dummy_ip_prefix doesn't have a config by design
-    ip_prefixes_with_check.add(dummy_ip_prefix)
 
     ip_prefixes_without_check = set(ip_prefixes_in_bird).difference(
         ip_prefixes_with_check)
@@ -261,7 +249,6 @@ def modify_ip_prefixes(
         if keep_changes:
             archive_bird_conf(config_file, changes_counter)
         tempname = write_temp_bird_conf(
-            dummy_ip_prefix,
             config_file,
             variable_name,
             ip_prefixes_in_bird
@@ -354,7 +341,7 @@ def configuration_check(config):
     # Catch the case where the directory, under which we store the pid file, is
     # missing.
     if not os.path.isdir(os.path.dirname(pidfile)):
-        raise ValueError("{d} doesn't exit".format(d=os.path.dirname(pidfile)))
+        raise ValueError("{d} doesn't exist".format(d=os.path.dirname(pidfile)))
 
     if not isinstance(num_level, int):
         raise ValueError('Invalid log level: {}'.format(log_level))
@@ -491,15 +478,9 @@ def build_bird_configuration(config):
         else:
             config_file = config.get('daemon', 'bird_conf')
 
-        dummy_ip_prefix = config.get('daemon', 'dummy_ip_prefix')
-        if not valid_ip_prefix(dummy_ip_prefix):
-            raise ValueError("invalid dummy IPv4 prefix: {i}"
-                             .format(i=dummy_ip_prefix))
-
         bird_configuration[4] = {
             'config_file': config_file,
             'variable_name': config.get('daemon', 'bird_variable'),
-            'dummy_ip_prefix': dummy_ip_prefix,
             'reconfigure_cmd': config.get('daemon', 'bird_reconfigure_cmd'),
             'keep_changes': config.getboolean('daemon', 'bird_keep_changes'),
             'changes_counter': config.getint('daemon', 'bird_changes_counter')
@@ -513,14 +494,9 @@ def build_bird_configuration(config):
         else:
             config_file = config.get('daemon', 'bird6_conf')
 
-        dummy_ip_prefix = config.get('daemon', 'dummy_ip6_prefix')
-        if not valid_ip_prefix(dummy_ip_prefix):
-            raise ValueError("invalid dummy IPv6 prefix: {i}"
-                             .format(i=dummy_ip_prefix))
         bird_configuration[6] = {
             'config_file': config_file,
             'variable_name': config.get('daemon', 'bird6_variable'),
-            'dummy_ip_prefix': dummy_ip_prefix,
             'reconfigure_cmd': config.get('daemon', 'bird6_reconfigure_cmd'),
             'keep_changes': config.getboolean('daemon', 'bird6_keep_changes'),
             'changes_counter': config.getint('daemon', 'bird6_changes_counter')
@@ -788,8 +764,7 @@ def reconfigure_bird(cmd):
                   "broken:%s", output)
 
 
-def write_temp_bird_conf(dummy_ip_prefix,
-                         config_file,
+def write_temp_bird_conf(config_file,
                          variable_name,
                          prefixes):
     """Write in a temporary file the list of IP-Prefixes.
@@ -797,7 +772,6 @@ def write_temp_bird_conf(dummy_ip_prefix,
     A failure to create and write the temporary file will exit main program.
 
     Arguments:
-        dummy_ip_prefix (str): The dummy IP prefix, which must be always
         config_file (str): The file name of bird configuration
         variable_name (str): The name of the variable set in bird configuration
         prefixes (list): The list of IP-Prefixes to write
@@ -807,8 +781,6 @@ def write_temp_bird_conf(dummy_ip_prefix,
 
     """
     log = logging.getLogger(PROGRAM_NAME)
-    comment = ("# {i} is a dummy IP Prefix. It should NOT be used and "
-               "REMOVED from the constant.".format(i=dummy_ip_prefix))
 
     # the temporary file must be on the same filesystem as the bird config
     # as we use os.rename to perform an atomic update on the bird config.
@@ -822,13 +794,13 @@ def write_temp_bird_conf(dummy_ip_prefix,
                        .format(t=datetime.datetime.now(),
                                n=PROGRAM_NAME,
                                p=os.getpid()))
-            tmpf.write("{c}\n".format(c=comment))
-            tmpf.write("define {n} =\n".format(n=variable_name))
-            tmpf.write("{s}[\n".format(s=4 * ' '))
-            # all entries of the array need a trailing comma except the last
-            # one. A single element array doesn't need a trailing comma.
-            tmpf.write(',\n'.join([' '*8 + n for n in prefixes]))
-            tmpf.write("\n{s}];\n".format(s=4 * ' '))
+            tmpf.write("define {n} = ".format(n=variable_name))
+            if len(prefixes) == 0:
+                tmpf.write("false;\n")
+            else:
+                tmpf.write("\n{s}[\n".format(s=4 * ' '))
+                tmpf.write(',\n'.join([' ' * 8 + n for n in prefixes]))
+                tmpf.write("\n{s}];\n".format(s=4 * ' '))
     except OSError as error:
         log.critical("failed to write temporary file %s: %s. This is a FATAL "
                      "error, this exiting main program", tm_file, error)
