@@ -272,7 +272,7 @@ def modify_ip_prefixes(
             msg = ("CRITICAL: failed to create Bird configuration {e}, "
                    "this is FATAL error, thus exiting main program"
                    .format(e=error))
-            sys.exit("{m}".format(m=msg))
+            sys.exit(f"{msg}")
         else:
             log.info("Bird configuration for IPv%s is updated", ip_version)
             reconfigure_bird(reconfigure_cmd)
@@ -354,10 +354,10 @@ def configuration_check(config):
     # Catch the case where the directory, under which we store the pid file, is
     # missing.
     if not os.path.isdir(os.path.dirname(pidfile)):
-        raise ValueError("{d} doesn't exit".format(d=os.path.dirname(pidfile)))
+        raise ValueError(f"{os.path.dirname(pidfile)} doesn't exit")
 
     if not isinstance(num_level, int):
-        raise ValueError('Invalid log level: {}'.format(log_level))
+        raise ValueError(f'Invalid log level: {log_level}')
 
     for _file in 'log_file', 'stderr_file':
         if config.has_option('daemon', _file):
@@ -602,7 +602,7 @@ def create_bird_config_files(bird_configuration):
                                  "history of changes for {b}:{e}"
                                  .format(d=history_dir, b=config_file, e=exc))
             else:
-                print("{d} is created".format(d=history_dir))
+                print(f"{history_dir} is created")
 
 
 def running(processid):
@@ -662,7 +662,7 @@ def get_ip_prefixes_from_bird(filename):
     return prefixes
 
 
-class BaseOperation(object):
+class BaseOperation:
     """Run operation on a list.
 
     Arguments:
@@ -822,8 +822,8 @@ def write_temp_bird_conf(dummy_ip_prefix,
                        .format(t=datetime.datetime.now(),
                                n=PROGRAM_NAME,
                                p=os.getpid()))
-            tmpf.write("{c}\n".format(c=comment))
-            tmpf.write("define {n} =\n".format(n=variable_name))
+            tmpf.write(f"{comment}\n")
+            tmpf.write(f"define {variable_name} =\n")
             tmpf.write("{s}[\n".format(s=4 * ' '))
             # all entries of the array need a trailing comma except the last
             # one. A single element array doesn't need a trailing comma.
@@ -890,7 +890,7 @@ def update_pidfile(pidfile):
         try:
             pid = int(pid)
         except ValueError:
-            print("cleaning stale pidfile with invalid data:'{}'".format(pid))
+            print(f"cleaning stale pidfile with invalid data:'{pid}'")
             write_pid(pidfile)
         else:
             if running(pid):
@@ -899,19 +899,19 @@ def update_pidfile(pidfile):
                 # be stopped. Since newer version has a different locking
                 # mechanism, we can end up with both versions running.
                 # In order to avoid this situation we refuse to startup.
-                sys.exit("process {} is already running".format(pid))
+                sys.exit(f"process {pid} is already running")
             else:
                 # pidfile exists with a PID for a process that is not running.
                 # Let's update PID.
-                print("updating stale processID({}) in pidfile".format(pid))
+                print(f"updating stale processID({pid}) in pidfile")
                 write_pid(pidfile)
     except FileNotFoundError:
         # Either it's 1st time we run or previous run was terminated
         # successfully.
-        print("creating pidfile {f}".format(f=pidfile))
+        print(f"creating pidfile {pidfile}")
         write_pid(pidfile)
     except OSError as exc:
-        sys.exit("failed to update pidfile:{e}".format(e=exc))
+        sys.exit(f"failed to update pidfile:{exc}")
 
 
 def write_pid(pidfile):
@@ -927,10 +927,10 @@ def write_pid(pidfile):
     pid = str(os.getpid())
     try:
         with open(pidfile, mode='w') as _file:
-            print("writing processID {p} to pidfile".format(p=pid))
+            print(f"writing processID {pid} to pidfile")
             _file.write(pid)
     except OSError as exc:
-        sys.exit("failed to write pidfile:{e}".format(e=exc))
+        sys.exit(f"failed to write pidfile:{exc}")
 
 
 def shutdown(pidfile, signalnb=None, frame=None):
@@ -1001,7 +1001,7 @@ def setup_logger(config):
             'message',
         ]
 
-        return ' '.join(['%({0:s})'.format(i) for i in supported_keys])
+        return ' '.join([f'%({i:s})' for i in supported_keys])
 
     custom_format = log_format()
     json_formatter = CustomJsonFormatter(custom_format,
@@ -1069,7 +1069,7 @@ def setup_logger(config):
     return logger
 
 
-class CustomLogger(object):
+class CustomLogger:
     """Helper Logger to redirect STDOUT or STDERR to a logging hander.
 
     It wraps a Logger class into a file like object, which provides a handy
