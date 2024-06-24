@@ -49,9 +49,9 @@ def main():
     args = docopt(__doc__, version=__version__)
     if args['--print']:
         for section in DEFAULT_OPTIONS:
-            print("[{}]".format(section))
+            print(f"[{section}]")
             for key, value in DEFAULT_OPTIONS[section].items():
-                print("{k} = {v}".format(k=key, v=value))
+                print(f"{key} = {value}")
             print()
         sys.exit(0)
 
@@ -68,15 +68,15 @@ def main():
 
     if args['--print-conf']:
         for section in config:
-            print("[{}]".format(section))
+            print(f"[{section}]")
             for key, value in config[section].items():
-                print("{k} = {v}".format(k=key, v=value))
+                print(f"{key} = {value}")
             print()
         sys.exit(0)
 
     try:
         lock_socket = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
-        lock_socket.bind('\0' + "{}".format(PROGRAM_NAME))
+        lock_socket.bind('\0' + f"{PROGRAM_NAME}")
     except socket.error as exc:
         sys.exit("failed to acquire a lock by creating an abstract namespace"
                  " socket: {}".format(exc))

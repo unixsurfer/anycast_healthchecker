@@ -129,7 +129,7 @@ class ServiceCheck(Thread):
             return 126
         else:
             duration = (time.time() - start_time) * 1000
-            msg = "check duration {t:.3f}ms".format(t=duration)
+            msg = f"check duration {duration:.3f}ms"
             self.log.info(msg)
             self.metric_check_duration.labels(**self.labels).set(duration)
 
