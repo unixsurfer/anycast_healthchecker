@@ -95,7 +95,7 @@ check_fail        = 2
 check_disabled    = false
 on_disabled       = withdraw
 ip_prefix         = fd12:aba6:57db:ffff::1/128
-ip_check_disabled = false
+ip_check_disabled = true
 EOT
 fi
 
