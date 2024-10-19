@@ -163,7 +163,7 @@ class ServiceCheck(Thread):
         if self.ip_check_disabled:
             self.log.info("checking for IP assignment on interface %s is "
                           "disabled", self.config['interface'])
-            result = True
+            return True
 
         self.log.debug("running %s", ' '.join(cmd))
         try:
