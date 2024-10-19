@@ -1,6 +1,7 @@
 [project]
 name = "anycast-healthchecker"
 description = "A healthchecker for Anycasted Services"
+readme = {file = "README.rst", content-type = "text/x-rst"}
 authors = [{name = "Pavlos Parissis", email = "pavlos.parissis@gmail.com"}]
 license = {text = "Apache 2.0"}
 keywords = ["healthchecker", "anycast", "ECMP"]
