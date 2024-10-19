@@ -1,6 +1,23 @@
 CHANGES
 =======
 
+0.9.9
+-----
+
+* RELEASE 0.9.9 version
+* Honor appropriately the value of ip\_check\_disabled (#51)
+* Convert several .format strings to f-strings (#48)
+* pylint workflow tweaks (#47)
+* Sort imports (#46)
+* Add prometheus-client to the requirements.txt file (#45)
+* Run all checks with a signal (#44)
+* Update pylint.yml
+* Create pylint.yml github workflow
+* Improve logging (#43)
+* Fix default settings in README (#42)
+* Update debian packaging (#41)
+* Update README
+
 0.9.8
 -----
 
