@@ -34,7 +34,7 @@ packages = ["anycast_healthchecker"]
 
 [tool.setuptools.dynamic]
 version = {attr = "anycast_healthchecker.__version__"}
-readme = {file = ["README.rst"]}
+readme = {file = ["README.rst"], content-type = "text/x-rst"}
 
 [build-system]
 requires = ["setuptools>=61", "wheel"]
