@@ -1046,6 +1046,8 @@ def setup_logger(config):
         stream_handler = logging.StreamHandler()
         if config.getboolean('daemon', 'json_stdout'):
             stream_handler.setFormatter(json_formatter)
+        elif config.getboolean('daemon', 'log_format_journalctl'):
+            stream_handler.setFormatter(JournalFormatter('%(threadName)s - %(message)s'))
         else:
             stream_handler.setFormatter(formatter)
         logger.addHandler(stream_handler)
@@ -1191,6 +1193,25 @@ class CustomJsonFormatter(jsonlogger.JsonFormatter):
         # return jsonlogger.JsonFormatter.process_log_record(self, log_record)
 
         return log_record
+
+
+class JournalFormatter(logging.Formatter):
+    """Format logs in a way that journald can interpret severity levels."""
+
+    SEVERITY_MAP = {
+        logging.DEBUG: 7,      # DEBUG
+        logging.INFO: 6,       # INFO
+        logging.WARNING: 4,    # WARNING
+        logging.ERROR: 3,      # ERR
+        logging.CRITICAL: 2    # CRIT
+    }
+
+    def format(self, record):
+        message = super().format(record)
+        severity = self.SEVERITY_MAP.get(record.levelno, 6)
+
+        # Adding journald's special PRIORITY field
+        return f"<{severity}>{message}"
 
 
 class ServiceCheckDiedError(Exception):

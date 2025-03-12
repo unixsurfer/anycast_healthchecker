@@ -4,8 +4,8 @@
 __title__ = 'anycast_healthchecker'
 __author__ = 'Pavlos Parissis'
 __license__ = 'Apache 2.0'
-__version__ = '0.9.9'
-__copyright__ = 'Copyright 2015-2023 Pavlos Parissis'
+__version__ = '0.9.10'
+__copyright__ = 'Copyright 2015-2025 Pavlos Parissis'
 
 PROGRAM_NAME = __title__.replace('_', '-')
 METRIC_PREFIX = __title__
@@ -47,9 +47,9 @@ DEFAULT_OPTIONS = {
         'json_log_server': 'false',
         'log_maxbytes': 104857600,
         'log_backups': 8,
+        'log_format_journalctl': 'false',
         'prometheus_exporter': 'false',
         'prometheus_collector_textfile_dir': '/var/cache/textfile_collector/',
         'prometheus_exporter_interval': 10,
-
     }
 }
