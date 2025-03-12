@@ -1,6 +1,11 @@
 CHANGES
 =======
 
+0.9.10
+------
+* RELEASE 0.9.10 version
+* Adding journalctl format handler
+
 0.9.9
 -----
 
