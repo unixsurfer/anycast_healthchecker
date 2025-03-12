@@ -491,6 +491,12 @@ You can enable structured logging for STDOUT, log file and remote UDP syslog ser
 
 * service_name: The name of the service defined in configuration for which the   message was logged, example value foo1IPv6.bar.com. Logging messages from the parent thread will have value "MainThread".
 
+Journalctl logging
+******************
+
+If you run the daemon via systemd, you might prefer using journalctl for logging.
+To enable this, make sure ``log_file`` and ``log_server`` and ``json_stdout`` options are **NOT set** , and ``log_format_journalctl`` is set to ``true``.
+
 Configuring checks for services
 ###############################
 

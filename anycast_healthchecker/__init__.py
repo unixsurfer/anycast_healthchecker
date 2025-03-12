@@ -47,9 +47,9 @@ DEFAULT_OPTIONS = {
         'json_log_server': 'false',
         'log_maxbytes': 104857600,
         'log_backups': 8,
+        'log_format_journalctl': 'false',
         'prometheus_exporter': 'false',
         'prometheus_collector_textfile_dir': '/var/cache/textfile_collector/',
         'prometheus_exporter_interval': 10,
-
     }
 }
